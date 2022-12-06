@@ -1,0 +1,39 @@
+{
+  "json": {
+    "consulta_puntaje_z": ["menores a -2", "de -2 a 2", "de 2 a 3", "mayores a 3", "Baja Talla"],
+    "consulta_diagnostico": [
+      "Bajo Peso",
+      "Normopeso",
+      "Sobrepeso",
+      "Obesidad 1",
+      "Obesidad 2",
+      "Obesidad Morbida"
+    ],
+    "consulta_riesgo_cardiovascular_colesterol": [
+      "menor a 10%",
+      "10-20%",
+      "20-30%",
+      "30-40%",
+      "mayor o igual a 40%"
+    ],
+    "consulta_habitos_saludables": [
+      "Actividad Fisica",
+      "Agua",
+      "Frutas Diaria",
+      "Harinas Integrales",
+      "Hidratos",
+      "Legumbres",
+      "Preparaciones Caceras",
+      "Verduras - Almuerzo",
+      "Verduras - Cena"
+    ],
+    "consulta_habitos_no_saludables": [
+      "Bebidas Azucaras",
+      "Fiambres Embutidos",
+      "Harinas Refinadas",
+      "Pan y Galletas - Almuerzo",
+      "Pan y Galletas - Cena"
+    ]
+  },
+  "ok": true
+}

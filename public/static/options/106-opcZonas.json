@@ -1,0 +1,41 @@
+{
+  "json": [
+    {
+      "description": "Alvarez La Reja",
+      "id": "Alvarez La Reja"
+    },
+    {
+      "description": "Cuartel V",
+      "id": "Cuartel V"
+    },
+    {
+      "description": "Moreno Norte",
+      "id": "Moreno Norte"
+    },
+    {
+      "description": "Moreno Sur",
+      "id": "Moreno Sur"
+    },
+    {
+      "description": "Nivel Central",
+      "id": "Nivel Central"
+    },
+    {
+      "description": "Paso Del Rey",
+      "id": "Paso Del Rey"
+    },
+    {
+      "description": "Trujui I",
+      "id": "Trujui I"
+    },
+    {
+      "description": "Trujui II",
+      "id": "Trujui II"
+    },
+    {
+      "description": "Otros",
+      "id": "Otros"
+    }
+  ],
+  "ok": true
+}

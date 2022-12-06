@@ -1,0 +1,50 @@
+{
+  "name": "secretaria-de-salud-moreno",
+  "version": "1.0.0",
+  "description": "Sistema de Gestión Integral de la Secretaria de Salud de Moreno.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PaZakwan/ssaludBack"
+  },
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node server/server.js",
+    "dev": "nodemon server/server.js",
+    "clean": "IF NOT EXIST dist MKDIR dist && rd /s /q dist && mkdir dist",
+    "prebuild": "npm run clean",
+    "build": "set NODE_OPTIONS=--max_old_space_size=2048 && ncc build server/server.js -o dist",
+    "testB": "nodemon dist/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "heroku-postbuild": "echo Skip build on Heroku"
+  },
+  "nodemonConfig": {
+    "ignore": [
+      "server/uploads/*"
+    ]
+  },
+  "heroku-run-build-script": true,
+  "author": "Paz Juan",
+  "license": "AGPL-3.0-only",
+  "dependencies": {
+    "bcrypt": "^5.0.1",
+    "connect-history-api-fallback": "^2.0.0",
+    "cors": "^2.8.5",
+    "express": "^4.18.1",
+    "helmet": "^6.0.0",
+    "ip": "^2.0.0",
+    "jsonwebtoken": "^8.5.1",
+    "lodash": "^4.17.21",
+    "mongoose": "^6.6.5",
+    "mongoose-unique-validator": "^3.1.0",
+    "morgan": "^1.10.0",
+    "multer": "^1.4.5-lts.1",
+    "node-schedule": "^2.1.0",
+    "nodemailer": "^6.7.8",
+    "xls-to-json-lc": "^0.3.4",
+    "xlsx-to-json-lc": "^0.5.0"
+  },
+  "engines": {
+    "node": "16.x",
+    "npm": "8.x"
+  }
+}

@@ -1,0 +1,25 @@
+# Option 1
+# Agregar al conf de apache para que funcione "apache2.conf"
+# Apache HTTP Server 2.2.16+
+# to run vue-router in apache server subfolder "sgs"
+#<Directory /var/www/html/sgs>
+#	  AllowOverride All
+# 	FallbackResource /sgs/index.html
+#</Directory>
+
+
+# Option 2
+# .htacces
+# Activar los modulos.. mod_negotiation y mod_rewrite
+# to run server in apache server subfolder "sgs"
+#<IfModule mod_negotiation.c>
+#  Options -MultiViews
+#</IfModule>
+#<IfModule mod_rewrite.c>
+#  RewriteEngine On
+#  RewriteBase /sgs
+#  RewriteRule ^sgs/index\.html$ - [L]
+#  RewriteCond %{REQUEST_FILENAME} !-f
+#  RewriteCond %{REQUEST_FILENAME} !-d
+#  RewriteRule . /sgs/index.html [L]
+#</IfModule>

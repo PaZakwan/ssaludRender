@@ -1,0 +1,33 @@
+{
+  "json": [
+    {
+      "description": "Cuartel V",
+      "id": "2489"
+    },
+    {
+      "description": "Francisco Alvarez",
+      "id": "2490"
+    },
+    {
+      "description": "La Reja",
+      "id": "2491"
+    },
+    {
+      "description": "Moreno",
+      "id": "2492"
+    },
+    {
+      "description": "Paso Del Rey",
+      "id": "2493"
+    },
+    {
+      "description": "Trujui",
+      "id": "2494"
+    },
+    {
+      "description": "Otros",
+      "id": "2495"
+    }
+  ],
+  "ok": true
+}

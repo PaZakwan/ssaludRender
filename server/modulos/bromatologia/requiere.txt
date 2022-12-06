@@ -1,0 +1,1 @@
+Config, para las firmas de los PDF.

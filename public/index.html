@@ -1,0 +1,29 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Secretaria de Salud - Moreno</title><link rel="shortcut icon" href="/favicon.ico"/><link rel="icon" type="image/gif" href="/animated_favicon1.gif"/><script async src="/static/fontawesome6.1.1/js/all.min.js"></script><script defer="defer" src="/js/chunk-vendors.0f418697.js"></script><script defer="defer" src="/js/app.5ec3dde3.js"></script><link href="/css/chunk-vendors.b794b2ec.css" rel="stylesheet"><link href="/css/app.8ee8040b.css" rel="stylesheet"></head><body><noscript><strong>Lo siento, pero la pagina no funcionara sin Javascript Habilitado. Por favor Habilite Javascript para poder continuar</strong></noscript><div id="app"></div></body><script>function errorScript(event) {
+      // Create error div => text (fileName, src), className, style.
+      let errorDiv = document.createElement("div");
+      try {
+        // in production dont show the full route to the src script
+        if (event.target.src.startsWith("https://")) {
+          throw new Error(
+            "No se pudo cargar parte de la pagina, re-intente mas tarde." +
+              "\nSi continua apareciendo este error comuniquese con Informatica de la Sec. de Salud de Moreno."
+          );
+        }
+        errorDiv.innerText = `SCRIPT LOAD ERROR: ${decodeURIComponent(
+          new URL(event.target.src).pathname.split("/").filter(Boolean).pop()
+        )}\n${event.target.src}`;
+      } catch (error) {
+        errorDiv.innerText = `SCRIPT LOAD ERROR\n${error.message}`;
+      }
+      errorDiv.className = "errorScript";
+      errorDiv.style.cssText =
+        "background: black; text-shadow: 1px 1px 2px black, 0px 0px 15px white; color: red;";
+      errorDiv.style.cssText += " text-align: center; font-weight: bold; padding: 10px;";
+      // add error div
+      document.body.appendChild(errorDiv);
+    }
+    // Create array of scripts
+    [...document.getElementsByTagName("script")].forEach((elem) => {
+      // addEventListener on error to scripts
+      elem.addEventListener("error", errorScript);
+    });</script></html>

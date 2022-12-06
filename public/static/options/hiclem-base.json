@@ -1,0 +1,77 @@
+{
+  "json": {
+    "motivo_especialidad": ["Nutricion", "Diabetes", "Tuberculosis"],
+
+    "motivo_temp": ["Clinica Medica", "Pediatria", "Ginecologia", "Obstetricia"],
+
+    "motivo_estado": ["Activo", "Finalizado", "Abandonado", "Suspendido", "Cancelado"],
+
+    "motivo_severidad": ["Leve", "Moderada", "Critica", "Incapaz de evaluar"],
+
+    "motivo_actividades": {
+      "Nutricion": ["control", "reduccion de peso"],
+      "Diabetes": ["control"],
+      "Tuberculosis": ["control"],
+      "Pediatria": ["control"],
+      "Clinica Medica": ["control"],
+      "Obstetricia": ["control"],
+      "Ginecologia": ["control"]
+    },
+
+    "consulta_especialidad": ["Nutricion", "Diabetes", "Tuberculosis"],
+
+    "consulta_actividades": {
+      "Nutricion": ["Nutricionista", "Coordinador"],
+      "Diabetes": ["Control"],
+      "Tuberculosis": ["Control"],
+      "Pediatria": ["Control"],
+      "Clinica Medica": ["Control"],
+      "Obstetricia": ["Control"],
+      "Ginecologia": ["Control"]
+    },
+
+    "consulta_antecedentes": [
+      "Diabetes (DM)",
+      "Dislipidemia (DSP)",
+      "Enfermedad Celíaca",
+      "Hipertensión Arterial (HTA)",
+      "Insuficiencia Renal Crónica"
+    ],
+
+    "consulta_presentacion": ["1ra vez", "Ulterior", "Promocion"],
+
+    "estudios_estado": ["Pendiente", "Finalizado"],
+
+    "estudios": {
+      "Contra-Referencia": {
+        "snomed": null,
+        "descripcion": "Solicitud de evaluación diagnóstica y/o tratamiento."
+      },
+      "Laboratorio": {"snomed": null, "descripcion": "Solicitud de Analisis de Laboratorio"}
+    },
+
+    "medicamentos_estado": ["Activo", "Suspendido", "Finalizado"],
+
+    "medicamentos": [
+      {
+        "nomivac": null,
+        "snomed": null,
+        "titulo": "Droga xx mg",
+        "descripcion": "Medicamento para bla bla."
+      },
+      {
+        "nomivac": null,
+        "snomed": null,
+        "titulo": "Droga zz mg",
+        "descripcion": "Medicamento para bla ble bli."
+      },
+      {
+        "nomivac": null,
+        "snomed": null,
+        "titulo": "Droga nn mg",
+        "descripcion": "Medicamento para bli blo blu."
+      }
+    ]
+  },
+  "ok": true
+}

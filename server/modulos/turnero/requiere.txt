@@ -1,0 +1,2 @@
+Profesional, para generar el calendario de turnos.
+Paciente, para asignarle el turno.

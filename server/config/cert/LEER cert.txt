@@ -1,0 +1,15 @@
+En esta carpeta van los archivos para los cerificados del https (SSL/TLS).
+
+"dhparam.pem"
+
+"ssalud.crt.pem"
+
+"ssalud.key.pem"
+
+Bibliografia:
+
+  # https://deliciousbrains.com/ssl-certificate-authority-for-local-https-development/
+
+  # https://stackoverflow.com/questions/10175812/how-to-generate-a-self-signed-ssl-certificate-using-openssl?answertab=trending#tab-top
+
+  # https://www.section.io/engineering-education/how-to-get-ssl-https-for-localhost/

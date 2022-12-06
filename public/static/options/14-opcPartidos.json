@@ -1,0 +1,549 @@
+{
+  "json": [
+    {
+      "description": "25 DE MAYO",
+      "id": 151
+    },
+    {
+      "description": "9 DE JULIO",
+      "id": 110
+    },
+    {
+      "description": "ADOLFO ALSINA",
+      "id": 22
+    },
+    {
+      "description": "ADOLFO GONZALES CHAVES",
+      "id": 23
+    },
+    {
+      "description": "ALBERTI",
+      "id": 24
+    },
+    {
+      "description": "ALMIRANTE BROWN",
+      "id": 25
+    },
+    {
+      "description": "ARRECIFES",
+      "id": 32
+    },
+    {
+      "description": "AVELLANEDA",
+      "id": 26
+    },
+    {
+      "description": "AYACUCHO",
+      "id": 27
+    },
+    {
+      "description": "AZUL",
+      "id": 28
+    },
+    {
+      "description": "BAHIA BLANCA",
+      "id": 29
+    },
+    {
+      "description": "BALCARCE",
+      "id": 30
+    },
+    {
+      "description": "BARADERO",
+      "id": 31
+    },
+    {
+      "description": "BENITO JUAREZ",
+      "id": 33
+    },
+    {
+      "description": "BERAZATEGUI",
+      "id": 34
+    },
+    {
+      "description": "BERISSO",
+      "id": 35
+    },
+    {
+      "description": "BOLIVAR",
+      "id": 36
+    },
+    {
+      "description": "BRAGADO",
+      "id": 37
+    },
+    {
+      "description": "BRANDSEN",
+      "id": 38
+    },
+    {
+      "description": "CAÑUELAS",
+      "id": 40
+    },
+    {
+      "description": "CAMPANA",
+      "id": 39
+    },
+    {
+      "description": "CAPITAN SARMIENTO",
+      "id": 41
+    },
+    {
+      "description": "CARLOS CASARES",
+      "id": 42
+    },
+    {
+      "description": "CARLOS TEJEDOR",
+      "id": 43
+    },
+    {
+      "description": "CARMEN DE ARECO",
+      "id": 44
+    },
+    {
+      "description": "CASTELLI",
+      "id": 45
+    },
+    {
+      "description": "CHACABUCO",
+      "id": 51
+    },
+    {
+      "description": "CHASCOMUS",
+      "id": 534
+    },
+    {
+      "description": "CHASCOMUS",
+      "id": 52
+    },
+    {
+      "description": "CHIVILCOY",
+      "id": 53
+    },
+    {
+      "description": "COLON",
+      "id": 46
+    },
+    {
+      "description": "CORONEL DE MARINA L ROSALES",
+      "id": 47
+    },
+    {
+      "description": "CORONEL DORREGO",
+      "id": 48
+    },
+    {
+      "description": "CORONEL PRINGLES",
+      "id": 49
+    },
+    {
+      "description": "CORONEL SUAREZ",
+      "id": 50
+    },
+    {
+      "description": "DAIREAUX",
+      "id": 54
+    },
+    {
+      "description": "DOLORES",
+      "id": 55
+    },
+    {
+      "description": "ENSENADA",
+      "id": 56
+    },
+    {
+      "description": "ESCOBAR",
+      "id": 57
+    },
+    {
+      "description": "ESTEBAN ECHEVERRIA",
+      "id": 58
+    },
+    {
+      "description": "EXALTACION DE LA CRUZ",
+      "id": 59
+    },
+    {
+      "description": "EZEIZA",
+      "id": 60
+    },
+    {
+      "description": "FLORENCIO VARELA",
+      "id": 61
+    },
+    {
+      "description": "FLORENTINO AMEGHINO",
+      "id": 62
+    },
+    {
+      "description": "GENERAL ALVARADO",
+      "id": 63
+    },
+    {
+      "description": "GENERAL ALVEAR",
+      "id": 64
+    },
+    {
+      "description": "GENERAL ARENALES",
+      "id": 65
+    },
+    {
+      "description": "GENERAL BELGRANO",
+      "id": 66
+    },
+    {
+      "description": "GENERAL GUIDO",
+      "id": 67
+    },
+    {
+      "description": "GENERAL JUAN MADARIAGA",
+      "id": 68
+    },
+    {
+      "description": "GENERAL LA MADRID",
+      "id": 69
+    },
+    {
+      "description": "GENERAL LAS HERAS",
+      "id": 70
+    },
+    {
+      "description": "GENERAL LAVALLE",
+      "id": 71
+    },
+    {
+      "description": "GENERAL PAZ",
+      "id": 72
+    },
+    {
+      "description": "GENERAL PINTO",
+      "id": 73
+    },
+    {
+      "description": "GENERAL PUEYRREDON",
+      "id": 74
+    },
+    {
+      "description": "GENERAL RODRIGUEZ",
+      "id": 75
+    },
+    {
+      "description": "GENERAL SAN MARTIN",
+      "id": 76
+    },
+    {
+      "description": "GENERAL VIAMONTE",
+      "id": 77
+    },
+    {
+      "description": "GENERAL VILLEGAS",
+      "id": 78
+    },
+    {
+      "description": "GUAMINI",
+      "id": 79
+    },
+    {
+      "description": "HIPOLITO YRIGOYEN",
+      "id": 80
+    },
+    {
+      "description": "HURLINGHAM",
+      "id": 81
+    },
+    {
+      "description": "ITUZAINGO",
+      "id": 82
+    },
+    {
+      "description": "JOSE C. PAZ",
+      "id": 83
+    },
+    {
+      "description": "JUNIN",
+      "id": 84
+    },
+    {
+      "description": "LA COSTA",
+      "id": 85
+    },
+    {
+      "description": "LA MATANZA",
+      "id": 86
+    },
+    {
+      "description": "LANUS",
+      "id": 87
+    },
+    {
+      "description": "LA PLATA",
+      "id": 88
+    },
+    {
+      "description": "LAPRIDA",
+      "id": 89
+    },
+    {
+      "description": "LAS FLORES",
+      "id": 90
+    },
+    {
+      "description": "LEANDRO N. ALEM",
+      "id": 91
+    },
+    {
+      "description": "LEZAMA",
+      "id": 535
+    },
+    {
+      "description": "LINCOLN",
+      "id": 92
+    },
+    {
+      "description": "LOBERIA",
+      "id": 93
+    },
+    {
+      "description": "LOBOS",
+      "id": 94
+    },
+    {
+      "description": "LOMAS DE ZAMORA",
+      "id": 95
+    },
+    {
+      "description": "LUJAN",
+      "id": 96
+    },
+    {
+      "description": "MAGDALENA",
+      "id": 97
+    },
+    {
+      "description": "MAIPU",
+      "id": 98
+    },
+    {
+      "description": "MALVINAS ARGENTINAS",
+      "id": 99
+    },
+    {
+      "description": "MAR CHIQUITA",
+      "id": 100
+    },
+    {
+      "description": "MARCOS PAZ",
+      "id": 101
+    },
+    {
+      "description": "MERCEDES",
+      "id": 102
+    },
+    {
+      "description": "MERLO",
+      "id": 103
+    },
+    {
+      "description": "MONTE",
+      "id": 104
+    },
+    {
+      "description": "MONTE HERMOSO",
+      "id": 105
+    },
+    {
+      "description": "Moreno",
+      "id": 106
+    },
+    {
+      "description": "MORON",
+      "id": 107
+    },
+    {
+      "description": "NAVARRO",
+      "id": 108
+    },
+    {
+      "description": "NECOCHEA",
+      "id": 109
+    },
+    {
+      "description": "OLAVARRIA",
+      "id": 111
+    },
+    {
+      "description": "PATAGONES",
+      "id": 112
+    },
+    {
+      "description": "PEHUAJO",
+      "id": 113
+    },
+    {
+      "description": "PELLEGRINI",
+      "id": 114
+    },
+    {
+      "description": "PERGAMINO",
+      "id": 115
+    },
+    {
+      "description": "PILA",
+      "id": 116
+    },
+    {
+      "description": "PILAR",
+      "id": 117
+    },
+    {
+      "description": "PINAMAR",
+      "id": 118
+    },
+    {
+      "description": "PRESIDENTE PERON",
+      "id": 119
+    },
+    {
+      "description": "PUAN",
+      "id": 120
+    },
+    {
+      "description": "PUNTA INDIO",
+      "id": 121
+    },
+    {
+      "description": "QUILMES",
+      "id": 122
+    },
+    {
+      "description": "RAMALLO",
+      "id": 123
+    },
+    {
+      "description": "RAUCH",
+      "id": 124
+    },
+    {
+      "description": "RIVADAVIA",
+      "id": 125
+    },
+    {
+      "description": "ROJAS",
+      "id": 126
+    },
+    {
+      "description": "ROQUE PEREZ",
+      "id": 127
+    },
+    {
+      "description": "SAAVEDRA",
+      "id": 128
+    },
+    {
+      "description": "SALADILLO",
+      "id": 129
+    },
+    {
+      "description": "SALLIQUELO",
+      "id": 131
+    },
+    {
+      "description": "SALTO",
+      "id": 130
+    },
+    {
+      "description": "SAN ANDRES DE GILES",
+      "id": 132
+    },
+    {
+      "description": "SAN ANTONIO DE ARECO",
+      "id": 133
+    },
+    {
+      "description": "SAN CAYETANO",
+      "id": 134
+    },
+    {
+      "description": "SAN FERNANDO",
+      "id": 135
+    },
+    {
+      "description": "SAN ISIDRO",
+      "id": 136
+    },
+    {
+      "description": "SAN MIGUEL",
+      "id": 137
+    },
+    {
+      "description": "SAN NICOLAS",
+      "id": 138
+    },
+    {
+      "description": "SAN PEDRO",
+      "id": 139
+    },
+    {
+      "description": "SAN VICENTE",
+      "id": 140
+    },
+    {
+      "description": "SUIPACHA",
+      "id": 141
+    },
+    {
+      "description": "TANDIL",
+      "id": 142
+    },
+    {
+      "description": "TAPALQUE",
+      "id": 143
+    },
+    {
+      "description": "TIGRE",
+      "id": 144
+    },
+    {
+      "description": "TORDILLO",
+      "id": 145
+    },
+    {
+      "description": "TORNQUIST",
+      "id": 146
+    },
+    {
+      "description": "TRENQUE LAUQUEN",
+      "id": 147
+    },
+    {
+      "description": "TRES ARROYOS",
+      "id": 148
+    },
+    {
+      "description": "TRES DE FEBRERO",
+      "id": 149
+    },
+    {
+      "description": "TRES LOMAS",
+      "id": 150
+    },
+    {
+      "description": "VICENTE LOPEZ",
+      "id": 152
+    },
+    {
+      "description": "VILLA GESELL",
+      "id": 153
+    },
+    {
+      "description": "VILLARINO",
+      "id": 154
+    },
+    {
+      "description": "ZARATE",
+      "id": 155
+    }
+  ],
+  "ok": true
+}
