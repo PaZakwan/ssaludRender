@@ -87,7 +87,9 @@ app.get(
           // regresa mongoose.Types.ObjectId(area);
           filtro.origen.$in[index] = isObjectIdValid(area);
         }
-      } else if (!req.usuario.farmacia.general?.reportes || !req.usuario.farmacia.general?.admin) {
+      } else if (
+        !(req.usuario.farmacia.general?.reportes === 1 || req.usuario.farmacia.general?.admin === 1)
+      ) {
         return errorMessage(res, {message: "Acceso Denegado."}, 401);
       }
       if (req.query.insumos && req.query.insumos !== "[]") {
@@ -173,7 +175,7 @@ app.get(
             _id: {$concat: ["$areaDB", "-", "$insumoDB"]},
             total_entregas: "$total",
           })
-          .sort({categoriaDB: 1, areaDB: 1, insumoDB: 1});
+          .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1});
       }
 
       // Descartes
@@ -271,7 +273,7 @@ app.get(
             _id: {$concat: ["$areaDB", "-", "$insumoDB"]},
             total_descartes: "$total",
           })
-          .sort({categoriaDB: 1, areaDB: 1, insumoDB: 1});
+          .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1});
       }
 
       // Egresos Transferencias Remitos (clearing)
@@ -350,7 +352,7 @@ app.get(
             _id: {$concat: ["$areaDB", "-", "$insumoDB"]},
             total_transferencia_out: "$total",
           })
-          .sort({categoriaDB: 1, areaDB: 1, insumoDB: 1});
+          .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1});
       }
 
       // INTEGRAR EGRESOS

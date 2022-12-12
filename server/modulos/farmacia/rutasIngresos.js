@@ -21,6 +21,8 @@ let listaIngreso = [
   "insumos",
   // "stockID",
   // "insumo",
+  // "insumoDB",
+  // "categoriaDB",
   // "cantidad",
   // "procedencia",
   // "lote",
@@ -227,6 +229,7 @@ app.get(
         .unwind({path: "$insumos.insumoDB"})
         .addFields({
           "insumos.insumoDB": "$insumos.insumoDB.nombre",
+          "insumos.categoriaDB": "$insumos.insumoDB.categoria",
           "insumos.vencimiento": {
             $dateToString: {format: "%Y-%m-%d", date: "$insumos.vencimiento"},
           },
@@ -548,12 +551,13 @@ app.get(
         .unwind({path: "$insumos.insumoDB"})
         .addFields({
           "insumos.insumoDB": "$insumos.insumoDB.nombre",
+          "insumos.categoriaDB": "$insumos.insumoDB.categoria",
           "insumos.vencimiento": {
             $dateToString: {format: "%Y-%m-%d", date: "$insumos.vencimiento"},
           },
         })
         // recomprimir
-        .sort({fecha: -1, _id: -1, "insumos.insumoDB": 1})
+        .sort({fecha: -1, _id: -1, "insumos.categoriaDB": 1, "insumos.insumoDB": 1})
         .group({
           _id: "$_id",
           data: {$first: "$$ROOT"},
@@ -802,7 +806,7 @@ app.get(
             _id: {$concat: ["$areaDB", "-", "$insumoDB"]},
             total_ingreso_pr: "$total",
           })
-          .sort({categoriaDB: 1, areaDB: 1, insumoDB: 1});
+          .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1});
       }
 
       // Ingresos Transferencias Remitos (clearing)
@@ -867,7 +871,7 @@ app.get(
             _id: {$concat: ["$areaDB", "-", "$insumoDB"]},
             total_transferencia_in: "$total",
           })
-          .sort({categoriaDB: 1, areaDB: 1, insumoDB: 1});
+          .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1});
       }
 
       // INTEGRAR INGRESOS

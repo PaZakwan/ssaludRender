@@ -83,7 +83,7 @@ app.get(
         // agrupar - area/insumo, sumar por insumo.
         // procedencia lote vencimiento cant
         .group({
-          _id: {area: "$destino", insumo: "$insumos.insumo"},
+          _id: {area: "$origen", insumo: "$insumos.insumo"},
           total: {$sum: "$insumos.cantidad"},
           // detalle: {
           //   $push: {
@@ -126,7 +126,7 @@ app.get(
           _id: {$concat: ["$areaDB", "-", "$insumoDB"]},
           total_ingreso_pr: "$total",
         })
-        .sort({categoriaDB: 1, areaDB: 1, insumoDB: 1});
+        .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1});
 
       return res.status(200).json({
         ok: true,
