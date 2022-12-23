@@ -14,9 +14,10 @@ const app = express();
 let listaIngreso = [
   "_id",
   "fecha",
-  "orden_compra",
+  "remito_compra",
   "proveedor",
   "destino",
+  "orden_compra",
 
   "insumos",
   // "stockID",
@@ -59,34 +60,61 @@ app.get(
   ],
   async (req, res) => {
     try {
-      let areasID = req.query.areas || JSON.stringify([]);
-      try {
-        areasID = JSON.parse(areasID);
-      } catch (error) {
-        return errorMessage(res, {message: "Las areas para buscar no son validas."}, 400);
-      }
-      for (const [index, area] of areasID.entries()) {
-        // verificar que las areas sean de su gestion.
-        if (
-          // existe en general/reportes o en general/admin o en gestion
-          !(
-            req.usuario.farmacia.general?.reportes === 1 ||
-            req.usuario.farmacia.general?.admin === 1 ||
-            req.usuario.farmacia.gestion?.includes(area)
-          )
-        ) {
-          return errorMessage(res, {message: "Acceso Denegado."}, 401);
+      let filtro = {};
+      if (req.query.areas && req.query.areas !== "[]") {
+        filtro.destino = {
+          $in: JSON.parse(req.query.areas),
+        };
+        for (const [index, area] of filtro.destino.$in.entries()) {
+          // verificar las areas.
+          if (
+            // existe en general/reportes o en general/admin o en gestion
+            !(
+              req.usuario.farmacia.general?.reportes === 1 ||
+              req.usuario.farmacia.general?.admin === 1 ||
+              req.usuario.farmacia.gestion?.includes(area)
+            )
+          ) {
+            return errorMessage(res, {message: "Acceso Denegado."}, 401);
+          }
+          // regresa mongoose.Types.ObjectId(area);
+          filtro.destino.$in[index] = isObjectIdValid(area);
         }
-        // regresa mongoose.Types.ObjectId(area);
-        areasID[index] = isObjectIdValid(area);
+      } else if (
+        !(req.usuario.farmacia.general?.reportes === 1 || req.usuario.farmacia.general?.admin === 1)
+      ) {
+        return errorMessage(res, {message: "Acceso Denegado."}, 401);
+      }
+      if (req.query.insumos && req.query.insumos !== "[]") {
+        filtro.insumos = {
+          $elemMatch: {
+            insumo: {
+              $in: JSON.parse(req.query.insumos),
+            },
+          },
+        };
+        filtro.insumos.$elemMatch.insumo.$in.forEach((insumo, index) => {
+          // regresa mongoose.Types.ObjectId(area);
+          filtro.insumos.$elemMatch.insumo.$in[index] = isObjectIdValid(insumo);
+        });
+      }
+      if (req.query.procedencias && req.query.procedencias !== "[]") {
+        filtro.insumos = {
+          $elemMatch: {
+            ...(filtro.insumos?.$elemMatch || {}),
+            procedencia: {
+              $in: JSON.parse(req.query.procedencias),
+            },
+          },
+        };
+      }
+      if (req.query.desde && req.query.hasta) {
+        filtro.fecha = {$gte: new Date(req.query.desde), $lte: new Date(req.query.hasta)};
       }
 
       // Ingresos
       let ingresosOrdenDB = await FarmaciaIngreso.aggregate()
-        .match({
-          fecha: {$gte: new Date(req.query.desde), $lte: new Date(req.query.hasta)},
-          destino: {$in: areasID},
-        })
+        .match(filtro)
         .sort({fecha: -1, _id: -1})
         .addFields({
           fecha: {$dateToString: {format: "%Y-%m-%d", date: "$fecha"}},
@@ -145,10 +173,7 @@ app.get(
 
       // Transferencias Remitos (clearing)
       let transferenciaRemitoDB = await FarmaciaTransferencia.aggregate()
-        .match({
-          fecha: {$gte: new Date(req.query.desde), $lte: new Date(req.query.hasta)},
-          destino: {$in: areasID},
-        })
+        .match(filtro)
         .addFields({
           fecha: {$dateToString: {format: "%Y-%m-%d", date: "$fecha"}},
           fec_planificada: {$dateToString: {format: "%Y-%m-%d", date: "$fec_planificada"}},
@@ -323,16 +348,16 @@ app.put(
       if (!body._id) {
         // Nuevo
         // Verifica que no se encuentra cargada misma orden de compra
-        if (body.orden_compra !== "Carga inicial") {
-          ingresoDB = await FarmaciaIngreso.findOne({orden_compra: body.orden_compra}).exec();
+        if (body.remito_compra !== "Carga inicial") {
+          ingresoDB = await FarmaciaIngreso.findOne({remito_compra: body.remito_compra}).exec();
           if (ingresoDB) {
-            return errorMessage(res, {message: "Orden de Compra existente."}, 401);
+            return errorMessage(res, {message: "Remito de Compra existente."}, 401);
           }
         }
         ingresoDB = await new FarmaciaIngreso(body).save();
 
         // Si es Carga inicial autorecibir stock
-        if (ingresoDB.orden_compra === "Carga inicial") {
+        if (ingresoDB.remito_compra === "Carga inicial") {
           let recibido = new Date();
           for (let index = 0; index < body.insumos.length; index++) {
             const ingreso = body.insumos[index];
@@ -373,7 +398,7 @@ app.put(
           ).exec();
           if (recibidoDB === null) {
             errors.push({
-              message: `${ingresoDB.orden_compra} - Recibir Ingreso Error`,
+              message: `${ingresoDB.remito_compra} - Recibir Ingreso Error`,
               type: "Ingreso Recibido",
             });
           }
@@ -398,7 +423,7 @@ app.put(
 
       return res.status(errors.length > 0 ? 500 : 201).json({
         ok: errors.length > 0 ? false : true,
-        ingreso: ingresoDB.orden_compra,
+        ingreso: ingresoDB.remito_compra,
         err: {
           errors,
         },
@@ -428,26 +453,57 @@ app.get(
   ],
   async (req, res) => {
     try {
-      let areasID = req.query.areas || JSON.stringify([]);
-      try {
-        areasID = JSON.parse(areasID);
-      } catch (error) {
-        return errorMessage(res, {message: "Las areas para buscar no son validas."}, 400);
-      }
-      for (const [index, area] of areasID.entries()) {
-        // verificar que las areas sean de su gestion.
-        if (
-          // existe en general/reportes o en general/admin o en gestion
-          !(
-            req.usuario.farmacia.general?.reportes === 1 ||
-            req.usuario.farmacia.general?.admin === 1 ||
-            req.usuario.farmacia.gestion?.includes(area)
-          )
-        ) {
-          return errorMessage(res, {message: "Acceso Denegado."}, 401);
+      let areasID = {};
+      if (req.query.areas && req.query.areas !== "[]") {
+        areasID = {
+          $in: JSON.parse(req.query.areas),
+        };
+        for (const [index, area] of areasID.$in.entries()) {
+          // verificar las areas.
+          if (
+            // existe en general/reportes o en general/admin o en gestion
+            !(
+              req.usuario.farmacia.general?.reportes === 1 ||
+              req.usuario.farmacia.general?.admin === 1 ||
+              req.usuario.farmacia.gestion?.includes(area)
+            )
+          ) {
+            return errorMessage(res, {message: "Acceso Denegado."}, 401);
+          }
+          // regresa mongoose.Types.ObjectId(area);
+          areasID.$in[index] = isObjectIdValid(area);
         }
-        // regresa mongoose.Types.ObjectId(area);
-        areasID[index] = isObjectIdValid(area);
+      } else if (
+        !(req.usuario.farmacia.general?.reportes === 1 || req.usuario.farmacia.general?.admin === 1)
+      ) {
+        return errorMessage(res, {message: "Acceso Denegado."}, 401);
+      }
+      let filtro = {};
+      if (req.query.insumos && req.query.insumos !== "[]") {
+        filtro.insumos = {
+          $elemMatch: {
+            insumo: {
+              $in: JSON.parse(req.query.insumos),
+            },
+          },
+        };
+        filtro.insumos.$elemMatch.insumo.$in.forEach((insumo, index) => {
+          // regresa mongoose.Types.ObjectId(area);
+          filtro.insumos.$elemMatch.insumo.$in[index] = isObjectIdValid(insumo);
+        });
+      }
+      if (req.query.procedencias && req.query.procedencias !== "[]") {
+        filtro.insumos = {
+          $elemMatch: {
+            ...(filtro.insumos?.$elemMatch || {}),
+            procedencia: {
+              $in: JSON.parse(req.query.procedencias),
+            },
+          },
+        };
+      }
+      if (req.query.desde && req.query.hasta) {
+        filtro.fecha = {$gte: new Date(req.query.desde), $lte: new Date(req.query.hasta)};
       }
 
       // Transferencias Remitos (clearing)
@@ -457,18 +513,14 @@ app.get(
             {
               $or: [
                 {
-                  origen: {
-                    $in: areasID,
-                  },
+                  origen: areasID,
                 },
                 {
-                  destino: {
-                    $in: areasID,
-                  },
+                  destino: areasID,
                 },
               ],
             },
-            {fecha: {$gte: new Date(req.query.desde), $lte: new Date(req.query.hasta)}},
+            {...filtro},
           ],
         })
         .addFields({
@@ -722,41 +774,71 @@ app.get(
   ],
   async (req, res) => {
     try {
-      let areasID = req.query.areas || JSON.stringify([]);
-      try {
-        areasID = JSON.parse(areasID);
-      } catch (error) {
-        return errorMessage(res, {message: "Las areas para buscar no son validas."}, 400);
-      }
-      for (const [index, area] of areasID.entries()) {
-        // verificar que las areas sean de su gestion.
-        if (
-          // existe en general/reportes o en general/admin o en gestion
-          !(
-            req.usuario.farmacia.general?.reportes === 1 ||
-            req.usuario.farmacia.general?.admin === 1 ||
-            req.usuario.farmacia.gestion?.includes(area)
-          )
-        ) {
-          return errorMessage(res, {message: "Acceso Denegado."}, 401);
+      let filtro = {};
+      if (req.query.areas && req.query.areas !== "[]") {
+        filtro.destino = {
+          $in: JSON.parse(req.query.areas),
+        };
+        for (const [index, area] of filtro.destino.$in.entries()) {
+          // verificar las areas.
+          if (
+            // existe en general/reportes o en general/admin o en gestion
+            !(
+              req.usuario.farmacia.general?.reportes === 1 ||
+              req.usuario.farmacia.general?.admin === 1 ||
+              req.usuario.farmacia.gestion?.includes(area)
+            )
+          ) {
+            return errorMessage(res, {message: "Acceso Denegado."}, 401);
+          }
+          // regresa mongoose.Types.ObjectId(area);
+          filtro.destino.$in[index] = isObjectIdValid(area);
         }
-        // regresa mongoose.Types.ObjectId(area);
-        areasID[index] = isObjectIdValid(area);
+      } else if (
+        !(req.usuario.farmacia.general?.reportes === 1 || req.usuario.farmacia.general?.admin === 1)
+      ) {
+        return errorMessage(res, {message: "Acceso Denegado."}, 401);
+      }
+      if (req.query.insumos && req.query.insumos !== "[]") {
+        filtro.insumos = {
+          $elemMatch: {
+            insumo: {
+              $in: JSON.parse(req.query.insumos),
+            },
+          },
+        };
+        filtro.insumos.$elemMatch.insumo.$in.forEach((insumo, index) => {
+          // regresa mongoose.Types.ObjectId(area);
+          filtro.insumos.$elemMatch.insumo.$in[index] = isObjectIdValid(insumo);
+        });
+      }
+      if (req.query.procedencias && req.query.procedencias !== "[]") {
+        filtro.insumos = {
+          $elemMatch: {
+            ...(filtro.insumos?.$elemMatch || {}),
+            procedencia: {
+              $in: JSON.parse(req.query.procedencias),
+            },
+          },
+        };
+      }
+      if (req.query.desde && req.query.hasta) {
+        filtro.fecha = {$gte: new Date(req.query.desde), $lte: new Date(req.query.hasta)};
       }
 
       // Ingresos Proveedores/Carga inicial
       let ingresosOrdenDB = [];
       if (JSON.parse(req.query.modelos)?.ingresos) {
         ingresosOrdenDB = await FarmaciaIngreso.aggregate()
-          .match({
-            fecha: {$gte: new Date(req.query.desde), $lte: new Date(req.query.hasta)},
-            destino: {$in: areasID},
-          })
+          .match(filtro)
           // descomprimir
           .unwind({path: "$insumos"})
           // encontrar recibidos
           .match({
             "insumos.recibido": {$ne: null},
+            "insumos.insumo": filtro.insumos?.$elemMatch.insumo || {$exists: true},
+            "insumos.procedencia": filtro.insumos?.$elemMatch.procedencia || {$exists: true},
+            // $and: [{"insumos.recibido": {$ne: null}}, {...(filtro.insumos?.$elemMatch || {})}],
           })
           // sort vencimiento
           // .sort({"insumos.vencimiento": 1, _id: -1})
@@ -813,15 +895,14 @@ app.get(
       let transferenciaInDB = [];
       if (JSON.parse(req.query.modelos)?.transferencias) {
         transferenciaInDB = await FarmaciaTransferencia.aggregate()
-          .match({
-            fecha: {$gte: new Date(req.query.desde), $lte: new Date(req.query.hasta)},
-            destino: {$in: areasID},
-          })
+          .match(filtro)
           // descomprimir
           .unwind({path: "$insumos"})
           // encontrar recibidos
           .match({
             "insumos.recibido": {$ne: null},
+            "insumos.insumo": filtro.insumos?.$elemMatch.insumo || {$exists: true},
+            "insumos.procedencia": filtro.insumos?.$elemMatch.procedencia || {$exists: true},
           })
           // sort vencimiento
           // .sort({"insumos.vencimiento": 1, _id: -1})

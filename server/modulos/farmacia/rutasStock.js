@@ -155,42 +155,50 @@ app.get(
   ],
   async (req, res) => {
     try {
-      let filtro = {area: {$in: "[]"}};
-      filtro.area.$in = req.query.areas || "[]";
-      try {
-        filtro.area.$in = JSON.parse(filtro.area.$in);
-      } catch (error) {
-        return errorMessage(res, {message: "Las areas para buscar no son validas."}, 400);
-      }
-      for (const [index, area] of filtro.area.$in.entries()) {
-        // verificar que las areas sean de su gestion.
-        if (
-          // existe en general/stock, en general/reportes, en general/admin, en array/gestion o en array/stock
-          !(
-            req.usuario.farmacia.general?.stock === 1 ||
-            req.usuario.farmacia.general?.reportes === 1 ||
-            req.usuario.farmacia.general?.admin === 1 ||
-            req.usuario.farmacia.gestion?.includes(area) ||
-            req.usuario.farmacia.stock?.includes(area)
-          )
-        ) {
-          return errorMessage(res, {message: "Acceso Denegado."}, 401);
+      let filtro = {};
+      if (req.query.areas && req.query.areas !== "[]") {
+        filtro.area = {
+          $in: JSON.parse(req.query.areas),
+        };
+        for (const [index, area] of filtro.area.$in.entries()) {
+          // verificar las areas.
+          if (
+            // existe en general/stock, en general/reportes, en general/admin, en array/gestion o en array/stock
+            !(
+              req.usuario.farmacia.general?.stock === 1 ||
+              req.usuario.farmacia.general?.reportes === 1 ||
+              req.usuario.farmacia.general?.admin === 1 ||
+              req.usuario.farmacia.gestion?.includes(area) ||
+              req.usuario.farmacia.stock?.includes(area)
+            )
+          ) {
+            return errorMessage(res, {message: "Acceso Denegado."}, 401);
+          }
+          // regresa mongoose.Types.ObjectId(area);
+          filtro.area.$in[index] = isObjectIdValid(area);
         }
-        // regresa mongoose.Types.ObjectId(area);
-        filtro.area.$in[index] = isObjectIdValid(area);
+      } else if (
+        !(
+          req.usuario.farmacia.general?.stock === 1 ||
+          req.usuario.farmacia.general?.reportes === 1 ||
+          req.usuario.farmacia.general?.admin === 1
+        )
+      ) {
+        return errorMessage(res, {message: "Acceso Denegado."}, 401);
       }
-      if (req.query.insumos) {
-        filtro.insumo = {$in: "[]"};
-        filtro.insumo.$in = req.query.insumos || "[]";
-        try {
-          filtro.insumo.$in = JSON.parse(filtro.insumo.$in);
-        } catch (error) {
-          return errorMessage(res, {message: "Los insumos para buscar no son validos."}, 400);
-        }
+      if (req.query.insumos && req.query.insumos !== "[]") {
+        filtro.insumo = {
+          $in: JSON.parse(req.query.insumos),
+        };
         filtro.insumo.$in.forEach((insumo, index) => {
           // regresa mongoose.Types.ObjectId(area);
           filtro.insumo.$in[index] = isObjectIdValid(insumo);
         });
+      }
+      if (req.query.procedencias && req.query.procedencias !== "[]") {
+        filtro.procedencia = {
+          $in: JSON.parse(req.query.procedencias),
+        };
       }
 
       let hoy = new Date();

@@ -17,10 +17,10 @@ let FarmaciaIngresoSchema = new Schema(
       type: Date,
       default: Date.now,
     },
-    orden_compra: {
+    remito_compra: {
       type: String,
       trim: true,
-      required: [true, "La Orden de Compra es necesaria."],
+      required: [true, "El Remito de Compra es necesario."],
     },
     proveedor: {
       type: String,
@@ -31,6 +31,10 @@ let FarmaciaIngresoSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "Area",
       required: [true, "El Area que recibe es necesaria."],
+    },
+    orden_compra: {
+      type: String,
+      trim: true,
     },
 
     insumos: [

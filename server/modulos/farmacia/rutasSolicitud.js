@@ -29,9 +29,8 @@ let listaSolicitud = [
 
 // ============================
 // Mostrar Solicitudes Estadistica, Pedidos segun area filtros, entre fechas.
-// Diferenciados por Estado(Pendiente / Aceptadas/ Rechazadas) y Motivo (Rutina / Urgencia / Emergencia)
+// Diferenciados por Estado(Pendiente* / Aceptadas/ Rechazadas) y Motivo (Rutina / Urgencia / Emergencia)
 // ============================
-// XXXXXX  Desarrollar  XXXXXXX
 app.get(
   "/farmacia/solicitudes/estadistica",
   [
@@ -48,58 +47,106 @@ app.get(
   ],
   async (req, res) => {
     try {
-      let areasID = req.query.areas || JSON.stringify([]);
-      try {
-        areasID = JSON.parse(areasID);
-      } catch (error) {
-        return errorMessage(res, {message: "Las areas para buscar no son validas."}, 400);
-      }
-      for (const [index, area] of areasID.entries()) {
-        // verificar que las areas sean de su gestion.
-        if (
-          // existe en general/reportes o en general/admin o en gestion
-          !(
-            req.usuario.farmacia.general?.reportes === 1 ||
-            req.usuario.farmacia.general?.admin === 1 ||
-            req.usuario.farmacia.gestion?.includes(area)
-          )
-        ) {
-          return errorMessage(res, {message: "Acceso Denegado."}, 401);
+      let filtro = {};
+      if (req.query.areas && req.query.areas !== "[]") {
+        filtro.origen = {
+          $in: JSON.parse(req.query.areas),
+        };
+        for (const [index, area] of filtro.origen.$in.entries()) {
+          // verificar las areas.
+          if (
+            // existe en general/reportes o en general/admin o en gestion
+            !(
+              req.usuario.farmacia.general?.reportes === 1 ||
+              req.usuario.farmacia.general?.admin === 1 ||
+              req.usuario.farmacia.gestion?.includes(area)
+            )
+          ) {
+            return errorMessage(res, {message: "Acceso Denegado."}, 401);
+          }
+          // regresa mongoose.Types.ObjectId(area);
+          filtro.origen.$in[index] = isObjectIdValid(area);
         }
-        // regresa mongoose.Types.ObjectId(area);
-        areasID[index] = isObjectIdValid(area);
+      } else if (
+        !(req.usuario.farmacia.general?.reportes === 1 || req.usuario.farmacia.general?.admin === 1)
+      ) {
+        return errorMessage(res, {message: "Acceso Denegado."}, 401);
+      }
+      if (req.query.insumos && req.query.insumos !== "[]") {
+        filtro.insumo = {
+          $in: JSON.parse(req.query.insumos),
+        };
+        filtro.insumo.$in.forEach((insumo, index) => {
+          // regresa mongoose.Types.ObjectId(area);
+          filtro.insumo.$in[index] = isObjectIdValid(insumo);
+        });
+      }
+      if (req.query.desde && req.query.hasta) {
+        filtro.fecha = {$gte: new Date(req.query.desde), $lte: new Date(req.query.hasta)};
       }
 
       // Buscar Solicitudes
-      // XXXXXX  Desarrollar  XXXXXXX
       let solicitudesDB = [];
       solicitudesDB = await FarmaciaSolicitud.aggregate()
         .match({
-          fecha: {$gte: new Date(req.query.desde), $lte: new Date(req.query.hasta)},
-          origen: {$in: areasID},
+          fecha: filtro.fecha,
+          origen: filtro.origen,
+          "insumos.insumo": filtro.insumo || {$exists: true},
+          estado: "Pendiente",
         })
+        .sort({fecha: 1, _id: 1})
         // descomprimir
         .unwind({path: "$insumos"})
+        // encontrar insumo
+        .match({
+          "insumos.insumo": filtro.insumo || {$exists: true},
+        })
         // agrupar - area/insumo, sumar por insumo.
-        // procedencia lote vencimiento cant
         .group({
           _id: {area: "$origen", insumo: "$insumos.insumo"},
           total: {$sum: "$insumos.cantidad"},
-          // detalle: {
-          //   $push: {
-          //     procedencia: "$insumos.procedencia",
-          //     lote: "$insumos.lote",
-          //     vencimiento: {$dateToString: {format: "%Y-%m-%d", date: "$insumos.vencimiento"}},
-          //     cantidad: "$insumos.cantidad",
-          //   },
-          // },
+          subtotal_rutina: {
+            $sum: {
+              $cond: [
+                {
+                  $eq: ["$motivo", "Rutina"],
+                },
+                "$insumos.cantidad",
+                0,
+              ],
+            },
+          },
+          subtotal_urgencia: {
+            $sum: {
+              $cond: [
+                {
+                  $eq: ["$motivo", "Urgencia"],
+                },
+                "$insumos.cantidad",
+                0,
+              ],
+            },
+          },
+          subtotal_emergencia: {
+            $sum: {
+              $cond: [
+                {
+                  $eq: ["$motivo", "Emergencia"],
+                },
+                "$insumos.cantidad",
+                0,
+              ],
+            },
+          },
         })
         .project({
           _id: 0,
           area: "$_id.area",
           insumo: "$_id.insumo",
           total: 1,
-          // detalle: 1,
+          subtotal_rutina: 1,
+          subtotal_urgencia: 1,
+          subtotal_emergencia: 1,
         })
         .lookup({
           from: "areas",
@@ -124,7 +171,7 @@ app.get(
         })
         .addFields({
           _id: {$concat: ["$areaDB", "-", "$insumoDB"]},
-          total_ingreso_pr: "$total",
+          total_pedidos: "$total",
         })
         .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1});
 
@@ -159,12 +206,13 @@ app.get(
     try {
       let filtro = {};
       if (req.query.areas && req.query.areas !== "[]") {
-        filtro.areas = {
+        filtro.areasID = {
           $in: JSON.parse(req.query.areas),
         };
-        for (const [index, area] of filtro.areas.$in.entries()) {
+        for (const [index, area] of filtro.areasID.$in.entries()) {
+          // verificar las areas.
           if (
-            // existe en general/reportes, en general/admin o en array/gestion
+            // existe en general/reportes o en general/admin o en gestion
             !(
               req.usuario.farmacia.general?.reportes === 1 ||
               req.usuario.farmacia.general?.admin === 1 ||
@@ -174,49 +222,44 @@ app.get(
             return errorMessage(res, {message: "Acceso Denegado."}, 401);
           }
           // regresa mongoose.Types.ObjectId(area);
-          filtro.areas.$in[index] = isObjectIdValid(area);
+          filtro.areasID.$in[index] = isObjectIdValid(area);
         }
       } else if (
-        // no es general/reportes o general/admin
         !(req.usuario.farmacia.general?.reportes === 1 || req.usuario.farmacia.general?.admin === 1)
       ) {
         return errorMessage(res, {message: "Acceso Denegado."}, 401);
       }
-
+      if (req.query.insumos && req.query.insumos !== "[]") {
+        filtro.insumo = {
+          $in: JSON.parse(req.query.insumos),
+        };
+        filtro.insumo.$in.forEach((insumo, index) => {
+          // regresa mongoose.Types.ObjectId(area);
+          filtro.insumo.$in[index] = isObjectIdValid(insumo);
+        });
+      }
       if (req.query.desde && req.query.hasta) {
         filtro.fecha = {$gte: new Date(req.query.desde), $lte: new Date(req.query.hasta)};
-      } else {
-        return errorMessage(
-          res,
-          {message: "El rango de fechas de busqueda es necesario para proceder."},
-          412
-        );
       }
-      if (filtro.areas.$in) {
-        filtro = {
+
+      let solicitudesDB = await FarmaciaSolicitud.aggregate()
+        .match({
           $and: [
             {
               $or: [
                 {destino: {$exists: false}},
                 {
-                  origen: {
-                    $in: filtro.areas.$in,
-                  },
+                  origen: filtro.areasID,
                 },
                 {
-                  destino: {
-                    $in: filtro.areas.$in,
-                  },
+                  destino: filtro.areasID,
                 },
               ],
             },
-            {fecha: {$gte: new Date(req.query.desde), $lte: new Date(req.query.hasta)}},
+            {fecha: filtro.fecha},
+            {"insumos.insumo": filtro.insumo || {$exists: true}},
           ],
-        };
-      }
-
-      let solicitudesDB = await FarmaciaSolicitud.aggregate()
-        .match(filtro)
+        })
         .sort({fecha: -1, _id: -1})
         .addFields({
           fecha: {$dateToString: {format: "%Y-%m-%d", date: "$fecha"}},

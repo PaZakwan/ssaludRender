@@ -66,7 +66,10 @@ app.get(
   ],
   async (req, res) => {
     try {
+      // para transferencias
       let filtro = {};
+      // para entregas/descartes
+      let filtroIndividual = {};
       if (req.query.areas && req.query.areas !== "[]") {
         filtro.origen = {
           $in: JSON.parse(req.query.areas),
@@ -87,29 +90,47 @@ app.get(
           // regresa mongoose.Types.ObjectId(area);
           filtro.origen.$in[index] = isObjectIdValid(area);
         }
+        filtroIndividual.origen = filtro.origen;
       } else if (
         !(req.usuario.farmacia.general?.reportes === 1 || req.usuario.farmacia.general?.admin === 1)
       ) {
         return errorMessage(res, {message: "Acceso Denegado."}, 401);
       }
       if (req.query.insumos && req.query.insumos !== "[]") {
-        filtro.insumo = {
-          $in: JSON.parse(req.query.insumos),
+        filtro.insumos = {
+          $elemMatch: {
+            insumo: {
+              $in: JSON.parse(req.query.insumos),
+            },
+          },
         };
-        filtro.insumo.$in.forEach((insumo, index) => {
+        filtro.insumos.$elemMatch.insumo.$in.forEach((insumo, index) => {
           // regresa mongoose.Types.ObjectId(area);
-          filtro.insumo.$in[index] = isObjectIdValid(insumo);
+          filtro.insumos.$elemMatch.insumo.$in[index] = isObjectIdValid(insumo);
         });
+        filtroIndividual.insumo = filtro.insumos.$elemMatch.insumo;
+      }
+      if (req.query.procedencias && req.query.procedencias !== "[]") {
+        filtro.insumos = {
+          $elemMatch: {
+            ...(filtro.insumos?.$elemMatch || {}),
+            procedencia: {
+              $in: JSON.parse(req.query.procedencias),
+            },
+          },
+        };
+        filtroIndividual.procedencia = filtro.insumos.$elemMatch.procedencia;
       }
       if (req.query.desde && req.query.hasta) {
         filtro.fecha = {$gte: new Date(req.query.desde), $lte: new Date(req.query.hasta)};
+        filtroIndividual.fecha = filtro.fecha;
       }
 
       // Entregas
       let entregasDB = [];
       if (JSON.parse(req.query.modelos)?.entregas) {
         entregasDB = await InsumoEntrega.aggregate()
-          .match(filtro)
+          .match(filtroIndividual)
           .sort({fecha: 1, _id: 1})
           .lookup({
             from: "pacientes",
@@ -182,7 +203,7 @@ app.get(
       let descartesDB = [];
       if (JSON.parse(req.query.modelos)?.descartes) {
         descartesDB = await FarmaciaDescarte.aggregate()
-          .match(filtro)
+          .match(filtroIndividual)
           .sort({fecha: 1, _id: 1})
           .group({
             _id: {area: "$origen", insumo: "$insumo"},
@@ -280,11 +301,7 @@ app.get(
       let transferenciaOutDB = [];
       if (JSON.parse(req.query.modelos)?.transferencias) {
         transferenciaOutDB = await FarmaciaTransferencia.aggregate()
-          .match({
-            fecha: filtro.fecha,
-            origen: filtro.origen,
-            "insumos.insumo": filtro.insumo || {$exists: true},
-          })
+          .match(filtro)
           .sort({fecha: 1, _id: 1})
           // buscar nombres de DestinosDB
           .lookup({
@@ -302,7 +319,8 @@ app.get(
           // encontrar retirados
           .match({
             "insumos.retirado": {$ne: null},
-            "insumos.insumo": filtro.insumo || {$exists: true},
+            "insumos.insumo": filtro.insumos?.$elemMatch.insumo || {$exists: true},
+            "insumos.procedencia": filtro.insumos?.$elemMatch.procedencia || {$exists: true},
           })
           // agrupar - area/insumo, sumar por insumo.
           .group({
@@ -448,8 +466,9 @@ app.get(
           // regresa mongoose.Types.ObjectId(area);
           filtro.origen.$in[index] = isObjectIdValid(area);
         }
-        // } else if (!req.usuario.farmacia.general || req.usuario.farmacia.general.reportes !== 1) {
-      } else {
+      } else if (
+        !(req.usuario.farmacia.general?.reportes === 1 || req.usuario.farmacia.general?.admin === 1)
+      ) {
         return errorMessage(res, {message: "Acceso Denegado."}, 401);
       }
       if (req.query.insumos && req.query.insumos !== "[]") {
@@ -460,6 +479,11 @@ app.get(
           // regresa mongoose.Types.ObjectId(area);
           filtro.insumo.$in[index] = isObjectIdValid(insumo);
         });
+      }
+      if (req.query.procedencias && req.query.procedencias !== "[]") {
+        filtro.procedencia = {
+          $in: JSON.parse(req.query.procedencias),
+        };
       }
       if (req.query.desde && req.query.hasta) {
         filtro.fecha = {$gte: new Date(req.query.desde), $lte: new Date(req.query.hasta)};
@@ -649,7 +673,9 @@ app.get(
           // regresa mongoose.Types.ObjectId(area);
           filtro.origen.$in[index] = isObjectIdValid(area);
         }
-      } else {
+      } else if (
+        !(req.usuario.farmacia.general?.reportes === 1 || req.usuario.farmacia.general?.admin === 1)
+      ) {
         return errorMessage(res, {message: "Acceso Denegado."}, 401);
       }
       if (req.query.insumos && req.query.insumos !== "[]") {
@@ -660,6 +686,11 @@ app.get(
           // regresa mongoose.Types.ObjectId(area);
           filtro.insumo.$in[index] = isObjectIdValid(insumo);
         });
+      }
+      if (req.query.procedencias && req.query.procedencias !== "[]") {
+        filtro.procedencia = {
+          $in: JSON.parse(req.query.procedencias),
+        };
       }
       if (req.query.desde && req.query.hasta) {
         filtro.fecha = {$gte: new Date(req.query.desde), $lte: new Date(req.query.hasta)};
