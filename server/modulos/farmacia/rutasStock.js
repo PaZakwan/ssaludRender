@@ -13,7 +13,7 @@ const {isObjectIdValid} = require("../../tools/object");
 const app = express();
 
 // ============================
-// Recibir la orden_compra/remito (recibir fecha)
+// Recibir la remito_compra/remito (recibir fecha)
 // ============================
 app.put(
   "/farmacia/recibir",
@@ -30,7 +30,7 @@ app.put(
   ],
   async (req, res) => {
     try {
-      let filtro = _pick(req.body, ["id", "orden_compra", "remito"]);
+      let filtro = _pick(req.body, ["id", "remito_compra", "remito"]);
       let ingresoDB = null;
 
       // Buscar Ingresos
@@ -40,7 +40,7 @@ app.put(
         })
           .populate("insumos.insumo", "nombre")
           .exec();
-      } else if (filtro.orden_compra) {
+      } else if (filtro.remito_compra) {
         ingresoDB = await FarmaciaIngreso.findOne({
           _id: filtro.id,
         })
@@ -99,7 +99,7 @@ app.put(
               runValidators: true,
             }
           ).exec();
-        } else if (filtro.orden_compra) {
+        } else if (filtro.remito_compra) {
           recibidoDB = await FarmaciaIngreso.findOneAndUpdate(
             {
               _id: filtro.id,
@@ -113,7 +113,7 @@ app.put(
         }
         if (recibidoDB === null) {
           errors.push({
-            message: `${filtro.remito || filtro.orden_compra} - Recibir Ingreso Error`,
+            message: `${filtro.remito || filtro.remito_compra} - Recibir Ingreso Error`,
             type: "Ingreso Recibido",
           });
         }
@@ -123,7 +123,7 @@ app.put(
 
       return res.status(errors.length === ingresoDB.insumos.length ? 500 : 202).json({
         ok: errors.length === ingresoDB.insumos.length ? false : true,
-        recibido: filtro.remito || filtro.orden_compra,
+        recibido: filtro.remito || filtro.remito_compra,
         err: {
           errors,
         },
