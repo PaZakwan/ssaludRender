@@ -2,7 +2,11 @@ const express = require("express");
 
 const _pick = require("lodash/pick");
 
-const {verificaToken, verificaArrayPropValue} = require("../../middlewares/autenticacion");
+const {
+  verificaToken,
+  verificaAdmin_Role,
+  verificaArrayPropValue,
+} = require("../../middlewares/autenticacion");
 const {errorMessage} = require("../../tools/errorHandler");
 const {isVacio, objectSetUnset} = require("../../tools/object");
 const Insumo = require("./models/insumo");
@@ -73,6 +77,10 @@ app.get("/farmacia/insumo", [verificaToken], async (req, res) => {
 
     let insumos = null;
 
+    if (req.usuario.role !== "ADMIN_ROLE") {
+      filtro.estado = true;
+    }
+
     insumos = await Insumo.find(filtro)
       .collation({locale: "es", numericOrdering: true})
       .select(select)
@@ -142,44 +150,30 @@ app.put(
 // ============================
 // Borrar el Insumo (estado a false)
 // ============================
-app.delete(
-  "/farmacia/insumo/:id",
-  [
-    verificaToken,
-    (req, res, next) => {
-      req.verificacionArray = [
-        {prop: "farmacia.insumos", value: 1},
-        {prop: "farmacia.general.admin", value: 1},
-      ];
-      next();
-    },
-    verificaArrayPropValue,
-  ],
-  async (req, res) => {
-    try {
-      let insumoBorrado = null;
+app.delete("/farmacia/insumo/:id", [verificaToken, verificaAdmin_Role], async (req, res) => {
+  try {
+    let insumoBorrado = null;
 
-      insumoBorrado = await Insumo.findOneAndUpdate(
-        {_id: req.params.id},
-        {
-          estado: false,
-        },
-        {new: true}
-      ).exec();
+    insumoBorrado = await Insumo.findOneAndUpdate(
+      {_id: req.params.id},
+      {
+        estado: false,
+      },
+      {new: true}
+    ).exec();
 
-      if (!insumoBorrado) {
-        return errorMessage(res, {message: "Insumo no encontrado."}, 404);
-      }
-
-      return res.json({
-        ok: true,
-        insumo: insumoBorrado,
-      });
-    } catch (err) {
-      return errorMessage(res, err, err.code);
+    if (!insumoBorrado) {
+      return errorMessage(res, {message: "Insumo no encontrado."}, 404);
     }
+
+    return res.json({
+      ok: true,
+      insumo: insumoBorrado,
+    });
+  } catch (err) {
+    return errorMessage(res, err, err.code);
   }
-);
+});
 
 // ============================
 // TITULO ¿?¿?¿?¿?

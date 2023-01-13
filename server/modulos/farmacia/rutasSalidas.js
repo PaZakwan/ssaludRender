@@ -426,10 +426,8 @@ app.get(
 );
 
 // ============================
-// Mostrar Entregas por filtro (origen[areas],insumos,paciente?, profesional?) entre fechas.
+// Mostrar Entregas por filtro (origen[areas], insumos, procedencias, paciente) entre fechas.
 // ============================
-// Ver tema de mostrar los insumos obtenidos por paciente.. independientemente del area(origen)
-// Completar
 app.get(
   "/farmacia/entrega",
   [
@@ -452,24 +450,9 @@ app.get(
           $in: JSON.parse(req.query.areas),
         };
         for (const [index, area] of filtro.origen.$in.entries()) {
-          // verificar que las areas sean de su gestion.
-          if (
-            // existe en general/reportes o en general/admin o en entregas
-            !(
-              req.usuario.farmacia.general?.reportes === 1 ||
-              req.usuario.farmacia.general?.admin === 1 ||
-              req.usuario.farmacia.entregas?.includes(area)
-            )
-          ) {
-            return errorMessage(res, {message: "Acceso Denegado."}, 401);
-          }
           // regresa mongoose.Types.ObjectId(area);
           filtro.origen.$in[index] = isObjectIdValid(area);
         }
-      } else if (
-        !(req.usuario.farmacia.general?.reportes === 1 || req.usuario.farmacia.general?.admin === 1)
-      ) {
-        return errorMessage(res, {message: "Acceso Denegado."}, 401);
       }
       if (req.query.insumos && req.query.insumos !== "[]") {
         filtro.insumo = {
@@ -487,6 +470,9 @@ app.get(
       }
       if (req.query.desde && req.query.hasta) {
         filtro.fecha = {$gte: new Date(req.query.desde), $lte: new Date(req.query.hasta)};
+      }
+      if (req.query.paciente) {
+        filtro.paciente = isObjectIdValid(req.query.paciente);
       }
 
       let entregasDB = await InsumoEntrega.aggregate()
@@ -636,7 +622,7 @@ app.put(
 );
 
 // ============================
-// Mostrar Descartes por filtro (origen[areas],insumos,paciente?, profesional?) entre fechas.
+// Mostrar Descartes por filtro (origen[areas], insumo, procedencia) entre fechas.
 // ============================
 app.get(
   "/farmacia/descarte",

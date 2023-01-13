@@ -29,7 +29,7 @@ let listaSolicitud = [
 
 // ============================
 // Mostrar Solicitudes Estadistica, Pedidos segun area filtros, entre fechas.
-// Diferenciados por Estado(Pendiente* / Aceptadas/ Rechazadas) y Motivo (Rutina / Urgencia / Emergencia)
+// Diferenciados por Estado(Pendiente / Aceptadas?/ Rechazadas?) y Motivo (Rutina / Urgencia / Emergencia)
 // ============================
 app.get(
   "/farmacia/solicitudes/estadistica",
@@ -94,7 +94,6 @@ app.get(
           "insumos.insumo": filtro.insumo || {$exists: true},
           estado: "Pendiente",
         })
-        .sort({fecha: 1, _id: 1})
         // descomprimir
         .unwind({path: "$insumos"})
         // encontrar insumo
@@ -186,7 +185,7 @@ app.get(
 );
 
 // ============================
-// Mostrar Solicitudes por area(origen, o destino), entre fecha
+// Mostrar Solicitudes por area(origen, o destino), insumo, entre fecha
 // ============================
 app.get(
   "/farmacia/solicitudes",

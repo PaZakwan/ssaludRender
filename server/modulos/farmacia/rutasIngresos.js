@@ -260,7 +260,6 @@ app.get(
           },
         })
         // recomprimir
-        .sort({fecha: -1, _id: -1})
         .group({
           _id: "$_id",
           data: {$first: "$$ROOT"},
@@ -288,7 +287,8 @@ app.get(
         .unwind({path: "$origenDB"})
         .addFields({
           origenDB: "$origenDB.area",
-        });
+        })
+        .sort({fecha: -1, _id: -1});
 
       return res.status(200).json({
         ok: true,
@@ -609,7 +609,6 @@ app.get(
           },
         })
         // recomprimir
-        .sort({fecha: -1, _id: -1, "insumos.categoriaDB": 1, "insumos.insumoDB": 1})
         .group({
           _id: "$_id",
           data: {$first: "$$ROOT"},
@@ -637,7 +636,8 @@ app.get(
         .unwind({path: "$origenDB"})
         .addFields({
           origenDB: "$origenDB.area",
-        });
+        })
+        .sort({fecha: -1, _id: -1});
 
       return res.status(200).json({
         ok: true,
@@ -840,8 +840,6 @@ app.get(
             "insumos.procedencia": filtro.insumos?.$elemMatch.procedencia || {$exists: true},
             // $and: [{"insumos.recibido": {$ne: null}}, {...(filtro.insumos?.$elemMatch || {})}],
           })
-          // sort vencimiento
-          // .sort({"insumos.vencimiento": 1, _id: -1})
           // agrupar - area/insumo, sumar por insumo.
           // procedencia lote vencimiento cant
           .group({
@@ -904,8 +902,6 @@ app.get(
             "insumos.insumo": filtro.insumos?.$elemMatch.insumo || {$exists: true},
             "insumos.procedencia": filtro.insumos?.$elemMatch.procedencia || {$exists: true},
           })
-          // sort vencimiento
-          // .sort({"insumos.vencimiento": 1, _id: -1})
           // agrupar - area/insumo, sumar por insumo.
           // procedencia lote vencimiento cant
           .group({

@@ -290,7 +290,7 @@ app.get(
         .addFields({
           _id: {$concat: ["$areaDB", "-", "$insumoDB"]},
         })
-        .sort({categoriaDB: 1, areaDB: 1, insumoDB: 1});
+        .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1});
       // XXXXXX  Desarrollar  XXXXXXX
       // buscar cantidad minima cant_min
       // $unionWith
