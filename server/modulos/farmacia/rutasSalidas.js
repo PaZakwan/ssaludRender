@@ -123,6 +123,9 @@ app.get(
       }
       if (req.query.desde && req.query.hasta) {
         filtro.fecha = {$gte: new Date(req.query.desde), $lte: new Date(req.query.hasta)};
+        if (isNaN(filtro.fecha.$gte) || isNaN(filtro.fecha.$lte)) {
+          return errorMessage(res, {message: "La fecha de Busqueda no es valida."}, 400);
+        }
         filtroIndividual.fecha = filtro.fecha;
       }
 
@@ -470,6 +473,9 @@ app.get(
       }
       if (req.query.desde && req.query.hasta) {
         filtro.fecha = {$gte: new Date(req.query.desde), $lte: new Date(req.query.hasta)};
+        if (isNaN(filtro.fecha.$gte) || isNaN(filtro.fecha.$lte)) {
+          return errorMessage(res, {message: "La fecha de Busqueda no es valida."}, 400);
+        }
       }
       if (req.query.paciente) {
         filtro.paciente = isObjectIdValid(req.query.paciente);
@@ -680,6 +686,9 @@ app.get(
       }
       if (req.query.desde && req.query.hasta) {
         filtro.fecha = {$gte: new Date(req.query.desde), $lte: new Date(req.query.hasta)};
+        if (isNaN(filtro.fecha.$gte) || isNaN(filtro.fecha.$lte)) {
+          return errorMessage(res, {message: "La fecha de Busqueda no es valida."}, 400);
+        }
       }
 
       let descartesDB = await FarmaciaDescarte.aggregate()

@@ -4,7 +4,7 @@ exports.errorMessage = (res, error, statusTemp) => {
   let statusOriginal = undefined;
   if (status < 100 || 600 <= status) {
     statusOriginal = status;
-    status = "444";
+    status = 444;
   }
   // "timed out" o "MongooseServerSelectionError" mensaje de BD no funcionando
   if (

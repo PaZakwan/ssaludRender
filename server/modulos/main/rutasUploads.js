@@ -20,7 +20,7 @@ const storage = multer.diskStorage({
     cb(null, "./server/uploads/");
   },
   filename: function (req, archivo, cb) {
-    let hoy = new Date().toISOString().substr(0, 19).replace(/:/g, "-");
+    let hoy = new Date().toISOString().substring(0, 19).replace(/:/g, "-");
     // let datetimestamp = Date.now();
     cb(null, hoy + "-" + archivo.originalname);
   },
@@ -97,7 +97,7 @@ function exceltojson(file) {
 // Guardar archivo log en uploads/logs...
 // ###############################
 function guardarLog(file, exitosos, errores, totales) {
-  let hoy = new Date().toISOString().substr(0, 19).replace(/:/g, "-");
+  let hoy = new Date().toISOString().substring(0, 19).replace(/:/g, "-");
   let filename = file.originalname.split(".");
   filename.pop();
   filename = filename.join(".");

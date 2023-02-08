@@ -110,6 +110,9 @@ app.get(
       }
       if (req.query.desde && req.query.hasta) {
         filtro.fecha = {$gte: new Date(req.query.desde), $lte: new Date(req.query.hasta)};
+        if (isNaN(filtro.fecha.$gte) || isNaN(filtro.fecha.$lte)) {
+          return errorMessage(res, {message: "La fecha de Busqueda no es valida."}, 400);
+        }
       }
 
       // Ingresos
@@ -436,6 +439,7 @@ app.put(
 
 // ============================
 // Mostrar Transferencias segun area filtros, entre fechas
+// Estadistica (req.query.estadistica)
 // ============================
 app.get(
   "/farmacia/transferencias",
@@ -504,6 +508,9 @@ app.get(
       }
       if (req.query.desde && req.query.hasta) {
         filtro.fecha = {$gte: new Date(req.query.desde), $lte: new Date(req.query.hasta)};
+        if (isNaN(filtro.fecha.$gte) || isNaN(filtro.fecha.$lte)) {
+          return errorMessage(res, {message: "La fecha de Busqueda no es valida."}, 400);
+        }
       }
 
       // Transferencias Remitos (clearing)
@@ -639,9 +646,58 @@ app.get(
         })
         .sort({fecha: -1, _id: -1});
 
+      let estadistica = {};
+      if (req.query.estadistica) {
+        for (let index = 0; index < transferenciasDB.length; index++) {
+          // crea areasDB
+          !(transferenciasDB[index].origenDB in estadistica) &&
+            (estadistica[transferenciasDB[index].origenDB] = {
+              envio_pendiente: 0,
+              espera_envio: 0,
+              completadas: 0,
+              espera_recepcion: 0,
+              recepcion_pendiente: 0,
+            });
+          !(transferenciasDB[index].destinoDB in estadistica) &&
+            (estadistica[transferenciasDB[index].destinoDB] = {
+              envio_pendiente: 0,
+              espera_envio: 0,
+              completadas: 0,
+              espera_recepcion: 0,
+              recepcion_pendiente: 0,
+            });
+
+          // NO retirado
+          if (!transferenciasDB[index].retirado) {
+            // Pendiente envio (origen)
+            estadistica[transferenciasDB[index].origenDB]["envio_pendiente"] += 1;
+            // En espera (destino)
+            estadistica[transferenciasDB[index].destinoDB]["espera_envio"] += 1;
+          } else {
+            // Recibido
+            if (transferenciasDB[index].recibido) {
+              // Completadas (origen/destino)
+              estadistica[transferenciasDB[index].origenDB]["completadas"] += 1;
+              estadistica[transferenciasDB[index].destinoDB]["completadas"] += 1;
+              if (transferenciasDB[index].origenDB === transferenciasDB[index].destinoDB) {
+                estadistica[transferenciasDB[index].destinoDB]["completadas"] -= 1;
+              }
+            }
+            // NO Recibido
+            else {
+              // Inconclusas (origen)
+              estadistica[transferenciasDB[index].origenDB]["espera_recepcion"] += 1;
+              // Pendiente recepcion (destino)
+              estadistica[transferenciasDB[index].destinoDB]["recepcion_pendiente"] += 1;
+            }
+          }
+        }
+      }
+
       return res.status(200).json({
         ok: true,
-        transferencias: transferenciasDB,
+        transferencias: !req.query.estadistica ? transferenciasDB : [],
+        estadistica,
       });
     } catch (err) {
       return errorMessage(res, err, err.code);
@@ -824,6 +880,9 @@ app.get(
       }
       if (req.query.desde && req.query.hasta) {
         filtro.fecha = {$gte: new Date(req.query.desde), $lte: new Date(req.query.hasta)};
+        if (isNaN(filtro.fecha.$gte) || isNaN(filtro.fecha.$lte)) {
+          return errorMessage(res, {message: "La fecha de Busqueda no es valida."}, 400);
+        }
       }
 
       // Ingresos Proveedores/Carga inicial

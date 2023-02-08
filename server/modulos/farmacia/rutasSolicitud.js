@@ -83,6 +83,9 @@ app.get(
       }
       if (req.query.desde && req.query.hasta) {
         filtro.fecha = {$gte: new Date(req.query.desde), $lte: new Date(req.query.hasta)};
+        if (isNaN(filtro.fecha.$gte) || isNaN(filtro.fecha.$lte)) {
+          return errorMessage(res, {message: "La fecha de Busqueda no es valida."}, 400);
+        }
       }
 
       // Buscar Solicitudes
@@ -239,6 +242,9 @@ app.get(
       }
       if (req.query.desde && req.query.hasta) {
         filtro.fecha = {$gte: new Date(req.query.desde), $lte: new Date(req.query.hasta)};
+        if (isNaN(filtro.fecha.$gte) || isNaN(filtro.fecha.$lte)) {
+          return errorMessage(res, {message: "La fecha de Busqueda no es valida."}, 400);
+        }
       }
 
       let solicitudesDB = await FarmaciaSolicitud.aggregate()

@@ -179,7 +179,7 @@ const sumarProps = (object1, object2) => {
         } else {
           temp[key] = object1[key];
         }
-      } else if (typeof object1[key] === "object") {
+      } else if (typeof object1[key] === "object" && !(object1[key] instanceof ObjectId)) {
         if (typeof object2[key] === "object") {
           temp[key] = sumarProps(object1[key], object2[key]);
         } else {
@@ -200,6 +200,15 @@ const sumarProps = (object1, object2) => {
   }
 };
 
+const groupBy = ({array, keys}) => {
+  return array.reduce((acumulador, obj) => {
+    keys.forEach((key) => {
+      (acumulador[obj[key]] = acumulador[obj[key]] || []).push(obj);
+    });
+    return acumulador;
+  }, {});
+};
+
 // exports
 exports.isObjectIdValid = isObjectIdValid;
 
@@ -212,3 +221,5 @@ exports.objectSetUnset = objectSetUnset;
 exports.objectToFind = objectToFind;
 
 exports.sumarProps = sumarProps;
+
+exports.groupBy = groupBy;
