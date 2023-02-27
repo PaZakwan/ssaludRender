@@ -38,9 +38,8 @@ let NutricionSchema = new Schema(
 
     // H2 Nutricion
     embarazada_semana: {
-      type: String,
-      sparse: true,
-      trim: true,
+      type: Number,
+      min: 0,
     },
 
     fuma: {

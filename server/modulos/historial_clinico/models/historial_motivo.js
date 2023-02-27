@@ -252,7 +252,7 @@ HistorialMotivoSchema.pre("save", async function (next) {
     })
       .select("_id id")
       .exec();
-    if (DB.length > 1 || (DB.length === 1 && DB[0]._id != this._id)) {
+    if (DB?.some?.((mot) => mot._id !== this._id)) {
       throw (err = {
         message: `Ya existe un Mismo Motivo (Programa) "Activo", evolucione con consultas el existente.`,
       });
@@ -279,9 +279,9 @@ HistorialMotivoSchema.pre("findOneAndUpdate", async function (next) {
       })
       .select("_id id")
       .exec();
-    if (DB.length > 1 || (DB.length === 1 && DB[0]._id != this.getUpdate().$set._id)) {
+    if (DB?.some?.((mot) => mot._id != this.getUpdate().$set._id)) {
       throw (err = {
-        message: `Ya existe un Mismo Motivo "Activo", evolucione el existente.`,
+        message: `Ya existe un Mismo Motivo (Programa) "Activo", evolucione con consultas el existente.`,
       });
     }
   }
