@@ -33,40 +33,46 @@ let FarmaciaTransferenciaSchema = new Schema(
       required: [true, "El Area que recibe es necesaria."],
     },
 
-    insumos: [
-      {
-        _id: false,
-        stockID: {
-          type: Schema.Types.ObjectId,
-          ref: "FarmaciaStock",
+    insumos: {
+      type: [
+        {
+          _id: false,
+          stockID: {
+            type: Schema.Types.ObjectId,
+            ref: "FarmaciaStock",
+          },
+          insumo: {
+            type: Schema.Types.ObjectId,
+            ref: "Insumo",
+            required: [true, "El Insumo a transferir es necesario."],
+          },
+          cantidad: {
+            type: Number,
+            required: [true, "La Cantidad a transferir del mismo es necesaria."],
+          },
+          procedencia: {
+            type: String,
+          },
+          lote: {
+            type: String,
+            trim: true,
+          },
+          vencimiento: {
+            type: Date,
+          },
+          retirado: {
+            type: Date,
+          },
+          recibido: {
+            type: Date,
+          },
         },
-        insumo: {
-          type: Schema.Types.ObjectId,
-          ref: "Insumo",
-          required: [true, "El Insumo a transferir es necesario."],
-        },
-        cantidad: {
-          type: Number,
-          required: [true, "La Cantidad a transferir del mismo es necesaria."],
-        },
-        procedencia: {
-          type: String,
-        },
-        lote: {
-          type: String,
-          trim: true,
-        },
-        vencimiento: {
-          type: Date,
-        },
-        retirado: {
-          type: Date,
-        },
-        recibido: {
-          type: Date,
-        },
+      ],
+      validate: {
+        validator: (v) => Array.isArray(v) && v.length > 0,
+        message: "Por lo menos un Insumo a transferir es requerido.",
       },
-    ],
+    },
 
     observacion: {
       type: String,

@@ -8,13 +8,14 @@ let schemaOptions = {
   toJSON: {
     getters: true,
   },
-  _id: false,
 };
 
 let Schema = mongoose.Schema;
 
 let TuberculosisSchema = new Schema(
   {
+    _id: false,
+
     usuario_modifico: {
       type: Schema.Types.ObjectId,
       ref: "Usuario",

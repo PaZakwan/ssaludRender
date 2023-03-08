@@ -113,7 +113,7 @@ app.put(
         }
         if (recibidoDB === null) {
           errors.push({
-            message: `${filtro.remito || filtro.remito_compra} - Recibir Ingreso Error`,
+            message: `${filtro.remito ?? filtro.remito_compra} - Recibir Ingreso Error`,
             type: "Ingreso Recibido",
           });
         }
@@ -123,7 +123,7 @@ app.put(
 
       return res.status(errors.length === ingresoDB.insumos.length ? 500 : 202).json({
         ok: errors.length === ingresoDB.insumos.length ? false : true,
-        recibido: filtro.remito || filtro.remito_compra,
+        recibido: filtro.remito ?? filtro.remito_compra,
         err: {
           errors,
         },
@@ -223,8 +223,6 @@ app.get(
               },
             ],
           },
-        })
-        .addFields({
           porExpirar: {
             $cond: [
               {$or: [{$not: ["$vencimiento"]}, "$expirado"]},
@@ -326,8 +324,8 @@ app.get(
   ],
   async (req, res) => {
     try {
-      let filtro = {area: req.query.area || null};
-      if (!filtro.area) {
+      let filtro = {area: req.query.area};
+      if (!filtro.area || filtro.area === "undefined") {
         return errorMessage(res, {message: "No se envió ningún filtro/dato."}, 412);
       }
       // verificar que el area sea de su gestion o entrega.
@@ -366,8 +364,6 @@ app.get(
               },
             ],
           },
-        })
-        .addFields({
           porExpirar: {
             $cond: [
               {$or: [{$not: ["$vencimiento"]}, "$expirado"]},
@@ -413,6 +409,68 @@ app.get(
           categoria.includes(insumo.insumoCategoriaDB.toString())
         );
       }
+
+      return res.status(200).json({
+        ok: true,
+        stock: stockDB,
+      });
+    } catch (err) {
+      return errorMessage(res, err, err.code);
+    }
+  }
+);
+
+// ============================
+// Mostrar Stock total de los [insumos] solicitados por el area.
+// ============================
+app.get(
+  "/farmacia/stock/solicitud",
+  [
+    verificaToken,
+    (req, res, next) => {
+      req.verificacionArray = [
+        {prop: "farmacia.gestion"},
+        {prop: "farmacia.general.reportes", value: 1},
+        {prop: "farmacia.general.admin", value: 1},
+      ];
+      next();
+    },
+    verificaArrayPropValue,
+  ],
+  async (req, res) => {
+    try {
+      let filtro = {
+        // regresa mongoose.Types.ObjectId(area);
+        area: isObjectIdValid(req.query.area),
+        insumo: {
+          $in: JSON.parse(req.query.insumos),
+        },
+      };
+
+      filtro.insumo.$in.forEach((insumo, index) => {
+        // regresa mongoose.Types.ObjectId(area);
+        filtro.insumo.$in[index] = isObjectIdValid(insumo);
+      });
+
+      if (
+        filtro.area === false ||
+        filtro.insumo.$in.length === filtro.insumo.$in.filter((x) => x === false).length
+      ) {
+        return errorMessage(res, {message: "No se enviaron datos necesarios para proceder."}, 412);
+      }
+
+      let stockDB = await FarmaciaStock.aggregate()
+        .match(filtro)
+        .group({
+          _id: {insumo: "$insumo"},
+          total: {$sum: "$cantidad"},
+        })
+        .project({
+          _id: 0,
+          insumo: "$_id.insumo",
+          total: 1,
+        })
+        .sort({insumo: -1});
 
       return res.status(200).json({
         ok: true,

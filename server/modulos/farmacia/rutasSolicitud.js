@@ -378,6 +378,59 @@ app.put(
 );
 
 // ============================
+// Borrar Solicitud
+// ============================
+app.delete(
+  "/farmacia/solicitud/:id",
+  [
+    verificaToken,
+    (req, res, next) => {
+      req.verificacionArray = [
+        {prop: "farmacia.gestion"},
+        {prop: "farmacia.general.admin", value: 1},
+      ];
+      next();
+    },
+    verificaArrayPropValue,
+  ],
+  async (req, res) => {
+    try {
+      let solicitudBorrada = await FarmaciaSolicitud.findOne({_id: req.params.id}).exec();
+
+      if (
+        // verificar que sea admin o que "origen" sea de su gestion.
+        !(
+          req.usuario.farmacia.general?.admin === 1 ||
+          req.usuario.farmacia.gestion?.includes(solicitudBorrada.origen.toString())
+        )
+      ) {
+        return errorMessage(res, {message: "Acceso Denegado."}, 401);
+      }
+
+      // Verificar que todavia este pendiente...
+      if (solicitudBorrada.estado !== "Pendiente") {
+        return errorMessage(res, {message: "Solicitud Respondida, no editable."}, 401);
+      }
+
+      solicitudBorrada = await FarmaciaSolicitud.findOneAndDelete({
+        _id: req.params.id,
+      }).exec();
+
+      if (!solicitudBorrada) {
+        return errorMessage(res, {message: "Solicitud no encontrado."}, 404);
+      }
+
+      return res.json({
+        ok: true,
+        solicitud_borrada: solicitudBorrada.id,
+      });
+    } catch (err) {
+      return errorMessage(res, err, err.code);
+    }
+  }
+);
+
+// ============================
 // TITULO ¿?¿?¿?¿?
 // ============================
 // ============================

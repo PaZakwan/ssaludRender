@@ -30,7 +30,7 @@ let FarmaciaSolicitudSchema = new Schema(
     insumos: {
       type: [
         {
-          // JSON con insumo y cantidad.
+          _id: false,
           insumo: {
             type: Schema.Types.ObjectId,
             ref: "Insumo",
@@ -42,7 +42,10 @@ let FarmaciaSolicitudSchema = new Schema(
           },
         },
       ],
-      required: [true, "Los Insumos a solicitar es necesario."],
+      validate: {
+        validator: (v) => Array.isArray(v) && v.length > 0,
+        message: "Por lo menos un Insumo a solicitar es requerido.",
+      },
     },
 
     estado: {

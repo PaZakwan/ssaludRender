@@ -438,6 +438,59 @@ app.put(
 );
 
 // ============================
+// Borrar Ingreso
+// ============================
+app.delete(
+  "/farmacia/ingreso/:id",
+  [
+    verificaToken,
+    (req, res, next) => {
+      req.verificacionArray = [
+        {prop: "farmacia.gestion"},
+        {prop: "farmacia.general.admin", value: 1},
+      ];
+      next();
+    },
+    verificaArrayPropValue,
+  ],
+  async (req, res) => {
+    try {
+      let ingresoBorrado = await FarmaciaIngreso.findOne({_id: req.params.id}).exec();
+
+      if (
+        // verificar que sea admin o que "destino" sea de su gestion.
+        !(
+          req.usuario.farmacia.general?.admin === 1 ||
+          req.usuario.farmacia.gestion?.includes(ingresoBorrado.destino.toString())
+        )
+      ) {
+        return errorMessage(res, {message: "Acceso Denegado."}, 401);
+      }
+
+      // Verificar que no se hayan recibido..
+      if (
+        ingresoBorrado.insumos.length === ingresoBorrado.insumos.filter((x) => x.recibido).length
+      ) {
+        return errorMessage(res, {message: "Ingreso Recibido, no editable."}, 401);
+      }
+
+      ingresoBorrado = await FarmaciaIngreso.findOneAndDelete({_id: req.params.id}).exec();
+
+      if (!ingresoBorrado) {
+        return errorMessage(res, {message: "Ingreso no encontrado."}, 404);
+      }
+
+      return res.json({
+        ok: true,
+        ingreso_borrado: ingresoBorrado.remito_compra,
+      });
+    } catch (err) {
+      return errorMessage(res, err, err.code);
+    }
+  }
+);
+
+// ============================
 // Mostrar Transferencias segun area filtros, entre fechas
 // Estadistica (req.query.estadistica)
 // ============================
@@ -802,6 +855,62 @@ app.put(
         err: {
           errors,
         },
+      });
+    } catch (err) {
+      return errorMessage(res, err, err.code);
+    }
+  }
+);
+
+// ============================
+// Borrar Transferencia
+// ============================
+app.delete(
+  "/farmacia/transferencia/:id",
+  [
+    verificaToken,
+    (req, res, next) => {
+      req.verificacionArray = [
+        {prop: "farmacia.gestion"},
+        {prop: "farmacia.general.admin", value: 1},
+      ];
+      next();
+    },
+    verificaArrayPropValue,
+  ],
+  async (req, res) => {
+    try {
+      let transferenciaBorrada = await FarmaciaTransferencia.findOne({_id: req.params.id}).exec();
+
+      if (
+        // verificar que sea admin o que "origen" sea de su gestion.
+        !(
+          req.usuario.farmacia.general?.admin === 1 ||
+          req.usuario.farmacia.gestion?.includes(transferenciaBorrada.origen.toString())
+        )
+      ) {
+        return errorMessage(res, {message: "Acceso Denegado."}, 401);
+      }
+
+      // Verificar que no se hayan retirado..
+      if (
+        transferenciaBorrada.insumos.length ===
+        transferenciaBorrada.insumos.filter((x) => x.retirado).length
+      ) {
+        return errorMessage(res, {message: "Transferencia Retirada, no editable."}, 401);
+      }
+
+      transferenciaBorrada = await FarmaciaTransferencia.findOneAndDelete({
+        _id: req.params.id,
+      }).exec();
+
+      if (!transferenciaBorrada) {
+        return errorMessage(res, {message: "Transferencia no encontrado."}, 404);
+      }
+
+      return res.json({
+        ok: true,
+        transferencia_borrada: transferenciaBorrada.remito,
       });
     } catch (err) {
       return errorMessage(res, err, err.code);

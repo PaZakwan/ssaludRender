@@ -4,10 +4,12 @@ const _pick = require("lodash/pick");
 
 const HistorialClinico = require("./models/historial_clinico_universal");
 const HistorialMotivo = require("./models/historial_motivo");
+const HistorialMedicacion = require("./models/historial_medicacion");
 const Nutricion = require("./models/especialidades/consultas_nutricion");
 
 const {verificaToken, verificaHistorialClinico} = require("../../middlewares/autenticacion");
 const {errorMessage} = require("../../tools/errorHandler");
+const {isVacio, objectSetUnset} = require("../../tools/object");
 
 const app = express();
 
@@ -43,6 +45,20 @@ let listaMotivo = [
   // "consultas", //[consultasSchema]
   // "estudios", //[estudiosSchema]
   // "medicamentos", //[medicamentosSchema]
+];
+
+let listaMedicacion = [
+  "_id",
+  "id",
+  // 'usuario_modifico',
+  // 'updatedAt',
+  "paciente",
+  "profesional",
+  "medicamento",
+  "fecha_inicio",
+  "fecha_declaracion_jurada",
+  "dias_actualizar_declaracion",
+  "estado",
 ];
 
 async function buscarConsultas(motivoId) {
@@ -149,9 +165,9 @@ app.get(
 
       let historialDB = await HistorialClinico.findOne({paciente: id}).exec();
 
-      if (!historialDB) {
-        return errorMessage(res, {message: "Historial no encontrado."}, 404);
-      }
+      // if (!historialDB) {
+      //   return errorMessage(res, {message: "Historial no encontrado."}, 404);
+      // }
 
       res.json({
         ok: true,
@@ -433,6 +449,89 @@ app.put(
       return res.status(201).json({
         ok: true,
         consulta: ConsultaDB,
+      });
+    } catch (err) {
+      return errorMessage(res, err, err.code);
+    }
+  }
+);
+
+// ============================
+// Mostrar Medicaciones de un Paciente por su ID.
+// ============================
+app.get(
+  "/HistorialClinico/medicacion/buscar/:pacienteId",
+  [verificaToken, verificaHistorialClinico],
+  async (req, res) => {
+    try {
+      let id = req.params.pacienteId;
+
+      if (!id) {
+        return errorMessage(res, {message: "Falta información para proceder."}, 412);
+      }
+
+      if (!/^[a-fA-F\d]{24}$/.test(id)) {
+        return errorMessage(res, {message: "El ID del Paciente no es valido."}, 400);
+      }
+
+      let medicacionesDB = await HistorialMedicacion.find({paciente: id}).exec();
+
+      res.json({
+        ok: true,
+        medicaciones: medicacionesDB,
+      });
+    } catch (err) {
+      return errorMessage(res, err, err.code);
+    }
+  }
+);
+
+// ============================
+// Modificar Medicacion o crearla en caso de no existir
+// ============================
+// Testear
+app.put(
+  "/HistorialClinico/medicacion/guardar",
+  [verificaToken, verificaHistorialClinico],
+  async (req, res) => {
+    try {
+      // false (no borra, los vacios)
+      let body = isVacio(_pick(req.body, listaMedicacion), false);
+      if (body.vacio === true) {
+        return errorMessage(res, {message: "No se envió ningún dato."}, 412);
+      }
+      body = body.dato;
+
+      if (!!body._id && body._id !== null && !/^[a-fA-F\d]{24}$/.test(body._id)) {
+        return errorMessage(res, {message: "El ID de la Medicacion no es valido."}, 400);
+      }
+
+      body["usuario_modifico"] = req.usuario._id;
+
+      let medicacionDB = null;
+      if (body._id) {
+        // update
+        body = objectSetUnset(body, "unsetCero").dato;
+        let _id = body.$set._id;
+        delete body.$set._id;
+        medicacionDB = await HistorialMedicacion.findOneAndUpdate({_id}, body, {
+          new: true,
+          runValidators: true,
+        }).exec();
+      } else {
+        // nuevo
+        // true (borra, los vacios)
+        body = isVacio(body, true).dato;
+        medicacionDB = await new HistorialMedicacion(body).save();
+      }
+
+      if (!medicacionDB) {
+        return errorMessage(res, {message: "Medicacion no encontrada."}, 404);
+      }
+
+      return res.status(201).json({
+        ok: true,
+        medicacion: medicacionDB,
       });
     } catch (err) {
       return errorMessage(res, err, err.code);

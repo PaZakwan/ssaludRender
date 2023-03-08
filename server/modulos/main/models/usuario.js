@@ -13,41 +13,39 @@ let schemaOptions = {
   },
 };
 
-const permisosFarmacia = new mongoose.Schema(
-  {
-    // crear insumos
-    insumos: {
+const permisosFarmacia = new mongoose.Schema({
+  _id: false,
+  // crear insumos
+  insumos: {
+    type: Number,
+    min: 0,
+    max: 1,
+  },
+  // Para todas las areas
+  general: {
+    stock: {
       type: Number,
       min: 0,
       max: 1,
     },
-    // Para todas las areas
-    general: {
-      stock: {
-        type: Number,
-        min: 0,
-        max: 1,
-      },
-      reportes: {
-        type: Number,
-        min: 0,
-        max: 1,
-      },
-      admin: {
-        type: Number,
-        min: 0,
-        max: 1,
-      },
+    reportes: {
+      type: Number,
+      min: 0,
+      max: 1,
     },
-    // entrega de insumos a pacientes
-    entregas: {type: [{type: mongoose.Schema.Types.ObjectId, ref: "Area"}], default: void 0},
-    // visualizacion de stock del area...
-    stock: {type: [{type: mongoose.Schema.Types.ObjectId, ref: "Area"}], default: void 0},
-    // gestion del area: opciones, solicitudes propias, entradas, clearing, descartes, reportes locales.
-    gestion: {type: [{type: mongoose.Schema.Types.ObjectId, ref: "Area"}], default: void 0},
+    admin: {
+      type: Number,
+      min: 0,
+      max: 1,
+    },
   },
-  {_id: false}
-);
+  // entrega de insumos a pacientes
+  entregas: {type: [{type: mongoose.Schema.Types.ObjectId, ref: "Area"}], default: void 0},
+  // visualizacion de stock del area...
+  stock: {type: [{type: mongoose.Schema.Types.ObjectId, ref: "Area"}], default: void 0},
+  // gestion del area: opciones, solicitudes propias, entradas, clearing, descartes, reportes locales.
+  gestion: {type: [{type: mongoose.Schema.Types.ObjectId, ref: "Area"}], default: void 0},
+});
 
 let usuarioSchema = new mongoose.Schema(
   {
