@@ -66,6 +66,9 @@ app.get(
   ],
   async (req, res) => {
     try {
+      // para seleccionar los modelos || entregas; descartes; transferencias;
+      let modelos = JSON.parse(req.query.modelos);
+
       // para transferencias
       let filtro = {};
       // para entregas/descartes
@@ -75,10 +78,12 @@ app.get(
           $in: JSON.parse(req.query.areas),
         };
         for (const [index, area] of filtro.origen.$in.entries()) {
-          // verificar que las areas sean de su gestion.
+          // verificar Acceso a las areas.
           if (
-            // existe en general/reportes o en general/admin o en entregas
+            // existe en general/reportes o en general/admin o en entregas o en gestion
+            // o modelo entregas para verlas todas.
             !(
+              modelos.entregas ||
               req.usuario.farmacia.general?.reportes === 1 ||
               req.usuario.farmacia.general?.admin === 1 ||
               req.usuario.farmacia.entregas?.includes(area) ||
@@ -131,7 +136,7 @@ app.get(
 
       // Entregas
       let entregasDB = [];
-      if (JSON.parse(req.query.modelos)?.entregas) {
+      if (modelos?.entregas) {
         entregasDB = await InsumoEntrega.aggregate()
           .match(filtroIndividual)
           .sort({fecha: 1, _id: 1})
@@ -204,7 +209,7 @@ app.get(
 
       // Descartes
       let descartesDB = [];
-      if (JSON.parse(req.query.modelos)?.descartes) {
+      if (modelos?.descartes) {
         descartesDB = await FarmaciaDescarte.aggregate()
           .match(filtroIndividual)
           .sort({fecha: 1, _id: 1})
@@ -302,7 +307,7 @@ app.get(
 
       // Egresos Transferencias Remitos (clearing)
       let transferenciaOutDB = [];
-      if (JSON.parse(req.query.modelos)?.transferencias) {
+      if (modelos?.transferencias) {
         transferenciaOutDB = await FarmaciaTransferencia.aggregate()
           .match(filtro)
           .sort({fecha: 1, _id: 1})

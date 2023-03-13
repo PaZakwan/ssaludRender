@@ -212,7 +212,6 @@ bromatologiaSchema.pre("findOneAndUpdate", function (next) {
   } else {
     this.getUpdate().updatedAt = new Date();
   }
-  // this.findOneAndUpdate({updatedAt: new Date()});
   next();
 });
 

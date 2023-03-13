@@ -66,9 +66,24 @@ let FarmaciaSolicitudSchema = new Schema(
     motivo_rechazo: {
       type: String,
     },
+
+    //todos
+    updatedAt: {
+      type: Date,
+      default: Date.now,
+    },
   },
   schemaOptions
 );
+
+FarmaciaSolicitudSchema.pre("findOneAndUpdate", function (next) {
+  if (this.getUpdate().$set) {
+    this.getUpdate().$set.updatedAt = new Date();
+  } else {
+    this.getUpdate().updatedAt = new Date();
+  }
+  next();
+});
 
 module.exports = mongoose.model(
   "FarmaciaSolicitud",

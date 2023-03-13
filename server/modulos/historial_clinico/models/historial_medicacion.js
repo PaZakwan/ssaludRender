@@ -185,6 +185,15 @@ let HistorialMedicacionSchema = new Schema(
   schemaOptions
 );
 
+HistorialMedicacionSchema.pre("findOneAndUpdate", async function (next) {
+  if (this.getUpdate().$set) {
+    this.getUpdate().$set.updatedAt = new Date();
+  } else {
+    this.getUpdate().updatedAt = new Date();
+  }
+  next();
+});
+
 HistorialMedicacionSchema.virtual("declaracion_vencida").get(function () {
   // calcular diferencia de fechas
   // TESTEAR DIFERENCIAS HORARIAS... UTC en 00:00:00:0000

@@ -97,6 +97,15 @@ let HistorialAntropometriaSchema = new Schema(
   schemaOptions
 );
 
+HistorialAntropometriaSchema.pre("findOneAndUpdate", async function (next) {
+  if (this.getUpdate().$set) {
+    this.getUpdate().$set.updatedAt = new Date();
+  } else {
+    this.getUpdate().updatedAt = new Date();
+  }
+  next();
+});
+
 HistorialAntropometriaSchema.virtual("IMC").get(function () {
   // Indice de Masa Corporal Kg/mts^2
   if (this.peso && this.talla && this.peso.length > 0 && this.talla.length > 0) {

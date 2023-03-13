@@ -223,6 +223,8 @@ app.get(
               },
             ],
           },
+        })
+        .addFields({
           porExpirar: {
             $cond: [
               {$or: [{$not: ["$vencimiento"]}, "$expirado"]},
@@ -364,6 +366,8 @@ app.get(
               },
             ],
           },
+        })
+        .addFields({
           porExpirar: {
             $cond: [
               {$or: [{$not: ["$vencimiento"]}, "$expirado"]},

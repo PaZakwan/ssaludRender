@@ -1,67 +1,70 @@
-const mongoose = require('mongoose');
-const uniqueValidator = require('mongoose-unique-validator');
+const mongoose = require("mongoose");
+const uniqueValidator = require("mongoose-unique-validator");
 
 let schemaOptions = {
-    toObject: {
-        getters: true
-    },
-    toJSON: {
-        getters: true
-    },
+  toObject: {
+    getters: true,
+  },
+  toJSON: {
+    getters: true,
+  },
 };
 
 let Schema = mongoose.Schema;
 
-let actual_anterior = new Schema({
+let actual_anterior = new Schema(
+  {
     _id: false,
 
     actual: {
-        fecha: {
-            type: Date,
-        },
-        valor: {
-            type: String,
-            lowercase: true,
-            trim: true,
-        },
-        profesional: {
-            type: Schema.Types.ObjectId,
-            ref: 'Profesional',
-        },
+      fecha: {
+        type: Date,
+      },
+      valor: {
+        type: String,
+        lowercase: true,
+        trim: true,
+      },
+      profesional: {
+        type: Schema.Types.ObjectId,
+        ref: "Profesional",
+      },
     },
     anterior: {
-        fecha: {
-            type: Date,
-        },
-        valor: {
-            type: String,
-            lowercase: true,
-            trim: true,
-        },
-        profesional: {
-            type: Schema.Types.ObjectId,
-            ref: 'Profesional',
-        },
-    },
-
-}, schemaOptions);
-
-let SignosVitalesSchema = new Schema({
-    usuario_modifico: {
+      fecha: {
+        type: Date,
+      },
+      valor: {
+        type: String,
+        lowercase: true,
+        trim: true,
+      },
+      profesional: {
         type: Schema.Types.ObjectId,
-        ref: 'Usuario',
-        required: true
+        ref: "Profesional",
+      },
+    },
+  },
+  schemaOptions
+);
+
+let SignosVitalesSchema = new Schema(
+  {
+    usuario_modifico: {
+      type: Schema.Types.ObjectId,
+      ref: "Usuario",
+      required: true,
     },
     updatedAt: {
-        type: Date,
-        default: Date.now,
+      type: Date,
+      default: Date.now,
     },
 
     paciente: {
-        type: Schema.Types.ObjectId,
-        ref: 'Paciente',
-        required: true,
-        unique: true,
+      type: Schema.Types.ObjectId,
+      ref: "Paciente",
+      required: true,
+      unique: true,
     },
 
     // actual/anterior: fecha, valor, profesional.
@@ -73,10 +76,19 @@ let SignosVitalesSchema = new Schema({
     tension_arterial_sistolica: actual_anterior,
     // T.A Baja
     tension_arterial_diastolica: actual_anterior,
+  },
+  schemaOptions
+);
 
-}, schemaOptions);
+SignosVitalesSchema.pre("findOneAndUpdate", async function (next) {
+  if (this.getUpdate().$set) {
+    this.getUpdate().$set.updatedAt = new Date();
+  } else {
+    this.getUpdate().updatedAt = new Date();
+  }
+  next();
+});
 
+SignosVitalesSchema.plugin(uniqueValidator, {message: "{PATH} debe de ser único."});
 
-SignosVitalesSchema.plugin(uniqueValidator, { message: '{PATH} debe de ser único.' });
-
-module.exports = mongoose.model('SignosVitales', SignosVitalesSchema);
+module.exports = mongoose.model("SignosVitales", SignosVitalesSchema);

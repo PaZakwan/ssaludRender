@@ -111,6 +111,15 @@ let DiabetesSchema = new Schema(
   schemaOptions
 );
 
+DiabetesSchema.pre("findOneAndUpdate", async function (next) {
+  if (this.getUpdate().$set) {
+    this.getUpdate().$set.updatedAt = new Date();
+  } else {
+    this.getUpdate().updatedAt = new Date();
+  }
+  next();
+});
+
 DiabetesSchema.virtual("fecha_ultimo_control").get(function () {
   if (this.controles && this.controles[0] && this.controles[0].fecha_control) {
     return `${this.controles[0].fecha_control}`;

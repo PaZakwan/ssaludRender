@@ -1,72 +1,84 @@
-const mongoose = require('mongoose');
-const uniqueValidator = require('mongoose-unique-validator');
+const mongoose = require("mongoose");
+const uniqueValidator = require("mongoose-unique-validator");
 
 let schemaOptions = {
-    toObject: {
-        getters: true
-    },
-    toJSON: {
-        getters: true
-    },
+  toObject: {
+    getters: true,
+  },
+  toJSON: {
+    getters: true,
+  },
 };
 
 let Schema = mongoose.Schema;
 
-let HistorialVacunaSchema = new Schema({
+let HistorialVacunaSchema = new Schema(
+  {
     usuario_modifico: {
-        type: Schema.Types.ObjectId,
-        ref: 'Usuario',
-        required: true
+      type: Schema.Types.ObjectId,
+      ref: "Usuario",
+      required: true,
     },
     updatedAt: {
-        type: Date,
-        default: Date.now,
+      type: Date,
+      default: Date.now,
     },
 
     paciente: {
-        type: Schema.Types.ObjectId,
-        ref: 'Paciente',
-        required: true,
-        unique: true,
+      type: Schema.Types.ObjectId,
+      ref: "Paciente",
+      required: true,
+      unique: true,
     },
 
-    vacunas: [{
+    vacunas: [
+      {
         // Vacunas modelos en archivo json.
         vacuna: {
-            lote: {
-                type: String,
-            },
-            modelo: {
-                type: String,
-                required: true,
-            },
+          lote: {
+            type: String,
+          },
+          modelo: {
+            type: String,
+            required: true,
+          },
         },
 
         profesional_aplico: {
-            type: Schema.Types.ObjectId,
-            ref: 'Profesional',
+          type: Schema.Types.ObjectId,
+          ref: "Profesional",
         },
         fecha_aplico: {
-            type: Date,
+          type: Date,
         },
 
         profesional_solicito: {
-            type: Schema.Types.ObjectId,
-            ref: 'Profesional',
+          type: Schema.Types.ObjectId,
+          ref: "Profesional",
         },
         fecha_solicito: {
-            type: Date,
+          type: Date,
         },
 
         estado: {
-            type: String,
-            enum: ['aplicada', 'pendiente'],
+          type: String,
+          enum: ["aplicada", "pendiente"],
         },
-    }],
+      },
+    ],
+  },
+  schemaOptions
+);
 
-}, schemaOptions);
+HistorialVacunaSchema.pre("findOneAndUpdate", async function (next) {
+  if (this.getUpdate().$set) {
+    this.getUpdate().$set.updatedAt = new Date();
+  } else {
+    this.getUpdate().updatedAt = new Date();
+  }
+  next();
+});
 
+HistorialVacunaSchema.plugin(uniqueValidator, {message: "{PATH} debe de ser único."});
 
-HistorialVacunaSchema.plugin(uniqueValidator, { message: '{PATH} debe de ser único.' });
-
-module.exports = mongoose.model('HistorialVacuna', HistorialVacunaSchema);
+module.exports = mongoose.model("HistorialVacuna", HistorialVacunaSchema);

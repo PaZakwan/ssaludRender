@@ -92,10 +92,22 @@ app.get(
       let solicitudesDB = [];
       solicitudesDB = await FarmaciaSolicitud.aggregate()
         .match({
-          fecha: filtro.fecha,
-          origen: filtro.origen,
-          "insumos.insumo": filtro.insumo || {$exists: true},
-          estado: "Pendiente",
+          $and: [
+            {
+              $or: [
+                {destino: {$exists: false}},
+                {
+                  origen: filtro.origen,
+                },
+                {
+                  destino: filtro.origen,
+                },
+              ],
+            },
+            {fecha: filtro.fecha},
+            {"insumos.insumo": filtro.insumo || {$exists: true}},
+            {estado: "Pendiente"},
+          ],
         })
         // descomprimir
         .unwind({path: "$insumos"})

@@ -1,59 +1,71 @@
-const mongoose = require('mongoose');
-const uniqueValidator = require('mongoose-unique-validator');
+const mongoose = require("mongoose");
+const uniqueValidator = require("mongoose-unique-validator");
 
 let schemaOptions = {
-    toObject: {
-        getters: true
-    },
-    toJSON: {
-        getters: true
-    },
+  toObject: {
+    getters: true,
+  },
+  toJSON: {
+    getters: true,
+  },
 };
 
 let Schema = mongoose.Schema;
 
-let HistorialCoberturaMedicaSchema = new Schema({
+let HistorialCoberturaMedicaSchema = new Schema(
+  {
     usuario_modifico: {
-        type: Schema.Types.ObjectId,
-        ref: 'Usuario',
-        required: true
+      type: Schema.Types.ObjectId,
+      ref: "Usuario",
+      required: true,
     },
     updatedAt: {
-        type: Date,
-        default: Date.now,
+      type: Date,
+      default: Date.now,
     },
 
     paciente: {
-        type: Schema.Types.ObjectId,
-        ref: 'Paciente',
-        required: true,
-        unique: true,
+      type: Schema.Types.ObjectId,
+      ref: "Paciente",
+      required: true,
+      unique: true,
     },
 
-    coberturas_medicas: [{
+    coberturas_medicas: [
+      {
         // JSON con Base de las Obras sociales existentes con su rnos,name y posibles planes.
         rnos: {
-            type: String,
+          type: String,
         },
         name: {
-            type: String,
+          type: String,
         },
         plan: {
-            type: String,
+          type: String,
         },
         nro_afiliado: {
-            type: String,
-            required: true,
+          type: String,
+          required: true,
         },
         // [inicia , finaliza cobertura]
         fecha_vigencia: {
-            type: Array,
+          type: Array,
         },
-    }],
+      },
+    ],
+  },
+  schemaOptions
+);
 
-}, schemaOptions);
+HistorialCoberturaMedicaSchema.pre("findOneAndUpdate", async function (next) {
+  if (this.getUpdate().$set) {
+    this.getUpdate().$set.updatedAt = new Date();
+  } else {
+    this.getUpdate().updatedAt = new Date();
+  }
+  next();
+});
 
+HistorialCoberturaMedicaSchema.plugin(uniqueValidator, {message: "{PATH} debe de ser único."});
 
-HistorialCoberturaMedicaSchema.plugin(uniqueValidator, { message: '{PATH} debe de ser único.' });
-
-module.exports = mongoose.model('HistorialCoberturaMedica', HistorialCoberturaMedicaSchema);
+module.exports = mongoose.model("HistorialCoberturaMedica", HistorialCoberturaMedicaSchema);

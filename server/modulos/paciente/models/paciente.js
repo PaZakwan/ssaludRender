@@ -225,6 +225,8 @@ pacienteSchema.pre("findOneAndUpdate", async function (next) {
   // Actualiza horario de edicion
   if (this.getUpdate().$set.hist_tuberculosis) {
     this.getUpdate().$set.hist_tuberculosis.updatedAt = new Date();
+  } else if (this.getUpdate().hist_tuberculosis) {
+    this.getUpdate().hist_tuberculosis.updatedAt = new Date();
   }
 
   // NUMERO DE HISTORIAL DE SALITAS NO REPETIBLE...
@@ -244,7 +246,6 @@ pacienteSchema.pre("findOneAndUpdate", async function (next) {
     }
   }
 
-  // this.findOneAndUpdate({updatedAt: new Date()});
   if (this.getUpdate().$set) {
     this.getUpdate().$set.updatedAt = new Date();
   } else {

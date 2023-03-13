@@ -188,6 +188,8 @@ if (process.env.HEROKU) {
 
 // MONGO CONEXIONES BD
 
+mongoose.set("strictQuery", false);
+
 // Configuraciones (DEFAULT)
 mongoose.connection.on("error", (e) => {
   // console.error("reason", e.reason);
