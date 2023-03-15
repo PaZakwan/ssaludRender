@@ -67,7 +67,7 @@ app.get(
   async (req, res) => {
     try {
       // para seleccionar los modelos || entregas; descartes; transferencias;
-      let modelos = JSON.parse(req.query.modelos);
+      let modelos = JSON.parse(req.query.mod);
 
       // para transferencias
       let filtro = {};
@@ -83,7 +83,7 @@ app.get(
             // existe en general/reportes o en general/admin o en entregas o en gestion
             // o modelo entregas para verlas todas.
             !(
-              modelos.entregas ||
+              modelos.entr ||
               req.usuario.farmacia.general?.reportes === 1 ||
               req.usuario.farmacia.general?.admin === 1 ||
               req.usuario.farmacia.entregas?.includes(area) ||
@@ -136,7 +136,7 @@ app.get(
 
       // Entregas
       let entregasDB = [];
-      if (modelos?.entregas) {
+      if (modelos?.entr) {
         entregasDB = await InsumoEntrega.aggregate()
           .match(filtroIndividual)
           .sort({fecha: 1, _id: 1})
@@ -205,11 +205,17 @@ app.get(
             total_entregas: "$total",
           })
           .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1});
+        if (modelos.entr.nd) {
+          // no detalle (ahorra ancho de banda)
+          entregasDB.forEach((entrega) => {
+            delete entrega["detalle_entregas"];
+          });
+        }
       }
 
       // Descartes
       let descartesDB = [];
-      if (modelos?.descartes) {
+      if (modelos?.desc) {
         descartesDB = await FarmaciaDescarte.aggregate()
           .match(filtroIndividual)
           .sort({fecha: 1, _id: 1})
@@ -303,11 +309,17 @@ app.get(
             total_descartes: "$total",
           })
           .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1});
+        if (modelos.desc.nd) {
+          // no detalle (ahorra ancho de banda)
+          descartesDB.forEach((descarte) => {
+            delete descarte["detalle_descartes"];
+          });
+        }
       }
 
       // Egresos Transferencias Remitos (clearing)
       let transferenciaOutDB = [];
-      if (modelos?.transferencias) {
+      if (modelos?.tran) {
         transferenciaOutDB = await FarmaciaTransferencia.aggregate()
           .match(filtro)
           .sort({fecha: 1, _id: 1})
@@ -379,6 +391,12 @@ app.get(
             total_transferencia_out: "$total",
           })
           .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1});
+        if (modelos.tran.nd) {
+          // no detalle (ahorra ancho de banda)
+          transferenciaOutDB.forEach((transferencia) => {
+            delete transferencia["detalle_transferencia_out"];
+          });
+        }
       }
 
       // INTEGRAR EGRESOS
