@@ -1,4 +1,5 @@
 const express = require("express");
+const axios = require("axios");
 
 const _pick = require("lodash/pick");
 
@@ -29,6 +30,8 @@ let listaPaciente = [
   "oSocial",
   "oSocialNumero",
   "hist_salitas",
+  "fec_fallecimiento",
+  "validadoRENAPER",
 
   //todos
   "estado",
@@ -531,6 +534,209 @@ app.put("/tuberculosis/paciente/:id", [verificaToken, verificaPaciente], (req, r
 // ============================
 // "Borrar" edita estado a false del Paciente por id
 // ============================
+// ============================
+// XXXXXX  Desarrollar  XXXXXXX
+// ============================
+
+// ============================
+// Buscar en RENAPER
+// ============================
+let RENAPER = {tkn: "", date: ""};
+app.get("/paciente/renaper/buscar", [verificaToken, verificaPaciente], async (req, res) => {
+  try {
+    // return errorMessage(res, {message: "El sistema no tiene usuario de RENAPER."}, 444);
+    // verificar que el sistema cuanta con la APIKEY del renaper
+    // process.env.RENAPER_USR;
+    // process.env.RENAPER_PSR;
+    if (!process.env.RENAPER_USR || !process.env.RENAPER_PSR) {
+      return errorMessage(
+        res,
+        {message: "El sistema no cuenta con acceso a RENAPER al momento."},
+        403
+      );
+    }
+
+    // verificar que este la data necesaria
+    // req.query.dni; req.query.sx
+    if (!req.query.dni || !req.query.sx) {
+      return errorMessage(res, {message: "Falta información para proceder (DNI y/o Sexo)."}, 412);
+    }
+
+    // verificar que pueda modificar pacientes
+    if (!pacienteEdit(req.usuario)) {
+      return errorMessage(res, {message: "Acceso Denegado."}, 401);
+    }
+
+    // verificar que no haya sido verificado, si el paciente ya se encuentra en la BD y Verificado => denegar
+    if (
+      await Paciente.findOne({
+        documento: req.query.dni,
+        sexo: req.query.sx,
+        validadoRENAPER: true,
+      }).exec()
+    ) {
+      return errorMessage(
+        res,
+        {message: "Actividad no autorizada, persona se encuentra verificada."},
+        403
+      );
+    }
+
+    // sino existe token o fecha diferente/vencido... refresh token.
+    if (
+      !RENAPER.tkn ||
+      RENAPER.date !==
+        new Date().toLocaleString("es-AR", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+        })
+    ) {
+      let respuesta = await axios.post(
+        "https://apirenaper.idear.gov.ar/CHUTROFINAL/API_ABIS/Autorizacion/token.php",
+        {
+          username: process.env.RENAPER_USR,
+          password: process.env.RENAPER_PSR,
+        },
+        {headers: {"content-type": "application/x-www-form-urlencoded"}}
+      );
+
+      if (respuesta?.data?.data?.token) {
+        RENAPER.tkn = respuesta?.data?.data?.token;
+        RENAPER.date = new Date().toLocaleString("es-AR", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+        });
+      } else {
+        if (respuesta?.data?.data?.mensaje) {
+          return errorMessage(res, {message: `RENAPER: ${respuesta.data.data.mensaje}.`}, 503);
+        }
+        return errorMessage(
+          res,
+          {message: "Servicio de RENAPER no accesible, re-intente mas tarde."},
+          503
+        );
+      }
+    }
+
+    // datos del paciente del renaper.
+    let pacienteRENAPER = null;
+    let respuesta = await axios.get(
+      `https://apirenaper.idear.gov.ar/apidatos/porDniSexo.php?dni=${req.query.dni}&sexo=${req.query.sx}`,
+      {
+        headers: {
+          Authorization: `Bearer ${RENAPER.tkn}`,
+        },
+      }
+    );
+    if (respuesta?.data?.apellido) {
+      // darle formato a los datos necesarios
+      // modificar ciudad (localidad)
+      switch (respuesta.data.ciudad) {
+        case "CUARTEL V":
+          respuesta.data.ciudad = "Cuartel V";
+          break;
+
+        case "FRANCISCO ALVAREZ":
+          respuesta.data.ciudad = "Francisco Alvarez";
+          break;
+
+        case "LA REJA":
+          respuesta.data.ciudad = "La Reja";
+          break;
+
+        case "MORENO":
+          respuesta.data.ciudad = "Moreno";
+          break;
+
+        case "PASO DEL REY":
+          respuesta.data.ciudad = "Paso Del Rey";
+          break;
+
+        case "TRUJUI":
+          respuesta.data.ciudad = "Trujui";
+          break;
+
+        default:
+          respuesta.data.ciudad = "Otros";
+          break;
+      }
+      pacienteRENAPER = {
+        tipo_doc: "DNI",
+        documento: req.query.dni,
+        sexo: req.query.sx == "M" ? "Masculino" : "Femenino",
+
+        apellido: respuesta.data.apellido,
+        nombre: respuesta.data.nombres,
+        fec_nac: respuesta.data.fecha_nacimiento.split("/").reverse().join("-"),
+
+        dir_calle: respuesta.data.calle,
+        dir_numero: respuesta.data.numero,
+        dir_piso: respuesta.data.piso,
+        dir_depto: respuesta.data.departamento,
+        dir_barrio: respuesta.data.barrio,
+        dir_localidad: respuesta.data.ciudad,
+
+        fec_fallecimiento:
+          respuesta.data.mensaje_fallecido === "SIN AVISO DE FALLECIMIENTO"
+            ? ""
+            : respuesta.data.mensaje_fallecido,
+
+        validadoRENAPER: true,
+      };
+    } else {
+      if (respuesta?.data?.mensaje) {
+        return errorMessage(res, {message: `RENAPER: ${respuesta.data.mensaje}.`}, 503);
+      }
+      return errorMessage(
+        res,
+        {message: "Servicio de RENAPER no accesible, re-intente mas tarde."},
+        503
+      );
+    }
+
+    // {
+    //   "id_tramite_principal": "3434355",
+    //   "id_tramite_tarjeta_reimpresa": 0,
+    //   "ejemplar": "B",
+    //   "vencimiento": "12/11/2027",
+    //   "emision": "12/11/2012",
+    //   "cuil": "20XXXXXXX4",
+
+    //   "apellido": "Perez",
+    //   "nombres": "Juan",
+    //   "fecha_nacimiento": "20/09/1955",
+
+    //   "calle": "22",
+    //   "numero": "S/N",
+    //   "piso": "",
+    //   "departamento": "",
+    //   "barrio": "0",
+    //   "ciudad": "LA PLATA",
+
+    //   "monoblock": "",
+    //   "municipio": "LA PLATA","MORENO"
+    //   "provincia": "BUENOS AIRES",
+    //   "pais": "ARGENTINA",
+
+    //   "codigo_postal": "",
+    //   "codigo_fallecido": 0,
+    //   "mensaje_fallecido": "SIN AVISO DE FALLECIMIENTO",
+
+    //   "id_ciudadano": "45789342",
+    //   "codigo": 99,
+    //   "mensaje": "DNI/PAS Firmado"
+    // }
+
+    return res.json({
+      ok: true,
+      paciente: pacienteRENAPER,
+    });
+  } catch (err) {
+    return errorMessage(res, err, err.code);
+  }
+});
 
 // ============================
 // TITULO ¿?¿?¿?¿?

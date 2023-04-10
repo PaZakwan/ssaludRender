@@ -54,10 +54,12 @@ let listaMedicacion = [
   // 'updatedAt',
   "paciente",
   "profesional",
+  "area",
   "medicamento",
   "fecha_inicio",
   "fecha_declaracion_jurada",
-  "dias_actualizar_declaracion",
+  "dias_declaracion_por_vencer",
+  "dias_declaracion_vencida",
   "estado",
 ];
 

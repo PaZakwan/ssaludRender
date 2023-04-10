@@ -137,6 +137,23 @@ app.get(
       // Entregas
       let entregasDB = [];
       if (modelos?.entr) {
+        let detallado = modelos.entr.nd
+          ? null
+          : {
+              detalle_entregas: {
+                $push: {
+                  fecha: {$dateToString: {format: "%Y-%m-%d", date: "$fecha"}},
+                  pacienteDB: "$pacienteDB",
+                  pacienteDocDB: "$pacienteDocDB",
+                  pacienteOSocDB: "$pacienteOSocDB",
+                  procedencia: "$procedencia",
+                  cantidad: "$cantidad",
+                  lote: "$lote",
+                  vencimiento: {$dateToString: {format: "%Y-%m-%d", date: "$vencimiento"}},
+                },
+              },
+            };
+
         entregasDB = await InsumoEntrega.aggregate()
           .match(filtroIndividual)
           .sort({fecha: 1, _id: 1})
@@ -157,20 +174,11 @@ app.get(
             },
           })
           .group({
-            _id: {area: "$origen", insumo: "$insumo"},
-            total: {$sum: "$cantidad"},
-            detalle_entregas: {
-              $push: {
-                fecha: {$dateToString: {format: "%Y-%m-%d", date: "$fecha"}},
-                pacienteDB: "$pacienteDB",
-                pacienteDocDB: "$pacienteDocDB",
-                pacienteOSocDB: "$pacienteOSocDB",
-                procedencia: "$procedencia",
-                cantidad: "$cantidad",
-                lote: "$lote",
-                vencimiento: {$dateToString: {format: "%Y-%m-%d", date: "$vencimiento"}},
-              },
+            ...{
+              _id: {area: "$origen", insumo: "$insumo"},
+              total: {$sum: "$cantidad"},
             },
+            ...detallado,
           })
           .project({
             _id: 0,
@@ -205,73 +213,75 @@ app.get(
             total_entregas: "$total",
           })
           .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1});
-        if (modelos.entr.nd) {
-          // no detalle (ahorra ancho de banda)
-          entregasDB.forEach((entrega) => {
-            delete entrega["detalle_entregas"];
-          });
-        }
       }
 
       // Descartes
       let descartesDB = [];
       if (modelos?.desc) {
+        let detallado = modelos.desc.nd
+          ? null
+          : {
+              detalle_descartes: {
+                $push: {
+                  fecha: {$dateToString: {format: "%Y-%m-%d", date: "$fecha"}},
+                  motivo: "$motivo",
+                  procedencia: "$procedencia",
+                  cantidad: "$cantidad",
+                  lote: "$lote",
+                  vencimiento: {$dateToString: {format: "%Y-%m-%d", date: "$vencimiento"}},
+                },
+              },
+            };
+
         descartesDB = await FarmaciaDescarte.aggregate()
           .match(filtroIndividual)
           .sort({fecha: 1, _id: 1})
           .group({
-            _id: {area: "$origen", insumo: "$insumo"},
-            total: {$sum: "$cantidad"},
-            subtotal_utilizado: {
-              $sum: {
-                $cond: [
-                  {
-                    $eq: ["$motivo", "Utilizado"],
-                  },
-                  "$cantidad",
-                  0,
-                ],
+            ...{
+              _id: {area: "$origen", insumo: "$insumo"},
+              total: {$sum: "$cantidad"},
+              subtotal_utilizado: {
+                $sum: {
+                  $cond: [
+                    {
+                      $eq: ["$motivo", "Utilizado"],
+                    },
+                    "$cantidad",
+                    0,
+                  ],
+                },
+              },
+              subtotal_vencido: {
+                $sum: {
+                  $cond: [
+                    {
+                      $eq: ["$motivo", "Vencimiento"],
+                    },
+                    "$cantidad",
+                    0,
+                  ],
+                },
+              },
+              subtotal_otros: {
+                $sum: {
+                  $cond: [
+                    {
+                      $and: [
+                        {
+                          $ne: ["$motivo", "Utilizado"],
+                        },
+                        {
+                          $ne: ["$motivo", "Vencimiento"],
+                        },
+                      ],
+                    },
+                    "$cantidad",
+                    0,
+                  ],
+                },
               },
             },
-            subtotal_vencido: {
-              $sum: {
-                $cond: [
-                  {
-                    $eq: ["$motivo", "Vencimiento"],
-                  },
-                  "$cantidad",
-                  0,
-                ],
-              },
-            },
-            subtotal_otros: {
-              $sum: {
-                $cond: [
-                  {
-                    $and: [
-                      {
-                        $ne: ["$motivo", "Utilizado"],
-                      },
-                      {
-                        $ne: ["$motivo", "Vencimiento"],
-                      },
-                    ],
-                  },
-                  "$cantidad",
-                  0,
-                ],
-              },
-            },
-            detalle_descartes: {
-              $push: {
-                fecha: {$dateToString: {format: "%Y-%m-%d", date: "$fecha"}},
-                motivo: "$motivo",
-                procedencia: "$procedencia",
-                cantidad: "$cantidad",
-                lote: "$lote",
-                vencimiento: {$dateToString: {format: "%Y-%m-%d", date: "$vencimiento"}},
-              },
-            },
+            ...detallado,
           })
           .project({
             _id: 0,
@@ -309,17 +319,27 @@ app.get(
             total_descartes: "$total",
           })
           .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1});
-        if (modelos.desc.nd) {
-          // no detalle (ahorra ancho de banda)
-          descartesDB.forEach((descarte) => {
-            delete descarte["detalle_descartes"];
-          });
-        }
       }
 
       // Egresos Transferencias Remitos (clearing)
       let transferenciaOutDB = [];
       if (modelos?.tran) {
+        let detallado = modelos.tran.nd
+          ? null
+          : {
+              detalle_transferencia_out: {
+                $push: {
+                  fecha: {$dateToString: {format: "%Y-%m-%d", date: "$fecha"}},
+                  destino: "$destino",
+                  destinoDB: "$destinoDB",
+                  procedencia: "$insumos.procedencia",
+                  lote: "$insumos.lote",
+                  vencimiento: {$dateToString: {format: "%Y-%m-%d", date: "$insumos.vencimiento"}},
+                  cantidad: "$insumos.cantidad",
+                },
+              },
+            };
+
         transferenciaOutDB = await FarmaciaTransferencia.aggregate()
           .match(filtro)
           .sort({fecha: 1, _id: 1})
@@ -344,19 +364,11 @@ app.get(
           })
           // agrupar - area/insumo, sumar por insumo.
           .group({
-            _id: {area: "$origen", insumo: "$insumos.insumo"},
-            total: {$sum: "$insumos.cantidad"},
-            detalle_transferencia_out: {
-              $push: {
-                fecha: {$dateToString: {format: "%Y-%m-%d", date: "$fecha"}},
-                destino: "$destino",
-                destinoDB: "$destinoDB",
-                procedencia: "$insumos.procedencia",
-                lote: "$insumos.lote",
-                vencimiento: {$dateToString: {format: "%Y-%m-%d", date: "$insumos.vencimiento"}},
-                cantidad: "$insumos.cantidad",
-              },
+            ...{
+              _id: {area: "$origen", insumo: "$insumos.insumo"},
+              total: {$sum: "$insumos.cantidad"},
             },
+            ...detallado,
           })
           .project({
             _id: 0,
@@ -391,12 +403,6 @@ app.get(
             total_transferencia_out: "$total",
           })
           .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1});
-        if (modelos.tran.nd) {
-          // no detalle (ahorra ancho de banda)
-          transferenciaOutDB.forEach((transferencia) => {
-            delete transferencia["detalle_transferencia_out"];
-          });
-        }
       }
 
       // INTEGRAR EGRESOS

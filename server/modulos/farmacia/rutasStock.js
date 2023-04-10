@@ -200,6 +200,20 @@ app.get(
           $in: JSON.parse(req.query.procedencias),
         };
       }
+      let detallado = req.query.nd
+        ? null
+        : {
+            detalle: {
+              $push: {
+                procedencia: "$procedencia",
+                lote: "$lote",
+                vencimiento: {$dateToString: {format: "%Y-%m-%d", date: "$vencimiento"}},
+                cantidad: "$cantidad",
+                expirado: "$expirado",
+                porExpirar: "$porExpirar",
+              },
+            },
+          };
 
       let hoy = new Date();
       let porExpirar = new Date(new Date().setDate(hoy.getDate() + 90));
@@ -242,20 +256,13 @@ app.get(
           },
         })
         .group({
-          _id: {area: "$area", insumo: "$insumo"},
-          total: {$sum: "$cantidad"},
-          total_expirado: {$sum: {$cond: ["$expirado", "$cantidad", 0]}},
-          total_porExpirar: {$sum: {$cond: ["$porExpirar", "$cantidad", 0]}},
-          detalle: {
-            $push: {
-              procedencia: "$procedencia",
-              lote: "$lote",
-              vencimiento: {$dateToString: {format: "%Y-%m-%d", date: "$vencimiento"}},
-              cantidad: "$cantidad",
-              expirado: "$expirado",
-              porExpirar: "$porExpirar",
-            },
+          ...{
+            _id: {area: "$area", insumo: "$insumo"},
+            total: {$sum: "$cantidad"},
+            total_expirado: {$sum: {$cond: ["$expirado", "$cantidad", 0]}},
+            total_porExpirar: {$sum: {$cond: ["$porExpirar", "$cantidad", 0]}},
           },
+          ...detallado,
         })
         .project({
           _id: 0,

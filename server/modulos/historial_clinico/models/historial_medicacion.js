@@ -51,6 +51,11 @@ let HistorialMedicacionSchema = new Schema(
     //     type: String,
     //   },
     // },
+    area: {
+      type: Schema.Types.ObjectId,
+      ref: "Area",
+      required: true,
+    },
     medicamento: {
       type: Schema.Types.ObjectId,
       ref: "Insumo",
@@ -80,7 +85,11 @@ let HistorialMedicacionSchema = new Schema(
     fecha_declaracion_jurada: {
       type: Date,
     },
-    dias_actualizar_declaracion: {
+    dias_declaracion_por_vencer: {
+      type: Number,
+      min: 0,
+    },
+    dias_declaracion_vencida: {
       type: Number,
       min: 0,
     },

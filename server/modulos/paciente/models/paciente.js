@@ -128,6 +128,8 @@ let pacienteSchema = new mongoose.Schema(
           },
           historial: {
             type: String,
+            trim: true,
+            uppercase: true,
           },
         },
       ],
@@ -136,6 +138,13 @@ let pacienteSchema = new mongoose.Schema(
 
     // Historiales migrar tuberculosis
     hist_tuberculosis: TuberculosisSchema,
+
+    fec_fallecimiento: {
+      type: String,
+    },
+    validadoRENAPER: {
+      type: Boolean,
+    },
 
     estado: {
       type: Boolean,

@@ -109,9 +109,7 @@ const verificaPaciente = (req, res, next) => {
   let usuario = req.usuario;
 
   if (
-    usuario.covid > 0 ||
     usuario.tuberculosis > 0 ||
-    usuario.salud_mental > 0 ||
     usuario.turnero > 0 ||
     usuario.historial_clinico > 0 ||
     usuario.farmacia?.general?.reportes ||
