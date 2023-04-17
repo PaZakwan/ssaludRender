@@ -21,6 +21,12 @@ const permisosFarmacia = new mongoose.Schema({
     min: 0,
     max: 1,
   },
+  // Permite la carga de ingresos con proveedores(procedencia Municipal)
+  proveedores: {
+    type: Number,
+    min: 0,
+    max: 1,
+  },
   // Para todas las areas
   general: {
     stock: {

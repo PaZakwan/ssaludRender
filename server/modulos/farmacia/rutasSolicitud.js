@@ -162,6 +162,41 @@ app.get(
           subtotal_urgencia: 1,
           subtotal_emergencia: 1,
         })
+        // buscar stock
+        .lookup({
+          from: "FarmaciaStock",
+          let: {
+            areaTmp: "$area",
+            insumoTmp: "$insumo",
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    {
+                      $eq: ["$area", "$$areaTmp"],
+                    },
+                    {
+                      $eq: ["$insumo", "$$insumoTmp"],
+                    },
+                  ],
+                },
+              },
+            },
+            {
+              $project: {
+                _id: 0,
+                cantidad: 1,
+              },
+            },
+          ],
+          as: "stockDB",
+        })
+        // sumar stock que tienen..
+        .addFields({
+          stockDB: {$sum: "$stockDB.cantidad"},
+        })
         .lookup({
           from: "areas",
           localField: "area",
