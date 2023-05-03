@@ -432,7 +432,7 @@ app.get(
 );
 
 // ============================
-// Mostrar Stock total de los [insumos] solicitados por el area.
+// Mostrar Stock total en el area de los [insumos] solicitados.
 // ============================
 app.get(
   "/farmacia/stock/solicitud",
@@ -488,6 +488,453 @@ app.get(
         stock: stockDB,
       });
     } catch (err) {
+      return errorMessage(res, err, err.code);
+    }
+  }
+);
+
+// ============================
+// Mostrar Stock Total del sistema por Insumo.
+// ============================
+app.get(
+  "/farmacia/stock/total",
+  [
+    verificaToken,
+    (req, res, next) => {
+      req.verificacionArray = [
+        {prop: "farmacia.general.reportes", value: 1},
+        {prop: "farmacia.general.admin", value: 1},
+      ];
+      next();
+    },
+    verificaArrayPropValue,
+  ],
+  async (req, res) => {
+    try {
+      let stockDB = await FarmaciaStock.aggregate()
+        // .match(filtro)
+        .group({
+          _id: {insumo: "$insumo"},
+          subtotal_CargaInicial: {
+            $sum: {
+              $cond: [{$eq: ["$procedencia", "Carga inicial"]}, "$cantidad", 0],
+            },
+          },
+          subtotal_Municipal: {
+            $sum: {
+              $cond: [{$eq: ["$procedencia", "Municipal"]}, "$cantidad", 0],
+            },
+          },
+          subtotal_Remediar: {
+            $sum: {
+              $cond: [{$eq: ["$procedencia", "Remediar"]}, "$cantidad", 0],
+            },
+          },
+          subtotal_SUMAR: {
+            $sum: {
+              $cond: [{$eq: ["$procedencia", "SUMAR"]}, "$cantidad", 0],
+            },
+          },
+          subtotal_Region: {
+            $sum: {
+              $cond: [{$eq: ["$procedencia", "Region"]}, "$cantidad", 0],
+            },
+          },
+          subtotal_Nacion: {
+            $sum: {
+              $cond: [{$eq: ["$procedencia", "Nacion"]}, "$cantidad", 0],
+            },
+          },
+          subtotal_Donacion: {
+            $sum: {
+              $cond: [{$eq: ["$procedencia", "Donacion"]}, "$cantidad", 0],
+            },
+          },
+          total: {$sum: "$cantidad"},
+        })
+        .lookup({
+          from: "Insumos",
+          localField: "_id.insumo",
+          foreignField: "_id",
+          as: "insumoDB",
+        })
+        .project({
+          _id: 0,
+        })
+        .unwind({path: "$insumoDB"})
+        .addFields({categoriaDB: "$insumoDB.categoria", insumoDB: "$insumoDB.nombre"})
+        .sort({categoriaDB: 1, insumoDB: 1});
+
+      return res.status(200).json({
+        ok: true,
+        stock: stockDB,
+      });
+    } catch (err) {
+      return errorMessage(res, err, err.code);
+    }
+  }
+);
+
+// ============================
+// Mostrar Resumen General => GroupBy: area - insumo.
+//    Stock (actual), ultimo Ingreso Recibido (fecha/cantidad), Egresos (desde ultimo Ingreso), Solicitado (pendiente).
+// ============================
+app.get(
+  "/farmacia/estadistica/general",
+  [
+    verificaToken,
+    (req, res, next) => {
+      req.verificacionArray = [
+        {prop: "farmacia.general.reportes", value: 1},
+        {prop: "farmacia.general.admin", value: 1},
+      ];
+      next();
+    },
+    verificaArrayPropValue,
+  ],
+  async (req, res) => {
+    try {
+      let reporte = await FarmaciaStock.aggregate()
+        // .match(filtro)
+        // unionWith() => Stock, Solicitudes, Minimos)?
+        // Stock
+        .project({
+          _id: 0,
+          area: 1,
+          insumo: 1,
+          stock: "$cantidad",
+        })
+        // Solicitudes
+        .unionWith({
+          coll: "FarmaciaSolicitudes",
+          pipeline: [
+            {$match: {estado: "Pendiente"}},
+            {$project: {_id: 0, origen: 1, insumos: 1}},
+            {$unwind: "$insumos"},
+            {
+              $project: {
+                area: "$origen",
+                insumo: "$insumos.insumo",
+                solicitado: "$insumos.cantidad",
+              },
+            },
+          ],
+        })
+        // group() => area - insumo.
+        .group({
+          _id: {area: "$area", insumo: "$insumo"},
+          total_stock: {$sum: "$stock"},
+          total_solicitado: {$sum: "$solicitado"},
+        })
+        .project({
+          _id: 0,
+          area: "$_id.area",
+          insumo: "$_id.insumo",
+          total_stock: 1,
+          total_solicitado: 1,
+        })
+        // lookup() => Ingresos (Recibidos). [Ingreso / Transferencia(in)]
+        .lookup({
+          from: "FarmaciaIngresos",
+          let: {
+            areaTmp: "$area",
+            insumoTmp: "$insumo",
+          },
+          pipeline: [
+            {
+              $match: {
+                $and: [
+                  {
+                    $expr: {
+                      $and: [
+                        {
+                          $eq: ["$destino", "$$areaTmp"],
+                        },
+                        {$in: ["$$insumoTmp", "$insumos.insumo"]},
+                      ],
+                    },
+                  },
+                  {
+                    "insumos.recibido": {$exists: true},
+                  },
+                ],
+              },
+            },
+            {
+              $project: {
+                _id: 0,
+                "insumos.insumo": 1,
+                "insumos.cantidad": 1,
+                "insumos.recibido": 1,
+              },
+            },
+            {$sort: {"insumos.recibido": -1, _id: -1}},
+            {$limit: 1},
+            // UNIR Transferencia(in) RECIBIDAS.
+            {
+              $unionWith: {
+                coll: "FarmaciaTransferencias",
+                pipeline: [
+                  {
+                    $match: {
+                      $and: [
+                        {
+                          $expr: {
+                            $and: [
+                              {
+                                $eq: ["$destino", "$$areaTmp"],
+                              },
+                              {$in: ["$$insumoTmp", "$insumos.insumo"]},
+                            ],
+                          },
+                        },
+                        {
+                          "insumos.recibido": {$exists: true},
+                        },
+                      ],
+                    },
+                  },
+                  {
+                    $project: {
+                      _id: 0,
+                      "insumos.insumo": 1,
+                      "insumos.cantidad": 1,
+                      "insumos.recibido": 1,
+                    },
+                  },
+                  {$sort: {"insumos.recibido": -1, _id: -1}},
+                  {$limit: 1},
+                ],
+              },
+            },
+            {$sort: {"insumos.recibido": -1, _id: -1}},
+            {$limit: 1},
+            // filter unwind.. or unwind and match..
+            {$unwind: "$insumos"},
+            {
+              $match: {
+                $and: [
+                  {
+                    $expr: {
+                      $eq: ["$insumos.insumo", "$$insumoTmp"],
+                    },
+                  },
+                  {
+                    "insumos.recibido": {$exists: true},
+                  },
+                ],
+              },
+            },
+            {
+              $group: {
+                _id: {insumo: "$insumos.insumo"},
+                recibido: {$first: "$insumos.recibido"},
+                cantidad: {$sum: "$insumos.cantidad"},
+              },
+            },
+          ],
+          as: "total_ingreso",
+        })
+        .addFields({
+          recibido_ingreso: {$first: "$total_ingreso.recibido"},
+          total_ingreso: {$first: "$total_ingreso.cantidad"},
+        })
+        // lookup() => Egresos. (Retirados desde ultimo Ingreso)
+        // FarmaciaTransferencias
+        .lookup({
+          from: "FarmaciaTransferencias",
+          let: {
+            areaTmp: "$area",
+            fechaTmp: "$recibido_ingreso",
+            insumoTmp: "$insumo",
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    {
+                      $eq: ["$origen", "$$areaTmp"],
+                    },
+                    {
+                      $gte: ["$fecha", "$$fechaTmp"],
+                    },
+                    {$in: ["$$insumoTmp", "$insumos.insumo"]},
+                  ],
+                },
+              },
+            },
+            {
+              $project: {
+                _id: 0,
+                "insumos.insumo": 1,
+                "insumos.retirado": 1,
+                "insumos.cantidad": 1,
+              },
+            },
+            {$unwind: "$insumos"},
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    {$eq: ["$$insumoTmp", "$insumos.insumo"]},
+                    {
+                      $gte: ["$insumos.retirado", "$$fechaTmp"],
+                    },
+                  ],
+                },
+              },
+            },
+            {
+              $group: {
+                _id: {insumo: "$insumos.insumo"},
+                cantidad: {$sum: "$insumos.cantidad"},
+              },
+            },
+          ],
+          as: "transferenciaOut",
+        })
+        .addFields({
+          transferenciaOut: {$first: "$transferenciaOut.cantidad"},
+        })
+        // InsumoEntregas
+        .lookup({
+          from: "InsumoEntregas",
+          let: {
+            areaTmp: "$area",
+            fechaTmp: "$recibido_ingreso",
+            insumoTmp: "$insumo",
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    {
+                      $eq: ["$origen", "$$areaTmp"],
+                    },
+                    {
+                      $eq: ["$insumo", "$$insumoTmp"],
+                    },
+                    {
+                      $gte: ["$retirado", "$$fechaTmp"],
+                    },
+                  ],
+                },
+              },
+            },
+            {
+              $project: {
+                _id: 0,
+                insumo: 1,
+                cantidad: 1,
+              },
+            },
+            {
+              $group: {
+                _id: {insumo: "$insumo"},
+                cantidad: {$sum: "$cantidad"},
+              },
+            },
+          ],
+          as: "entregas",
+        })
+        .addFields({
+          entregas: {$first: "$entregas.cantidad"},
+        })
+        // FarmaciaDescartes "Motivos"
+        .lookup({
+          from: "FarmaciaDescartes",
+          let: {
+            areaTmp: "$area",
+            fechaTmp: "$recibido_ingreso",
+            insumoTmp: "$insumo",
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    {
+                      $eq: ["$origen", "$$areaTmp"],
+                    },
+                    {
+                      $eq: ["$insumo", "$$insumoTmp"],
+                    },
+                    {
+                      $gte: ["$retirado", "$$fechaTmp"],
+                    },
+                  ],
+                },
+              },
+            },
+            {
+              $project: {
+                _id: 0,
+                insumo: 1,
+                cantidad: 1,
+                motivo: 1,
+              },
+            },
+            {
+              $group: {
+                _id: {insumo: "$insumo"},
+                cantidad_consumido: {
+                  $sum: {$cond: [{$eq: ["$motivo", "Utilizado"]}, "$cantidad", 0]},
+                },
+                cantidad_otros: {$sum: {$cond: [{$ne: ["$motivo", "Utilizado"]}, "$cantidad", 0]}},
+              },
+            },
+          ],
+          as: "descartes_otros",
+        })
+        .addFields({
+          descartes_consumido: {$first: "$descartes_otros.cantidad_consumido"},
+          descartes_otros: {$first: "$descartes_otros.cantidad_otros"},
+        })
+        .addFields({
+          // egreso_consumido (entregas / descarte(utilizado)
+          egreso_consumido: {
+            $add: [{$ifNull: ["$entregas", 0]}, {$ifNull: ["$descartes_consumido", 0]}],
+          },
+          // egreso_otros (descarte(otros)/transferencia(out))
+          egreso_otros: {
+            $add: [{$ifNull: ["$descartes_otros", 0]}, {$ifNull: ["$transferenciaOut", 0]}],
+          },
+        })
+        // populate area - insumo.
+        .lookup({
+          from: "areas",
+          localField: "area",
+          foreignField: "_id",
+          as: "areaDB",
+        })
+        .unwind({path: "$areaDB"})
+        .addFields({
+          areaDB: "$areaDB.area",
+        })
+        .lookup({
+          from: "Insumos",
+          localField: "insumo",
+          foreignField: "_id",
+          as: "insumoDB",
+        })
+        .unwind({path: "$insumoDB"})
+        .addFields({
+          categoriaDB: "$insumoDB.categoria",
+          insumoDB: "$insumoDB.nombre",
+          recibido_ingreso: {
+            $dateToString: {format: "%Y-%m-%d", date: "$recibido_ingreso"},
+          },
+        })
+        .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1});
+
+      return res.status(200).json({
+        ok: true,
+        reporte,
+      });
+    } catch (err) {
+      console.log(err);
       return errorMessage(res, err, err.code);
     }
   }

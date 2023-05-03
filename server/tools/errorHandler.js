@@ -6,16 +6,16 @@ exports.errorMessage = (res, error, statusTemp) => {
     statusOriginal = status;
     status = 444;
   }
-  // "timed out" o "MongooseServerSelectionError" mensaje de BD no funcionando
-  if (
-    error.name &&
-    error.message &&
-    (error.message.includes("timed out") || error.name.includes("MongooseServerSelectionError"))
-  ) {
-    status = 503;
-    msjtemp = `Problema con la conexion a la Base de Datos
-    Comuniquese con soporte para mas informacion.`;
-  }
+
+  // console.log(error.code);
+  // console.log(error.responseCode);
+  // console.log(statusTemp);
+  // console.log(error.name);
+  // console.log(error.message);
+  // console.log(error.type);
+  // console.log(error.arguments);
+  // console.log(error.errors);
+
   // Mongoose Errors
   if (error.name === "ValidationError") {
     // pasar object de errors a array de string.. key: message
@@ -26,6 +26,25 @@ exports.errorMessage = (res, error, statusTemp) => {
     error.errors = temp;
     msjtemp = "";
   }
+
+  // MongoDB Errors
+  if (error.name === "MongoServerError") {
+    status = 500;
+    msjtemp = `Problema con la Consulta a la Base de Datos
+    Comuniquese con soporte para mas informacion.`;
+  }
+
+  // "timed out" o "MongooseServerSelectionError" mensaje de BD no funcionando
+  if (
+    error.name &&
+    error.message &&
+    (error.message.includes("timed out") || error.name.includes("MongooseServerSelectionError"))
+  ) {
+    status = 503;
+    msjtemp = `Problema con la Conexion a la Base de Datos
+    Comuniquese con soporte para mas informacion.`;
+  }
+
   return res.status(status).json({
     ok: false,
     err: {
