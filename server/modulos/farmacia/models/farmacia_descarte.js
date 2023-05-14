@@ -43,8 +43,6 @@ let FarmaciaDescarteSchema = new Schema(
     },
     lote: {
       type: String,
-      trim: true,
-      lowercase: true,
     },
     vencimiento: {
       type: Date,

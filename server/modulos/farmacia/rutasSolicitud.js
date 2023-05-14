@@ -5,7 +5,7 @@ const _pick = require("lodash/pick");
 const {verificaToken, verificaArrayPropValue} = require("../../middlewares/autenticacion");
 const {errorMessage} = require("../../tools/errorHandler");
 const FarmaciaSolicitud = require("./models/farmacia_solicitud");
-const {objectSetUnset, isObjectIdValid} = require("../../tools/object");
+const {isVacio, objectSetUnset, isObjectIdValid} = require("../../tools/object");
 
 const app = express();
 
@@ -367,20 +367,12 @@ app.put(
   ],
   async (req, res) => {
     try {
-      let body = _pick(req.body, listaSolicitud);
-
-      let todovacio = true;
-      for (const key in body) {
-        if (body.hasOwnProperty(key)) {
-          if (body[key] !== "" && body[key] !== null) {
-            todovacio = false;
-            break;
-          }
-        }
-      }
-      if (todovacio === true) {
+      // false (no borra, los vacios)
+      let body = isVacio(_pick(req.body, listaSolicitud), false);
+      if (body.vacio === true) {
         return errorMessage(res, {message: "No se envió ningún dato."}, 412);
       }
+      body = body.dato;
 
       if (
         // verificar que sea admin o que su gestion este en "origen" o "destino".

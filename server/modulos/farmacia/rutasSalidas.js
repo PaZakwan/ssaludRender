@@ -8,7 +8,7 @@ const modificarStockInc = require("./farmaciaHelper");
 const FarmaciaTransferencia = require("./models/farmacia_transferencia");
 const FarmaciaDescarte = require("./models/farmacia_descarte");
 const InsumoEntrega = require("./models/insumo_entrega");
-const {isObjectIdValid, sumarProps} = require("../../tools/object");
+const {isVacio, isObjectIdValid, sumarProps} = require("../../tools/object");
 // const {objectSetUnset} = require("../../tools/object");
 
 const app = express();
@@ -579,20 +579,12 @@ app.put(
   ],
   async (req, res) => {
     try {
-      let body = _pick(req.body, listaSalida);
-
-      let todovacio = true;
-      for (const key in body) {
-        if (body.hasOwnProperty(key)) {
-          if (body[key] !== "" && body[key] !== null) {
-            todovacio = false;
-            break;
-          }
-        }
-      }
-      if (todovacio === true) {
+      // false (no borra, los vacios)
+      let body = isVacio(_pick(req.body, listaSalida), false);
+      if (body.vacio === true) {
         return errorMessage(res, {message: "No se envió ningún dato."}, 412);
       }
+      body = body.dato;
 
       if (
         // verificar que sea admin o que "origen" sea de sus entregas.
@@ -649,6 +641,99 @@ app.put(
         err: {
           errors,
         },
+      });
+    } catch (err) {
+      return errorMessage(res, err, err.code);
+    }
+  }
+);
+
+// ============================
+// Borrar Entrega
+// ============================
+app.delete(
+  "/farmacia/entrega/:id",
+  [
+    verificaToken,
+    (req, res, next) => {
+      req.verificacionArray = [
+        {prop: "farmacia.entregas"},
+        {prop: "farmacia.general.admin", value: 1},
+      ];
+      next();
+    },
+    verificaArrayPropValue,
+  ],
+  async (req, res) => {
+    try {
+      // buscar entrega
+      let entregaDB = null;
+      entregaDB = await InsumoEntrega.findOne({_id: req.params.id}).exec();
+      if (!entregaDB) {
+        return errorMessage(res, {message: "Entrega no encontrada."}, 404);
+      }
+
+      // comparar permisos (origen)
+      if (
+        !(
+          req.usuario.farmacia.general?.admin === 1 ||
+          req.usuario.farmacia.entregas?.includes(entregaDB.origen?.toString?.())
+        )
+      ) {
+        return errorMessage(res, {message: "Acceso Denegado."}, 401);
+      }
+
+      // comparar permisos (fecha)
+      let hoy = new Date().toISOString().slice(0, 10);
+      if (
+        !(
+          req.usuario.farmacia.general?.admin === 1 ||
+          new Date(entregaDB.fecha).toISOString().slice(0, 10) === hoy
+        )
+      ) {
+        return errorMessage(
+          res,
+          {
+            message: `Actividad no autorizada. La fecha de la entrega debe ser ${hoy}`,
+          },
+          403
+        );
+      }
+
+      // recuperar stock
+      if (entregaDB.retirado) {
+        let stockDB = null;
+        stockDB = await modificarStockInc(
+          entregaDB.origen,
+          {
+            insumo: entregaDB.insumo,
+            procedencia: entregaDB.procedencia,
+            lote: entregaDB.lote,
+            vencimiento: entregaDB.vencimiento,
+          },
+          entregaDB.cantidad
+        );
+        // si hay un error Salir
+        if (stockDB.err) {
+          return errorMessage(
+            res,
+            {message: "Problemas con la Base de Datos (recuperar el Stock)."},
+            507
+          );
+        }
+      }
+
+      // buscar y borrar
+      let entregaBorrada = null;
+      entregaBorrada = await InsumoEntrega.findOneAndDelete({_id: req.params.id}).exec();
+      if (!entregaBorrada) {
+        return errorMessage(res, {message: "Entrega no encontrada."}, 404);
+      }
+
+      // reponder
+      return res.json({
+        ok: true,
+        entregaBorrada,
       });
     } catch (err) {
       return errorMessage(res, err, err.code);
@@ -773,20 +858,12 @@ app.put(
   ],
   async (req, res) => {
     try {
-      let body = _pick(req.body, listaSalida);
-
-      let todovacio = true;
-      for (const key in body) {
-        if (body.hasOwnProperty(key)) {
-          if (body[key] !== "" && body[key] !== null) {
-            todovacio = false;
-            break;
-          }
-        }
-      }
-      if (todovacio === true) {
+      // false (no borra, los vacios)
+      let body = isVacio(_pick(req.body, listaSalida), false);
+      if (body.vacio === true) {
         return errorMessage(res, {message: "No se envió ningún dato."}, 412);
       }
+      body = body.dato;
 
       if (
         // verificar que sea admin o que "origen" sea de su gestion.
@@ -843,6 +920,99 @@ app.put(
         err: {
           errors,
         },
+      });
+    } catch (err) {
+      return errorMessage(res, err, err.code);
+    }
+  }
+);
+
+// ============================
+// Borrar Descarte
+// ============================
+app.delete(
+  "/farmacia/descarte/:id",
+  [
+    verificaToken,
+    (req, res, next) => {
+      req.verificacionArray = [
+        {prop: "farmacia.gestion"},
+        {prop: "farmacia.general.admin", value: 1},
+      ];
+      next();
+    },
+    verificaArrayPropValue,
+  ],
+  async (req, res) => {
+    try {
+      // buscar entrega
+      let descarteDB = null;
+      descarteDB = await FarmaciaDescarte.findOne({_id: req.params.id}).exec();
+      if (!descarteDB) {
+        return errorMessage(res, {message: "Descarte no encontrado."}, 404);
+      }
+
+      // comparar permisos (origen)
+      if (
+        !(
+          req.usuario.farmacia.general?.admin === 1 ||
+          req.usuario.farmacia.gestion?.includes(descarteDB.origen?.toString?.())
+        )
+      ) {
+        return errorMessage(res, {message: "Acceso Denegado."}, 401);
+      }
+
+      // comparar permisos (fecha)
+      let hoy = new Date().toISOString().slice(0, 10);
+      if (
+        !(
+          req.usuario.farmacia.general?.admin === 1 ||
+          new Date(descarteDB.fecha).toISOString().slice(0, 10) === hoy
+        )
+      ) {
+        return errorMessage(
+          res,
+          {
+            message: `Actividad no autorizada. La fecha del descarte debe ser ${hoy}`,
+          },
+          403
+        );
+      }
+
+      // recuperar stock
+      if (descarteDB.retirado) {
+        let stockDB = null;
+        stockDB = await modificarStockInc(
+          descarteDB.origen,
+          {
+            insumo: descarteDB.insumo,
+            procedencia: descarteDB.procedencia,
+            lote: descarteDB.lote,
+            vencimiento: descarteDB.vencimiento,
+          },
+          descarteDB.cantidad
+        );
+        // si hay un error Salir
+        if (stockDB.err) {
+          return errorMessage(
+            res,
+            {message: "Problemas con la Base de Datos (recuperar el Stock)."},
+            507
+          );
+        }
+      }
+
+      // buscar y borrar
+      let descarteBorrado = null;
+      descarteBorrado = await FarmaciaDescarte.findOneAndDelete({_id: req.params.id}).exec();
+      if (!descarteBorrado) {
+        return errorMessage(res, {message: "Descarte no encontrado."}, 404);
+      }
+
+      // reponder
+      return res.json({
+        ok: true,
+        descarteBorrado,
       });
     } catch (err) {
       return errorMessage(res, err, err.code);

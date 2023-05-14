@@ -48,7 +48,6 @@ let InsumoEntregaSchema = new Schema(
     },
     lote: {
       type: String,
-      trim: true,
     },
     vencimiento: {
       type: Date,

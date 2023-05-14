@@ -56,6 +56,7 @@ let FarmaciaIngresoSchema = new Schema(
           lote: {
             type: String,
             trim: true,
+            uppercase: true,
           },
           vencimiento: {
             type: Date,

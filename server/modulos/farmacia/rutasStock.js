@@ -121,8 +121,8 @@ app.put(
         return errorMessage(res, {message: "Ingreso no encontrado."}, 404);
       }
 
-      return res.status(errors.length === ingresoDB.insumos.length ? 500 : 202).json({
-        ok: errors.length === ingresoDB.insumos.length ? false : true,
+      return res.status(errors.length > 0 ? 500 : 202).json({
+        ok: errors.length > 0 ? false : true,
         recibido: filtro.remito ?? filtro.remito_compra,
         err: {
           errors,
@@ -465,7 +465,8 @@ app.get(
 
       if (
         filtro.area === false ||
-        filtro.insumo.$in.length === filtro.insumo.$in.filter((x) => x === false).length
+        // todos false
+        !filtro.insumo.$in.some((insumo) => insumo !== false)
       ) {
         return errorMessage(res, {message: "No se enviaron datos necesarios para proceder."}, 412);
       }
@@ -1029,8 +1030,8 @@ app.put(
         return errorMessage(res, {message: "Transferencia no encontrada."}, 404);
       }
 
-      return res.status(errors.length === transferenciaDB.insumos.length ? 500 : 202).json({
-        ok: errors.length === transferenciaDB.insumos.length ? false : true,
+      return res.status(errors.length > 0 ? 500 : 202).json({
+        ok: errors.length > 0 ? false : true,
         retirado: req.body.remito,
         err: {
           errors,

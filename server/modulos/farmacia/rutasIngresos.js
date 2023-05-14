@@ -7,7 +7,7 @@ const {errorMessage} = require("../../tools/errorHandler");
 const modificarStockInc = require("./farmaciaHelper");
 const FarmaciaTransferencia = require("./models/farmacia_transferencia");
 const FarmaciaIngreso = require("./models/farmacia_ingreso");
-const {objectSetUnset, isObjectIdValid, sumarProps} = require("../../tools/object");
+const {isVacio, objectSetUnset, isObjectIdValid, sumarProps} = require("../../tools/object");
 
 const app = express();
 
@@ -321,20 +321,12 @@ app.put(
   ],
   async (req, res) => {
     try {
-      let body = _pick(req.body, listaIngreso);
-
-      let todovacio = true;
-      for (const key in body) {
-        if (body.hasOwnProperty(key)) {
-          if (body[key] !== "" && body[key] !== null) {
-            todovacio = false;
-            break;
-          }
-        }
-      }
-      if (todovacio === true) {
+      // false (no borra, los vacios)
+      let body = isVacio(_pick(req.body, listaIngreso), false);
+      if (body.vacio === true) {
         return errorMessage(res, {message: "No se envió ningún dato."}, 412);
       }
+      body = body.dato;
 
       if (
         // verificar que sea admin o que "destino" sea de su gestion.
@@ -348,69 +340,22 @@ app.put(
 
       let ingresoDB = null;
       let errors = [];
+
       if (!body._id) {
         // Nuevo
-        // Verifica que no se encuentra cargada misma orden de compra
         if (body.remito_compra !== "Carga inicial") {
+          // Verifica que no se encuentra cargado mismo remito de compra (ingreso)
           ingresoDB = await FarmaciaIngreso.findOne({remito_compra: body.remito_compra}).exec();
           if (ingresoDB) {
             return errorMessage(res, {message: "Remito de Compra existente."}, 401);
           }
         }
         ingresoDB = await new FarmaciaIngreso(body).save();
-
-        // Si es Carga inicial autorecibir stock
-        if (ingresoDB.remito_compra === "Carga inicial") {
-          let recibido = new Date();
-          for (let index = 0; index < body.insumos.length; index++) {
-            const ingreso = body.insumos[index];
-            let stockDB = null;
-            stockDB = await modificarStockInc(
-              body.destino,
-              {
-                insumo: ingreso.insumo,
-                procedencia: ingreso.procedencia,
-                lote: ingreso.lote,
-                vencimiento: ingreso.vencimiento,
-                recibido: ingreso.recibido,
-              },
-              ingreso.cantidad
-            );
-            if (stockDB.err) {
-              // o si tira error..
-              errors.push({
-                message: `${ingreso.insumo} - Modificar Stock - ${stockDB.err}`,
-                type: "Modificar Stock",
-              });
-            } else {
-              // si es exitoso..
-              body.insumos[index].recibido = recibido;
-            }
-          }
-          //Update
-          let recibidoDB = null;
-          recibidoDB = await FarmaciaIngreso.findOneAndUpdate(
-            {
-              _id: ingresoDB.id,
-            },
-            {insumos: body.insumos},
-            {
-              new: true,
-              runValidators: true,
-            }
-          ).exec();
-          if (recibidoDB === null) {
-            errors.push({
-              message: `${ingresoDB.remito_compra} - Recibir Ingreso Error`,
-              type: "Ingreso Recibido",
-            });
-          }
-        }
       } else {
         // Update
-        // Verificar que no se hayan recibido..
+        // Verificar que no se hayan recibido todos los insumos. (todos recibidos)
         ingresoDB = await FarmaciaIngreso.findOne({_id: body._id}).exec();
-        if (ingresoDB.insumos.length === ingresoDB.insumos.filter((x) => x.recibido).length) {
+        if (!ingresoDB.insumos.some((insumo) => !insumo.recibido)) {
           return errorMessage(res, {message: "Ya Recibido, no editable."}, 401);
         }
 
@@ -422,6 +367,53 @@ app.put(
           new: true,
           runValidators: true,
         }).exec();
+      }
+
+      if (ingresoDB.remito_compra === "Carga inicial") {
+        // Si es Carga inicial autorecibir stock
+        let recibido = new Date();
+        for (let index = 0; index < ingresoDB.insumos.length; index++) {
+          let stockDB = null;
+          stockDB = await modificarStockInc(
+            ingresoDB.destino,
+            {
+              insumo: ingresoDB.insumos[index].insumo,
+              procedencia: ingresoDB.insumos[index].procedencia,
+              lote: ingresoDB.insumos[index].lote,
+              vencimiento: ingresoDB.insumos[index].vencimiento,
+              recibido: ingresoDB.insumos[index].recibido,
+            },
+            ingresoDB.insumos[index].cantidad
+          );
+          if (stockDB.err) {
+            // o si tira error..
+            errors.push({
+              message: `${ingresoDB.insumos[index].insumo} - Modificar Stock - ${stockDB.err}`,
+              type: "Modificar Stock",
+            });
+          } else {
+            // si es exitoso..
+            ingresoDB.insumos[index].recibido = recibido;
+          }
+        }
+        // Recibir Update
+        let recibidoDB = null;
+        recibidoDB = await FarmaciaIngreso.findOneAndUpdate(
+          {
+            _id: ingresoDB.id,
+          },
+          {insumos: ingresoDB.insumos},
+          {
+            new: true,
+            runValidators: true,
+          }
+        ).exec();
+        if (recibidoDB === null) {
+          errors.push({
+            message: `${ingresoDB.remito_compra} - Recibir Ingreso Error`,
+            type: "Ingreso Recibido",
+          });
+        }
       }
 
       return res.status(errors.length > 0 ? 500 : 201).json({
@@ -467,10 +459,8 @@ app.delete(
         return errorMessage(res, {message: "Acceso Denegado."}, 401);
       }
 
-      // Verificar que no se hayan recibido..
-      if (
-        ingresoBorrado.insumos.length === ingresoBorrado.insumos.filter((x) => x.recibido).length
-      ) {
+      // Verificar que no se hayan recibido.. (todos recibidos)
+      if (!ingresoBorrado.insumos.some((insumo) => !insumo.recibido)) {
         return errorMessage(res, {message: "Ingreso Recibido, no editable."}, 401);
       }
 
@@ -776,20 +766,12 @@ app.put(
   ],
   async (req, res) => {
     try {
-      let body = _pick(req.body, listaIngreso);
-
-      let todovacio = true;
-      for (const key in body) {
-        if (body.hasOwnProperty(key)) {
-          if (body[key] !== "" && body[key] !== null) {
-            todovacio = false;
-            break;
-          }
-        }
-      }
-      if (todovacio === true) {
+      // false (no borra, los vacios)
+      let body = isVacio(_pick(req.body, listaIngreso), false);
+      if (body.vacio === true) {
         return errorMessage(res, {message: "No se envió ningún dato."}, 412);
       }
+      body = body.dato;
 
       if (
         // verificar que sea admin o que "origen" sea de su gestion.
@@ -823,12 +805,9 @@ app.put(
         transferenciaDB = await new FarmaciaTransferencia(body).save();
       } else {
         // Update
-        // Verificar que no se hayan retirado..
         transferenciaDB = await FarmaciaTransferencia.findOne({_id: body._id}).exec();
-        if (
-          transferenciaDB.insumos.length ===
-          transferenciaDB.insumos.filter((x) => x.retirado).length
-        ) {
+        // Verificar que no se hayan retirado.. (todos retirados)
+        if (!transferenciaDB.insumos.some((insumo) => !insumo.retirado)) {
           return errorMessage(res, {message: "Ya Retirado, no editable."}, 401);
         }
 
@@ -892,11 +871,8 @@ app.delete(
         return errorMessage(res, {message: "Acceso Denegado."}, 401);
       }
 
-      // Verificar que no se hayan retirado..
-      if (
-        transferenciaBorrada.insumos.length ===
-        transferenciaBorrada.insumos.filter((x) => x.retirado).length
-      ) {
+      // Verificar que no se hayan retirado.. (todos retirados)
+      if (!transferenciaBorrada.insumos.some((insumo) => !insumo.retirado)) {
         return errorMessage(res, {message: "Transferencia Retirada, no editable."}, 401);
       }
 

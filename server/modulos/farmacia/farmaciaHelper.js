@@ -34,6 +34,7 @@ const modificarStockInc = async (area, insumo, cantidad, resta) => {
   // busca stock existente en "area"
   stockDB = await FarmaciaStock.findOne(filtro).exec();
 
+  console.log("modificarStockInc INI", stockDB);
   if (resta) {
     if (stockDB && stockDB.cantidad > cantidad) {
       // si existe y la cantidad es adecuada quita cantidad en "area"
@@ -50,7 +51,9 @@ const modificarStockInc = async (area, insumo, cantidad, resta) => {
       stockDB = await FarmaciaStock.findOneAndDelete(filtro).exec();
     } else {
       // si no existe o cantidad invalida return error
-      return {err: "Cantidad invalida"};
+      return {
+        err: `Cantidad invalida, quiere retirar ${cantidad} pero quedan ${stockDB?.cantidad ?? 0}`,
+      };
     }
   } else {
     if (stockDB) {

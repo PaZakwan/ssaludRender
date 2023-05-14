@@ -63,6 +63,12 @@ exports.errorMessage = (res, error, statusTemp) => {
 // import
 // const { errorMessage } = require('../../tools/errorHandler');
 
+// SERVER
+// 507 Insufficient Storage
+// 503 Service Unavailable (Overload / mantenimiento)
+// 501 Not Implemented
+// 500 Internal Server Error (Generico)
+
 // Precondition Failed
 // return errorMessage(res, { message: "Falta información para proceder." }, 412);
 // return errorMessage(res, {message: "No se envió ningún filtro/dato."}, 412);
