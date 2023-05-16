@@ -62,32 +62,33 @@ app.put(
         // recorrer insumos
         for (let index = 0; index < ingresoDB.insumos.length; index++) {
           // Modificar stock
-          const ingreso = ingresoDB.insumos[index];
           let stockDB = null;
           stockDB = await modificarStockInc(
             ingresoDB.destino,
             {
-              insumo: ingreso.insumo._id,
-              procedencia: ingreso.procedencia,
-              lote: ingreso.lote,
-              vencimiento: ingreso.vencimiento,
-              recibido: ingreso.recibido,
+              insumo: ingresoDB.insumos[index].insumo._id,
+              procedencia: ingresoDB.insumos[index].procedencia,
+              lote: ingresoDB.insumos[index].lote,
+              vencimiento: ingresoDB.insumos[index].vencimiento,
+              recibido: ingresoDB.insumos[index].recibido,
             },
-            ingreso.cantidad
+            ingresoDB.insumos[index].cantidad
           );
           if (!stockDB || (stockDB && stockDB.err)) {
+            // o si tira error..
             errors.push({
-              message: `${ingreso.insumo.nombre} - Modificar Stock${
-                stockDB ? ` - ${stockDB.err}` : ""
-              }`,
+              message: `${ingresoDB.insumos[index].insumo.nombre} - Modificar Stock - ${
+                stockDB?.err ?? "No contemplado"
+              }.`,
               type: "Modificar Stock",
             });
           } else {
+            // si es exitoso..
             ingresoDB.insumos[index].recibido = recibido;
           }
         }
+        // Recibir Update
         let recibidoDB = null;
-        // Recibir ingreso
         if (filtro.remito) {
           recibidoDB = await FarmaciaTransferencia.findOneAndUpdate(
             {
@@ -516,11 +517,24 @@ app.get(
         // .match(filtro)
         .group({
           _id: {insumo: "$insumo"},
-          subtotal_CargaInicial: {
-            $sum: {
-              $cond: [{$eq: ["$procedencia", "Carga inicial"]}, "$cantidad", 0],
-            },
-          },
+          // subtotal_Otros: {
+          //   $sum: {
+          //     $cond: [
+          //       {
+          //         $not: [
+          //           {
+          //             $in: [
+          //               "$procedencia",
+          //               ["Municipal", "Remediar", "SUMAR", "Region", "Nacion", "Donacion"],
+          //             ],
+          //           },
+          //         ],
+          //       },
+          //       "$cantidad",
+          //       0,
+          //     ],
+          //   },
+          // },
           subtotal_Municipal: {
             $sum: {
               $cond: [{$eq: ["$procedencia", "Municipal"]}, "$cantidad", 0],
@@ -552,6 +566,23 @@ app.get(
             },
           },
           total: {$sum: "$cantidad"},
+        })
+        .addFields({
+          subtotal_Otros: {
+            $subtract: [
+              "$total",
+              {
+                $sum: [
+                  "$subtotal_Municipal",
+                  "$subtotal_Remediar",
+                  "$subtotal_SUMAR",
+                  "$subtotal_Region",
+                  "$subtotal_Nacion",
+                  "$subtotal_Donacion",
+                ],
+              },
+            ],
+          },
         })
         .lookup({
           from: "Insumos",
@@ -982,34 +1013,35 @@ app.put(
         // recorrer insumos
         for (let index = 0; index < transferenciaDB.insumos.length; index++) {
           // Modificar stock
-          const insumo = transferenciaDB.insumos[index];
           let stockDB = null;
           stockDB = await modificarStockInc(
             transferenciaDB.origen,
             {
-              insumo: insumo.insumo._id,
-              procedencia: insumo.procedencia,
-              lote: insumo.lote,
-              vencimiento: insumo.vencimiento,
-              retirado: insumo.retirado,
+              insumo: transferenciaDB.insumos[index].insumo._id,
+              procedencia: transferenciaDB.insumos[index].procedencia,
+              lote: transferenciaDB.insumos[index].lote,
+              vencimiento: transferenciaDB.insumos[index].vencimiento,
+              retirado: transferenciaDB.insumos[index].retirado,
             },
-            insumo.cantidad,
+            transferenciaDB.insumos[index].cantidad,
             {resta: true}
           );
           if (!stockDB || (stockDB && stockDB.err)) {
+            // o si tira error..
             errors.push({
-              message: `${insumo.insumo.nombre} - Modificar Stock${
-                stockDB ? ` - ${stockDB.err}` : ""
-              }`,
+              message: `${transferenciaDB.insumos[index].insumo.nombre} - Modificar Stock - ${
+                stockDB?.err ?? "No contemplado"
+              }.`,
               type: "Modificar Stock",
             });
           } else {
+            // si es exitoso..
             transferenciaDB.insumos[index].retirado = retirado;
           }
         }
 
+        // Retirar Update
         let retiradoDB = null;
-        // Retirado de origen
         retiradoDB = await FarmaciaTransferencia.findOneAndUpdate(
           {
             remito: req.body.remito,

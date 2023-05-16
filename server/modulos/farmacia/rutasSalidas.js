@@ -608,15 +608,16 @@ app.put(
 
         stockDB = await modificarStockInc(body.origen, insumo.insumo, insumo.cantidad, "resta");
 
-        if (stockDB.err) {
+        if (!stockDB || (stockDB && stockDB.err)) {
           // o si tira error..
           errors.push({
-            message: `${ingreso.insumo.insumoDB} - Modificar Stock - ${stockDB.err}`,
+            message: `${insumo.insumo.insumoDB} - Modificar Stock - ${
+              stockDB?.err ?? "No contemplado"
+            }.`,
             type: "Modificar Stock",
           });
-        }
-
-        if (stockDB) {
+        } else {
+          // modifico stock sin error (guarda entrega)
           entregaDB = await new InsumoEntrega({
             ...body,
             insumo: insumo.insumo.insumo,
@@ -625,13 +626,12 @@ app.put(
             vencimiento: insumo.insumo.vencimiento,
             cantidad: insumo.cantidad,
           }).save();
-        }
-
-        if (!stockDB.err && entregaDB === null) {
-          errors.push({
-            message: `${insumo.insumo.insumoDB} - Guardar Entrega Error`,
-            type: "Guardar Entrega",
-          });
+          if (entregaDB === null) {
+            errors.push({
+              message: `${insumo.insumo.insumoDB} - Guardar Entrega Error`,
+              type: "Guardar Entrega",
+            });
+          }
         }
       }
 
@@ -714,7 +714,7 @@ app.delete(
           entregaDB.cantidad
         );
         // si hay un error Salir
-        if (stockDB.err) {
+        if (!stockDB || (stockDB && stockDB.err)) {
           return errorMessage(
             res,
             {message: "Problemas con la Base de Datos (recuperar el Stock)."},
@@ -887,15 +887,16 @@ app.put(
 
         stockDB = await modificarStockInc(body.origen, insumo.insumo, insumo.cantidad, "resta");
 
-        if (stockDB.err) {
+        if (!stockDB || (stockDB && stockDB.err)) {
           // o si tira error..
           errors.push({
-            message: `${ingreso.insumo.insumoDB} - Modificar Stock - ${stockDB.err}`,
+            message: `${insumo.insumo.insumoDB} - Modificar Stock - ${
+              stockDB?.err ?? "No contemplado"
+            }.`,
             type: "Modificar Stock",
           });
-        }
-
-        if (stockDB) {
+        } else {
+          // modifico stock sin error (guarda descarte)
           descarteDB = await new FarmaciaDescarte({
             ...body,
             insumo: insumo.insumo.insumo,
@@ -904,13 +905,12 @@ app.put(
             vencimiento: insumo.insumo.vencimiento,
             cantidad: insumo.cantidad,
           }).save();
-        }
-
-        if (!stockDB.err && descarteDB === null) {
-          errors.push({
-            message: `${insumo.insumo.insumoDB} - Guardar Descarte Error`,
-            type: "Guardar Descarte",
-          });
+          if (descarteDB === null) {
+            errors.push({
+              message: `${insumo.insumo.insumoDB} - Guardar Descarte Error`,
+              type: "Guardar Descarte",
+            });
+          }
         }
       }
 
@@ -993,7 +993,7 @@ app.delete(
           descarteDB.cantidad
         );
         // si hay un error Salir
-        if (stockDB.err) {
+        if (!stockDB || (stockDB && stockDB.err)) {
           return errorMessage(
             res,
             {message: "Problemas con la Base de Datos (recuperar el Stock)."},

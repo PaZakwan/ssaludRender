@@ -385,10 +385,12 @@ app.put(
             },
             ingresoDB.insumos[index].cantidad
           );
-          if (stockDB.err) {
+          if (!stockDB || (stockDB && stockDB.err)) {
             // o si tira error..
             errors.push({
-              message: `${ingresoDB.insumos[index].insumo} - Modificar Stock - ${stockDB.err}`,
+              message: `${ingresoDB.insumos[index].insumo} - Modificar Stock - ${
+                stockDB?.err ?? "No contemplado"
+              }.`,
               type: "Modificar Stock",
             });
           } else {
