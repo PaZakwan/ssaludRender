@@ -2,9 +2,11 @@ const express = require("express");
 
 const _pick = require("lodash/pick");
 
-const {verificaToken, verificaAdmin_Role} = require("../../middlewares/autenticacion");
-const {errorMessage} = require("../../tools/errorHandler");
-const {isVacio, objectToFind, objectSetUnset} = require("../../tools/object");
+const {verificaToken, verificaAdmin_Role} = require(process.env.MAIN_FOLDER +
+  "/middlewares/autenticacion");
+const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
+const {isVacio, objectToFind, objectSetUnset} = require(process.env.MAIN_FOLDER + "/tools/object");
+
 const Lugar = require("./models/lugar");
 
 const app = express();

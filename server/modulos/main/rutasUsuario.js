@@ -3,10 +3,12 @@ const express = require("express");
 const bcrypt = require("bcrypt");
 const _pick = require("lodash/pick");
 
+const {verificaToken, verificaAdmin_Role} = require(process.env.MAIN_FOLDER +
+  "/middlewares/autenticacion");
+const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
+const {isVacio, objectSetUnset} = require(process.env.MAIN_FOLDER + "/tools/object");
+
 const Usuario = require("./models/usuario");
-const {verificaToken, verificaAdmin_Role} = require("../../middlewares/autenticacion");
-const {errorMessage} = require("../../tools/errorHandler");
-const {isVacio, objectSetUnset} = require("../../tools/object");
 
 const app = express();
 

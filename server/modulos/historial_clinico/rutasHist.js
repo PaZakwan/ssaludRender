@@ -2,14 +2,15 @@ const express = require("express");
 
 const _pick = require("lodash/pick");
 
+const {verificaToken, verificaArrayPropValue} = require(process.env.MAIN_FOLDER +
+  "/middlewares/autenticacion");
+const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
+const {isVacio, objectSetUnset} = require(process.env.MAIN_FOLDER + "/tools/object");
+
 const HistorialClinico = require("./models/historial_clinico_universal");
 const HistorialMotivo = require("./models/historial_motivo");
 const HistorialMedicacion = require("./models/historial_medicacion");
 const Nutricion = require("./models/especialidades/consultas_nutricion");
-
-const {verificaToken, verificaHistorialClinico} = require("../../middlewares/autenticacion");
-const {errorMessage} = require("../../tools/errorHandler");
-const {isVacio, objectSetUnset} = require("../../tools/object");
 
 const app = express();
 
@@ -123,36 +124,19 @@ async function crearConsulta(data) {
   }
 }
 
-function historialAdmin(usuario) {
-  try {
-    if (usuario.historial_clinico === 3) {
-      return true;
-    } else {
-      return false;
-    }
-  } catch (error) {
-    return false;
-  }
-}
-
-function historialEdit(usuario) {
-  try {
-    if (usuario.historial_clinico > 1) {
-      return true;
-    } else {
-      return false;
-    }
-  } catch (error) {
-    return false;
-  }
-}
-
 // ============================
 // Mostrar Historial de un Paciente por su ID.
 // ============================
 app.get(
   "/HistorialClinico/buscar/:pacienteId",
-  [verificaToken, verificaHistorialClinico],
+  [
+    verificaToken,
+    (req, res, next) => {
+      req.verificacionArray = [{prop: "historial_clinico", value: 1}];
+      next();
+    },
+    verificaArrayPropValue,
+  ],
   async (req, res) => {
     try {
       let id = req.params.pacienteId;
@@ -186,7 +170,14 @@ app.get(
 // ============================
 app.put(
   "/HistorialClinico/guardar",
-  [verificaToken, verificaHistorialClinico],
+  [
+    verificaToken,
+    (req, res, next) => {
+      req.verificacionArray = [{prop: "historial_clinico", value: 2}];
+      next();
+    },
+    verificaArrayPropValue,
+  ],
   async (req, res) => {
     try {
       let body = _pick(req.body, listaHistorial);
@@ -263,7 +254,14 @@ app.put(
 // ============================
 app.get(
   "/HistorialClinico/motivo/buscar/:pacienteId",
-  [verificaToken, verificaHistorialClinico],
+  [
+    verificaToken,
+    (req, res, next) => {
+      req.verificacionArray = [{prop: "historial_clinico", value: 1}];
+      next();
+    },
+    verificaArrayPropValue,
+  ],
   async (req, res) => {
     try {
       let id = req.params.pacienteId;
@@ -293,7 +291,14 @@ app.get(
 // ============================
 app.put(
   "/HistorialClinico/motivo/guardar",
-  [verificaToken, verificaHistorialClinico],
+  [
+    verificaToken,
+    (req, res, next) => {
+      req.verificacionArray = [{prop: "historial_clinico", value: 2}];
+      next();
+    },
+    verificaArrayPropValue,
+  ],
   async (req, res) => {
     try {
       let body = _pick(req.body, listaMotivo);
@@ -368,7 +373,14 @@ app.put(
 // ============================
 app.get(
   "/HistorialClinico/consulta/buscar/:motivoId",
-  [verificaToken, verificaHistorialClinico],
+  [
+    verificaToken,
+    (req, res, next) => {
+      req.verificacionArray = [{prop: "historial_clinico", value: 1}];
+      next();
+    },
+    verificaArrayPropValue,
+  ],
   async (req, res) => {
     try {
       if (!req.params.motivoId) {
@@ -380,7 +392,6 @@ app.get(
       }
 
       // Funcion de busqueda de todas las consultas del motivo
-      // let consultasDB = await HistorialMotivo.find({paciente: id}).exec();
       let consultasDB = await buscarConsultas(req.params.motivoId);
       if (consultasDB === false) {
         return errorMessage(
@@ -408,7 +419,14 @@ app.get(
 // ============================
 app.put(
   "/HistorialClinico/consulta/guardar",
-  [verificaToken, verificaHistorialClinico],
+  [
+    verificaToken,
+    (req, res, next) => {
+      req.verificacionArray = [{prop: "historial_clinico", value: 2}];
+      next();
+    },
+    verificaArrayPropValue,
+  ],
   async (req, res) => {
     try {
       let body = req.body;
@@ -463,7 +481,14 @@ app.put(
 // ============================
 app.get(
   "/HistorialClinico/medicacion/buscar/:pacienteId",
-  [verificaToken, verificaHistorialClinico],
+  [
+    verificaToken,
+    (req, res, next) => {
+      req.verificacionArray = [{prop: "historial_clinico", value: 1}];
+      next();
+    },
+    verificaArrayPropValue,
+  ],
   async (req, res) => {
     try {
       let id = req.params.pacienteId;
@@ -494,7 +519,14 @@ app.get(
 // Testear
 app.put(
   "/HistorialClinico/medicacion/guardar",
-  [verificaToken, verificaHistorialClinico],
+  [
+    verificaToken,
+    (req, res, next) => {
+      req.verificacionArray = [{prop: "historial_clinico", value: 2}];
+      next();
+    },
+    verificaArrayPropValue,
+  ],
   async (req, res) => {
     try {
       // false (no borra, los vacios)

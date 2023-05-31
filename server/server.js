@@ -1,7 +1,14 @@
 require("./config/config");
 
+// MONGO CONEXIONES DB
+require("./db_connection");
+
+// Tareas Cronologicas.
+const schedule_task = require("./schedule_task");
+schedule_task.scheduleRun().catch((error) => console.error("schedule_task.scheduleRun", error));
+
+// WebServer + API Routes
 const express = require("express");
-const mongoose = require("mongoose");
 const path = require("path");
 const history = require("connect-history-api-fallback");
 const cors = require("cors");
@@ -80,7 +87,6 @@ app.use(
 app.use(express.static(path.resolve(__dirname, "../public")));
 
 // Configuración global de rutas de la API
-// const rutas = require('./routes/index');
 const rutas = require("./rutas_index");
 app.use("/api", rutas);
 
@@ -91,8 +97,6 @@ app.use(function (req, res, next) {
     err: {
       message: "Ruta Inexistente",
       data: `${req.protocol}-${req.method}: ${req.originalUrl}`,
-      // Para que funcione mongoose-unique-validator en el front
-      errors: "",
     },
   });
 });
@@ -104,8 +108,6 @@ app.use(function (error, req, res, next) {
     err: {
       message: "Error Interno en el Servidor",
       data: `${error.name}: ${error.message}`,
-      // Para que funcione mongoose-unique-validator en el front
-      errors: "",
     },
   });
   console.error(error.stack);
@@ -118,33 +120,14 @@ process.env.MAIN_FOLDER = path.resolve(__dirname);
 if (process.env.HEROKU) {
   // Heroku Server
   app.listen(process.env.PORT, () => {
-    let ahora = new Date();
-    console.log(
-      `${ahora.getFullYear()}/${(ahora.getMonth() + 1).toString().padStart(2, 0)}/${ahora
-        .getDate()
-        .toString()
-        .padStart(2, 0)} - ${ahora.getHours().toString().padStart(2, 0)}:${ahora
-        .getMinutes()
-        .toString()
-        .padStart(2, 0)}` +
-        ` <=> Ejecutando Backend en: ${process.env.BASE_URL}:${process.env.PORT}`
-    );
+    mensajeBackend(process.env.BASE_URL, process.env.PORT);
   });
 } else {
   // Levantando servidor HTTP
   if (process.env.NODE_ENV === "dev") {
     // Servidor para desarrollo local del FrontEnd
     app.listen(80, () => {
-      let ahora = new Date();
-      console.log(
-        `${ahora.getFullYear()}/${(ahora.getMonth() + 1).toString().padStart(2, 0)}/${ahora
-          .getDate()
-          .toString()
-          .padStart(2, 0)} - ${ahora.getHours().toString().padStart(2, 0)}:${ahora
-          .getMinutes()
-          .toString()
-          .padStart(2, 0)}` + ` <=> Ejecutando Backend en: ${process.env.BASE_URL}:80`
-      );
+      mensajeBackend(process.env.BASE_URL, 80);
     });
   } else {
     // Redirect from http port 80 to https 443
@@ -172,146 +155,25 @@ if (process.env.HEROKU) {
       app
     )
     .listen(process.env.PORT, () => {
-      let ahora = new Date();
-      console.log(
-        `${ahora.getFullYear()}/${(ahora.getMonth() + 1).toString().padStart(2, 0)}/${ahora
-          .getDate()
-          .toString()
-          .padStart(2, 0)} - ${ahora.getHours().toString().padStart(2, 0)}:${ahora
-          .getMinutes()
-          .toString()
-          .padStart(2, 0)}` +
-          ` <=> Ejecutando Backend en: ${process.env.BASE_URL}:${process.env.PORT}`
-      );
+      mensajeBackend(process.env.BASE_URL, process.env.PORT);
     });
 }
 
-// MONGO CONEXIONES BD
-
-mongoose.set("strictQuery", false);
-
-// Configuraciones (DEFAULT)
-mongoose.connection.on("error", (e) => {
-  // console.error("reason", e.reason);
-  // console.error(`onError, ${e.name}: ${e.message}.`);
-  console.error(`~~~~~ RE-Intentando primer conexion... (Default) ~~~~~`);
-  console.log("mongoose.connections *error Def*", mongoose.connections.length);
-  // intenta reconectar pasados los 20 seg de un error
-  setTimeout(() => {
-    mongoose.connect(process.env.URLDB, JSON.parse(process.env.DBoptions)).catch((err) => {});
-  }, 20 * 1000);
-});
-
-mongoose.connection.on("connected", () => {
+// funciones de msjs
+const mensajeBackend = function (BASE_URL, PORT) {
+  console.error(`${timeNow()} <=> Ejecutando Backend en: ${BASE_URL}:${PORT}`);
+};
+const timeNow = function () {
   let ahora = new Date();
-  console.log(`===== Servidor funcionando en: ${process.env.BASE_URL}:${process.env.PORT} =====`);
-  console.log(
-    `===== ${ahora.getFullYear()}/${(ahora.getMonth() + 1).toString().padStart(2, 0)}/${ahora
-      .getDate()
-      .toString()
-      .padStart(2, 0)} - ${ahora.getHours().toString().padStart(2, 0)}:${ahora
-      .getMinutes()
-      .toString()
-      .padStart(2, 0)}` + ` <=> Base de Datos ONLINE (Default) =====`
-  );
-  // console.log("mongoose.connections *conn Def*", mongoose.connections.length);
-});
+  return `${ahora.getFullYear()}/${(ahora.getMonth() + 1).toString().padStart(2, 0)}/${ahora
+    .getDate()
+    .toString()
+    .padStart(2, 0)} - ${ahora.getHours().toString().padStart(2, 0)}:${ahora
+    .getMinutes()
+    .toString()
+    .padStart(2, 0)}`;
+};
 
-mongoose.connection.on("disconnected", () => {
-  let ahora = new Date();
-  console.error(
-    `XXXXX ${ahora.getFullYear()}/${(ahora.getMonth() + 1).toString().padStart(2, 0)}/${ahora
-      .getDate()
-      .toString()
-      .padStart(2, 0)} - ${ahora.getHours().toString().padStart(2, 0)}:${ahora
-      .getMinutes()
-      .toString()
-      .padStart(2, 0)}` + ` <=> Base de Datos OFFLINE (Default) XXXXX`
-  );
-  console.error("XXXXX Esperando Re-conectar... XXXXX");
-  console.log("mongoose.connections *disco Def*", mongoose.connections.length);
-});
-
-// FUNCION PARA CREAR OTRAS CONEXIONES A LA BD MONGO
-function crearNuevaConexion(dbURL, options, baseName) {
-  try {
-    let db = mongoose.createConnection(dbURL, options);
-    db.on("error", function (err) {
-      // Primer conexion falla
-      // console.error(`onError (${baseName}), ${err.name}: ${err.message}.`);
-      // console.error(`~~~~~ RE-Intentando primer conexion... IMPORTANTE (${baseName}) ~~~~~`);
-      console.error(`~~~~~ NO RE-Intenta primer conexion... IMPORTANTE (${baseName}) ~~~~~`);
-      // DESARROLLAR RE CONEXION...
-      // usar otro mongoose para crear array de conexiones infinitas
-      // y cnd este lista mandarla conexion al array del default ¿?¿?¿?
-      // console.log("this: ", this);
-      // db.close();
-      // setTimeout(function () {
-      //   db.open(dbURL).catch((err) => {});
-      //   // catch to avoid unhandled rejections.
-      // }, 20 * 1000);
-      // console.log("despues de aca tira alto error!!");
-    });
-    db.on("connected", () => {
-      let ahora = new Date();
-      console.log(
-        `===== ${ahora.getFullYear()}/${(ahora.getMonth() + 1).toString().padStart(2, 0)}/${ahora
-          .getDate()
-          .toString()
-          .padStart(2, 0)} - ${ahora.getHours().toString().padStart(2, 0)}:${ahora
-          .getMinutes()
-          .toString()
-          .padStart(2, 0)}` + ` <=> Base de Datos ONLINE (${baseName}) =====`
-      );
-    });
-    db.on("disconnected", () => {
-      let ahora = new Date();
-      console.error(
-        `XXXXX ${ahora.getFullYear()}/${(ahora.getMonth() + 1).toString().padStart(2, 0)}/${ahora
-          .getDate()
-          .toString()
-          .padStart(2, 0)} - ${ahora.getHours().toString().padStart(2, 0)}:${ahora
-          .getMinutes()
-          .toString()
-          .padStart(2, 0)}` + ` <=> Base de Datos OFFLINE (${baseName}) XXXXX`
-      );
-    });
-
-    return db;
-  } catch (error) {
-    console.error("crearNuevaConexion: ", error.message);
-  }
-}
-
-// carga las tareas ejecutadas cronologicamente.
-const schedule = require("./schedule_task");
-
-// Conectando la BD
-(async () => {
-  try {
-    schedule.saveFarmaciaEstadistica();
-    //  gracefully shutdown jobs when a system interrupt occurs.
-    process.on("SIGINT", async () => {
-      await schedule.gracefulShutdown();
-      process.exit(0);
-    });
-    process.on("SIGTERM", async () => {
-      await schedule.gracefulShutdown();
-      process.exit(0);
-    });
-    process.on("SIGQUIT", async () => {
-      await schedule.gracefulShutdown();
-      process.exit(0);
-    });
-    // console.log("mongoose.connections *Ini*", mongoose.connections.length);
-    mongoose.connect(process.env.URLDB, JSON.parse(process.env.DBoptions)).catch((err) => {});
-    crearNuevaConexion(
-      process.env.URLDB,
-      {...JSON.parse(process.env.DBoptions), ...{maxPoolSize: 1}},
-      "UploadBatch"
-    );
-    // console.log("mongoose.connections *fin*", mongoose.connections.length);
-  } catch (err) {
-    console.error("conectarBDs: ", err.message);
-  }
-})();
+// +isVacio               todovacio = true          como rutasInsumos
+// +objectSetUnset        $set = {} $unset          como rutasInsumos
+// +populate optional                               como en rutasPatrimonio

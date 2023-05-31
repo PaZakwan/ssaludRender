@@ -2,9 +2,11 @@ const express = require("express");
 
 const _pick = require("lodash/pick");
 
-const {verificaToken, verificaArrayPropValue} = require("../../middlewares/autenticacion");
-const {errorMessage} = require("../../tools/errorHandler");
-const {isVacio, isObjectIdValid} = require("../../tools/object");
+const {verificaToken, verificaArrayPropValue} = require(process.env.MAIN_FOLDER +
+  "/middlewares/autenticacion");
+const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
+const {isVacio, isObjectIdValid} = require(process.env.MAIN_FOLDER + "/tools/object");
+
 const Patrimonio = require("./models/patrimonio");
 const PatrimonioStock = require("./models/patrimonioStock");
 

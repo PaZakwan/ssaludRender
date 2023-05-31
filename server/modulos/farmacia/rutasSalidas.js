@@ -2,14 +2,15 @@ const express = require("express");
 
 const _pick = require("lodash/pick");
 
-const {verificaToken, verificaArrayPropValue} = require("../../middlewares/autenticacion");
-const {errorMessage} = require("../../tools/errorHandler");
+const {verificaToken, verificaArrayPropValue} = require(process.env.MAIN_FOLDER +
+  "/middlewares/autenticacion");
+const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
+const {isVacio, isObjectIdValid, sumarProps} = require(process.env.MAIN_FOLDER + "/tools/object");
+
 const modificarStockInc = require("./farmaciaHelper");
 const FarmaciaTransferencia = require("./models/farmacia_transferencia");
 const FarmaciaDescarte = require("./models/farmacia_descarte");
 const InsumoEntrega = require("./models/insumo_entrega");
-const {isVacio, isObjectIdValid, sumarProps} = require("../../tools/object");
-// const {objectSetUnset} = require("../../tools/object");
 
 const app = express();
 
@@ -127,7 +128,10 @@ app.get(
         filtroIndividual.procedencia = filtro.insumos.$elemMatch.procedencia;
       }
       if (req.query.desde && req.query.hasta) {
-        filtro.fecha = {$gte: new Date(req.query.desde), $lte: new Date(req.query.hasta)};
+        filtro.fecha = {
+          $gte: new Date(req.query.desde),
+          $lte: new Date(`${req.query.hasta}T23:59:59.999+00:00`),
+        };
         if (isNaN(filtro.fecha.$gte) || isNaN(filtro.fecha.$lte)) {
           return errorMessage(res, {message: "La fecha de Busqueda no es valida."}, 400);
         }
@@ -501,7 +505,10 @@ app.get(
         };
       }
       if (req.query.desde && req.query.hasta) {
-        filtro.fecha = {$gte: new Date(req.query.desde), $lte: new Date(req.query.hasta)};
+        filtro.fecha = {
+          $gte: new Date(req.query.desde),
+          $lte: new Date(`${req.query.hasta}T23:59:59.999+00:00`),
+        };
         if (isNaN(filtro.fecha.$gte) || isNaN(filtro.fecha.$lte)) {
           return errorMessage(res, {message: "La fecha de Busqueda no es valida."}, 400);
         }
@@ -799,7 +806,10 @@ app.get(
         };
       }
       if (req.query.desde && req.query.hasta) {
-        filtro.fecha = {$gte: new Date(req.query.desde), $lte: new Date(req.query.hasta)};
+        filtro.fecha = {
+          $gte: new Date(req.query.desde),
+          $lte: new Date(`${req.query.hasta}T23:59:59.999+00:00`),
+        };
         if (isNaN(filtro.fecha.$gte) || isNaN(filtro.fecha.$lte)) {
           return errorMessage(res, {message: "La fecha de Busqueda no es valida."}, 400);
         }

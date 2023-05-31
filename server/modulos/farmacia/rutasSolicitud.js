@@ -2,16 +2,19 @@ const express = require("express");
 
 const _pick = require("lodash/pick");
 
-const {verificaToken, verificaArrayPropValue} = require("../../middlewares/autenticacion");
-const {errorMessage} = require("../../tools/errorHandler");
+const {verificaToken, verificaArrayPropValue} = require(process.env.MAIN_FOLDER +
+  "/middlewares/autenticacion");
+const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
+const {isVacio, objectSetUnset, isObjectIdValid} = require(process.env.MAIN_FOLDER +
+  "/tools/object");
+
 const FarmaciaSolicitud = require("./models/farmacia_solicitud");
-const {isVacio, objectSetUnset, isObjectIdValid} = require("../../tools/object");
 
 const app = express();
 
 let listaSolicitud = [
   "_id",
-  "fecha",
+  // "fecha",
   "origen",
   "destino",
 
@@ -82,7 +85,10 @@ app.get(
         });
       }
       if (req.query.desde && req.query.hasta) {
-        filtro.fecha = {$gte: new Date(req.query.desde), $lte: new Date(req.query.hasta)};
+        filtro.fecha = {
+          $gte: new Date(req.query.desde),
+          $lte: new Date(`${req.query.hasta}T23:59:59.999+00:00`),
+        };
         if (isNaN(filtro.fecha.$gte) || isNaN(filtro.fecha.$lte)) {
           return errorMessage(res, {message: "La fecha de Busqueda no es valida."}, 400);
         }
@@ -288,7 +294,10 @@ app.get(
         });
       }
       if (req.query.desde && req.query.hasta) {
-        filtro.fecha = {$gte: new Date(req.query.desde), $lte: new Date(req.query.hasta)};
+        filtro.fecha = {
+          $gte: new Date(req.query.desde),
+          $lte: new Date(`${req.query.hasta}T23:59:59.999+00:00`),
+        };
         if (isNaN(filtro.fecha.$gte) || isNaN(filtro.fecha.$lte)) {
           return errorMessage(res, {message: "La fecha de Busqueda no es valida."}, 400);
         }
@@ -313,10 +322,10 @@ app.get(
           ],
         })
         .sort({fecha: -1, _id: -1})
-        .addFields({
-          fecha: {$dateToString: {format: "%Y-%m-%d", date: "$fecha"}},
-          fec_resolucion: {$dateToString: {format: "%Y-%m-%d", date: "$fec_resolucion"}},
-        })
+        // .addFields({
+        //   fecha: {$dateToString: {format: "%Y-%m-%d %H:%M", date: "$fecha"}},
+        //   fec_resolucion: {$dateToString: {format: "%Y-%m-%d %H:%M", date: "$fec_resolucion"}},
+        // })
         .lookup({
           from: "areas",
           localField: "origen",
@@ -385,6 +394,10 @@ app.put(
         return errorMessage(res, {message: "Acceso Denegado."}, 401);
       }
 
+      if (body.fec_resolucion) {
+        body.fec_resolucion = Date.now();
+      }
+
       let solicitudDB = null;
 
       if (body._id) {
@@ -403,7 +416,7 @@ app.put(
       }
 
       if (!solicitudDB) {
-        return errorMessage(res, {message: "Error al crear la Solicitud."}, 400);
+        return errorMessage(res, {message: "Error al guardar la Solicitud."}, 400);
       }
 
       return res.status(201).json({
@@ -456,7 +469,7 @@ app.delete(
       }).exec();
 
       if (!solicitudBorrada) {
-        return errorMessage(res, {message: "Solicitud no encontrado."}, 404);
+        return errorMessage(res, {message: "Solicitud no borrada."}, 400);
       }
 
       return res.json({

@@ -18,7 +18,7 @@ const FarmaciaEstadistica = require("./modulos/farmacia/models/farmacia_estadist
 // │    └──────────────────── minute (0 - 59)
 // └───────────────────────── second (0 - 59, OPTIONAL)
 
-exports.saveFarmaciaEstadistica = () => {
+const saveFarmaciaEstadistica = function () {
   // guardar stock final, recibido(ingreso/trasnfer), consumo(entrega), pedido (solicitudes)
   // No guardar stock.. el stock calcularlo en base a la diferencia de los demas datos.
   // guardar los datos del mes pasado, por si faltan cargas del actual (ventana de carga 1 seamana)
@@ -31,10 +31,7 @@ exports.saveFarmaciaEstadistica = () => {
       // console.log("fireDate", fireDate.toUTCString());
       let primerDiaMes = new Date();
       primerDiaMes.setUTCDate(1);
-      primerDiaMes.setUTCHours(0);
-      primerDiaMes.setUTCMinutes(0);
-      primerDiaMes.setUTCSeconds(0);
-      primerDiaMes.setUTCMilliseconds(0);
+      primerDiaMes.setUTCHours(0, 0, 0, 0);
 
       let mesAnterior = new Date(primerDiaMes.getTime());
       mesAnterior.setUTCMonth(mesAnterior.getUTCMonth() - 1);
@@ -270,8 +267,26 @@ exports.saveFarmaciaEstadistica = () => {
   }
 };
 
-exports.gracefulShutdown = function () {
-  //  gracefully shutdown jobs
-  console.log("gracefulShutdown");
-  schedule.gracefulShutdown();
+const scheduleRun = async function () {
+  // saveFarmaciaEstadistica();
+  //  gracefully shutdown jobs when a system interrupt occurs.
+  process.on("SIGINT", async () => {
+    console.log("gracefulShutdown");
+    await schedule.gracefulShutdown();
+    process.exit(0);
+  });
+  process.on("SIGTERM", async () => {
+    console.log("gracefulShutdown");
+    await schedule.gracefulShutdown();
+    process.exit(0);
+  });
+  process.on("SIGQUIT", async () => {
+    console.log("gracefulShutdown");
+    await schedule.gracefulShutdown();
+    process.exit(0);
+  });
 };
+
+// exports
+exports.scheduleRun = scheduleRun;
+// exports.saveFarmaciaEstadistica = saveFarmaciaEstadistica;

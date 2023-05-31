@@ -3,12 +3,13 @@ const express = require("express");
 const bcrypt = require("bcrypt");
 const _pick = require("lodash/pick");
 
+const {verificaToken, verificaAdmin_Role} = require(process.env.MAIN_FOLDER +
+  "/middlewares/autenticacion");
+const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
+const {mailTransporter} = require(process.env.MAIN_FOLDER + "/mailer");
+
 const AutoUsuario = require("./models/autoUsuario");
 const VerificationCode = require("./models/codeTemp");
-const {verificaToken, verificaAdmin_Role} = require("../../middlewares/autenticacion");
-
-const {mailTransporter} = require("../../tools/mailer");
-const {errorMessage} = require("../../tools/errorHandler");
 
 const app = express();
 
@@ -103,12 +104,9 @@ app.get("/autoUsuario", [verificaToken, verificaAdmin_Role], async (req, res) =>
     // segundo parametro que propiedades mostrar ,'usuario nombre email telefono role especialidad estado'
     let usuarios = await AutoUsuario.find({}).skip(desde).limit(limite).sort("apellido").exec();
 
-    let cuantos = await AutoUsuario.countDocuments({}).exec();
-
     return res.json({
       ok: true,
       usuarios,
-      cuantos,
     });
   } catch (err) {
     // Respuesta para el Front en caso de error
@@ -177,6 +175,7 @@ app.get("/autoUsuario/perfil/:id", [verificaToken], async (req, res) => {
 // ============================
 app.post("/autoUsuario", async (req, res) => {
   try {
+    // REHACER... Enviar token con datos del usuario.. y cuando lo valide guardarlos con los datos del token)?
     let listaCrear = listaUsuario.slice();
     // Se quitan de la lista los valores del role y los usados para los derechos de los demás módulos. Por cuestión de seguridad al crear usuarios.
     listaCrear.splice(16);
@@ -195,7 +194,7 @@ app.post("/autoUsuario", async (req, res) => {
     }
 
     if (todovacio === true) {
-      return errorMessage(res, {message: "Falta información para proceder."}, 412);
+      return errorMessage(res, {message: "No se envió ningún dato."}, 412);
     }
 
     if (body.password) {
@@ -284,194 +283,100 @@ app.post("/autoUsuario", async (req, res) => {
 // DESARROLLAR '/autoUsuario/newCode/:id'
 // ============================
 
-// DESARROLLAR VER
+// DESARROLLAR VER TODO DEBAJO DE ACA
 
 // ===============================
 // Modificar usuario por id ADMINS
 // ===============================
-app.put("/autoUsuario/:id", [verificaToken, verificaAdmin_Role], (req, res) => {
-  let id = req.params.id;
+app.put("/autoUsuario/:id", [verificaToken, verificaAdmin_Role], async (req, res) => {
+  try {
+    let listaUsuarioUpdate = listaUsuario.slice();
+    // Se quitan de la lista los valores que no serán modificables. Por cuestión de seguridad.
+    listaUsuarioUpdate.splice(0, 1);
 
-  let listaUsuarioUpdate = listaUsuario.slice();
-  // Se quitan de la lista los valores que no serán modificables. Por cuestión de seguridad.
-  listaUsuarioUpdate.splice(0, 1);
+    let body = _pick(req.body, listaUsuarioUpdate);
 
-  let body = _pick(req.body, listaUsuarioUpdate);
-
-  let todovacio = true;
-  for (const key in body) {
-    if (body.hasOwnProperty(key)) {
-      const element = body[key];
-      if (element !== "") {
-        todovacio = false;
-        break;
+    let todovacio = true;
+    for (const key in body) {
+      if (body.hasOwnProperty(key)) {
+        const element = body[key];
+        if (element !== "") {
+          todovacio = false;
+          break;
+        }
       }
     }
-  }
-  if (todovacio === true) {
-    return res.status(400).json({
-      ok: false,
-      err: {
-        message: "No se envió ningún dato.",
-      },
+    if (todovacio === true) {
+      return errorMessage(res, {message: "No se envió ningún dato."}, 412);
+    }
+
+    if (body.password) {
+      body.password = bcrypt.hashSync(body.password, 10);
+    }
+
+    let usuarioDB = await AutoUsuario.findOneAndUpdate({_id: req.params.id}, body, {
+      new: true,
+      runValidators: true,
+    }).exec();
+    if (!usuarioDB) {
+      return errorMessage(res, {message: "Usuario no encontrado."}, 404);
+    }
+
+    return res.status(200).json({
+      ok: true,
+      usuario: usuarioDB,
     });
+  } catch (err) {
+    return errorMessage(res, err, err.code);
   }
-
-  if (body.password) {
-    body.password = bcrypt.hashSync(body.password, 10);
-  }
-
-  // Revisa que no se le saque el derecho de admin al user "admin"
-  Usuario.findOne({_id: id})
-    .populate("area", "area")
-    .exec((err, usuarioDB) => {
-      if (err) {
-        return res.status(500).json({
-          ok: false,
-          err,
-        });
-      }
-
-      if (!usuarioDB) {
-        return res.status(400).json({
-          ok: false,
-          err: {
-            message: "Usuario no encontrado.",
-          },
-        });
-      }
-
-      if (usuarioDB.usuario === "admin") {
-        if (body.role !== "ADMIN_ROLE") {
-          return res.status(401).json({
-            ok: false,
-            err: {
-              message: "Usuario no Modificable.",
-            },
-          });
-        }
-        if (body.estado !== "true") {
-          return res.status(401).json({
-            ok: false,
-            err: {
-              message: "Usuario no Modificable.",
-            },
-          });
-        }
-        if (body.password) {
-          return res.status(401).json({
-            ok: false,
-            err: {
-              message: "Usuario no Modificable.",
-            },
-          });
-        }
-        body.role = "ADMIN_ROLE";
-        body.estado = true;
-        delete body.password;
-      }
-
-      // Modificacion de los datos
-      Usuario.findOneAndUpdate(
-        {_id: id},
-        body,
-        {new: true, runValidators: true},
-        (err, usuarioDB) => {
-          if (err) {
-            return res.status(500).json({
-              ok: false,
-              err,
-            });
-          }
-
-          res.json({
-            ok: true,
-            usuario: usuarioDB,
-          });
-        }
-      );
-    });
 });
 
 // ===============================
 // Modificar usuario por id PERFIL
 // ===============================
-app.put("/autoUsuario/perfil/:id", [verificaToken], (req, res) => {
-  let idSolicitada = req.params.id;
-  let idSolicitante = req.usuario.id;
+app.put("/autoUsuario/perfil/:id", [verificaToken], async (req, res) => {
+  try {
+    let idSolicitada = req.params.id;
+    let idSolicitante = req.usuario.id;
 
-  // Verifica que los datos a editar sean los suyos y no de otras personas.
-  if (idSolicitada !== idSolicitante) {
-    return res.status(401).json({
-      ok: false,
-      err: {
-        message: "Acceso Denegado.",
-      },
-    });
-  }
+    // Verifica que los datos a editar sean los suyos y no de otras personas.
+    if (idSolicitada !== idSolicitante) {
+      return errorMessage(res, {message: "Acceso Denegado."}, 401);
+    }
 
-  // Se selecciona de la lista los valores que serán modificables. Por cuestión de seguridad.
-  let listaUsuarioUpdate = ["email", "telefono", "password", "password_anterior"];
+    // Se selecciona de la lista los valores que serán modificables. Por cuestión de seguridad.
+    let listaUsuarioUpdate = ["email", "telefono", "password", "password_anterior"];
 
-  let body = _pick(req.body, listaUsuarioUpdate);
+    let body = _pick(req.body, listaUsuarioUpdate);
 
-  // Verifica que haya datos para editar.
-  let todovacio = true;
-  for (const key in body) {
-    if (body.hasOwnProperty(key)) {
-      const element = body[key];
-      if (element !== "") {
-        todovacio = false;
-        break;
+    // Verifica que haya datos para editar.
+    let todovacio = true;
+    for (const key in body) {
+      if (body.hasOwnProperty(key)) {
+        const element = body[key];
+        if (element !== "") {
+          todovacio = false;
+          break;
+        }
       }
     }
-  }
-  if (todovacio === true) {
-    return res.status(400).json({
-      ok: false,
-      err: {
-        message: "No se envió ningún dato.",
-      },
-    });
-  }
-
-  // Verifica que el password anterior haya sido enviado.
-  if (!body.password_anterior) {
-    return res.status(401).json({
-      ok: false,
-      err: {
-        message: "Contraseña anterior necesaria.",
-      },
-    });
-  }
-
-  // Verifica que el password anterior sea correcto.
-  Usuario.findOne({_id: idSolicitada}, (err, usuarioDB) => {
-    if (err) {
-      return res
-        .json({
-          ok: false,
-          err,
-        })
-        .status(500);
+    if (todovacio === true) {
+      return errorMessage(res, {message: "No se envió ningún dato."}, 412);
     }
 
+    // Verifica que el password anterior haya sido enviado.
+    if (!body.password_anterior) {
+      return errorMessage(res, {message: "Falta información para proceder."}, 412);
+    }
+
+    let usuarioDB = await AutoUsuario.findOne({_id: idSolicitada}).exec();
     if (!usuarioDB) {
-      return res.status(400).json({
-        ok: false,
-        err: {
-          message: "Usuario no encontrado.",
-        },
-      });
+      return errorMessage(res, {message: "Usuario no encontrado."}, 404);
     }
 
+    // Verifica que el password anterior sea correcto.
     if (!bcrypt.compareSync(body.password_anterior, usuarioDB.password)) {
-      return res.status(400).json({
-        ok: false,
-        err: {
-          message: "Contraseña incorrecta.",
-        },
-      });
+      return errorMessage(res, {message: "Contraseña incorrecta."}, 401);
     }
 
     // Encripta nuevo password de ser necesario.
@@ -480,79 +385,47 @@ app.put("/autoUsuario/perfil/:id", [verificaToken], (req, res) => {
     }
 
     // Actualiza usuario.
-    Usuario.findOneAndUpdate(
-      {_id: idSolicitada},
-      body,
-      {new: true, runValidators: true},
-      (err, usuarioDB) => {
-        if (err) {
-          return res.status(500).json({
-            ok: false,
-            err,
-          });
-        }
+    let usuarioUpdateDB = await AutoUsuario.findOneAndUpdate({_id: idSolicitada}, body, {
+      new: true,
+      runValidators: true,
+    }).exec();
+    if (!usuarioUpdateDB) {
+      return errorMessage(res, {message: "Usuario no Actualizado."}, 404);
+    }
 
-        res.json({
-          ok: true,
-          usuario: usuarioDB,
-        });
-      }
-    );
-  });
+    return res.status(200).json({
+      ok: true,
+      usuario: usuarioDB,
+    });
+  } catch (err) {
+    return errorMessage(res, err, err.code);
+  }
 });
 
 // ============================
 // "Borrar" edita estado a false de usuario por id
 // ============================
-app.delete("/autoUsuario/:id", [verificaToken, verificaAdmin_Role], (req, res) => {
-  let id = req.params.id;
-
-  Usuario.findOne({_id: id})
-    .populate("area", "area")
-    .exec((err, usuarioDB) => {
-      if (err) {
-        return res.status(500).json({
-          ok: false,
-          err,
-        });
-      }
-
-      if (!usuarioDB) {
-        return res.status(400).json({
-          ok: false,
-          err: {
-            message: "Usuario no encontrado.",
-          },
-        });
-      }
-
-      if (usuarioDB.usuario === "admin") {
-        return res.status(401).json({
-          ok: false,
-          err: {
-            message: "Usuario no modificable.",
-          },
-        });
-      }
-
-      let cambiaEstado = {
+app.delete("/autoUsuario/:id", [verificaToken, verificaAdmin_Role], async (req, res) => {
+  try {
+    let usuarioBorrado = await AutoUsuario.findOneAndUpdate(
+      {_id: req.params.id},
+      {
         estado: false,
-      };
+      },
+      {new: true}
+    ).exec();
 
-      Usuario.findOneAndUpdate({_id: id}, cambiaEstado, {new: true}, (err, usuarioBorrado) => {
-        if (err) {
-          return res.status(500).json({
-            ok: false,
-            err,
-          });
-        }
+    if (!usuarioBorrado) {
+      return errorMessage(res, {message: "Usuario no encontrado."}, 404);
+    }
 
-        res.json({
-          ok: true,
-          usuario: usuarioBorrado,
-        });
-      });
+    return res.status(200).json({
+      ok: true,
+      usuario: usuarioBorrado,
     });
+  } catch (err) {
+    return errorMessage(res, err, err.code);
+  }
 });
 
 module.exports = app;

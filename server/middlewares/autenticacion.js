@@ -1,22 +1,32 @@
 const jwt = require("jsonwebtoken");
 const _get = require("lodash/get");
 
+const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
+
 // =====================
 // Verificar Token
 // =====================
 const verificaToken = (req, res, next) => {
-  let token = req.get("token");
-
-  jwt.verify(token, process.env.SEED, (err, decoded) => {
+  // express no maneja bien las async function
+  // try {
+  //   let decoded = await jwt.verify(req.get("token"), process.env.SEED);
+  //   req.usuario = decoded.usuario;
+  //   return next();
+  // } catch (err) {
+  //   return errorMessage(
+  //     res,
+  //     {message: "Sesión expirada. Por favor, vuelva a iniciar Sesión."},
+  //     401
+  //   );
+  // }
+  jwt.verify(req.get("token"), process.env.SEED, (err, decoded) => {
     if (err) {
-      return res.status(401).json({
-        ok: false,
-        err: {
-          message: "Sesión expirada. Por favor, vuelva a iniciar Sesión.",
-        },
-      });
+      return errorMessage(
+        res,
+        {message: "Sesión expirada. Por favor, vuelva a iniciar Sesión."},
+        401
+      );
     }
-
     req.usuario = decoded.usuario;
     return next();
   });
@@ -29,12 +39,7 @@ const verificaAdmin_Role = (req, res, next) => {
   if (req.usuario.role === "ADMIN_ROLE") {
     return next();
   } else {
-    return res.status(403).json({
-      ok: false,
-      err: {
-        message: "Actividad no autorizada.",
-      },
-    });
+    return errorMessage(res, {message: "Actividad no autorizada."}, 403);
   }
 };
 
@@ -57,121 +62,13 @@ const verificaArrayPropValue = (req, res, next) => {
       return next();
     }
   }
+  req.verificacionArray = [];
   // si ninguna cumple No autorizado
-  return res.status(403).json({
-    ok: false,
-    err: {
-      message: "Actividad no autorizada.",
-    },
-  });
-};
-
-// =====================
-// Verifica Bromatologia
-// =====================
-const verificaBromatologia = (req, res, next) => {
-  let usuario = req.usuario;
-
-  if (usuario.bromatologia > 0) {
-    return next();
-  } else {
-    return res.status(403).json({
-      ok: false,
-      err: {
-        message: "Actividad no autorizada.",
-      },
-    });
-  }
-};
-
-// =====================
-// Verifica Same
-// =====================
-const verificaSame = (req, res, next) => {
-  let usuario = req.usuario;
-
-  if (usuario.same > 0) {
-    return next();
-  } else {
-    return res.status(403).json({
-      ok: false,
-      err: {
-        message: "Actividad no autorizada.",
-      },
-    });
-  }
-};
-
-// =====================
-// Verifica Paciente
-// =====================
-const verificaPaciente = (req, res, next) => {
-  let usuario = req.usuario;
-
-  if (
-    usuario.tuberculosis > 0 ||
-    usuario.turnero > 0 ||
-    usuario.historial_clinico > 0 ||
-    usuario.farmacia?.general?.reportes ||
-    usuario.farmacia?.general?.admin ||
-    (usuario.farmacia &&
-      Array.isArray(usuario.farmacia.entregas) &&
-      usuario.farmacia.entregas.length >= 1)
-  ) {
-    return next();
-  } else {
-    return res.status(403).json({
-      ok: false,
-      err: {
-        message: "Actividad no autorizada.",
-      },
-    });
-  }
-};
-
-// =====================
-// Verifica Turnero
-// =====================
-const verificaTurno = (req, res, next) => {
-  let usuario = req.usuario;
-
-  if (usuario.turnero > 0) {
-    return next();
-  } else {
-    return res.status(403).json({
-      ok: false,
-      err: {
-        message: "Actividad no autorizada.",
-      },
-    });
-  }
-};
-
-// =====================
-// Verifica HistorialClinico
-// =====================
-const verificaHistorialClinico = (req, res, next) => {
-  let usuario = req.usuario;
-
-  if (usuario.historial_clinico > 0) {
-    return next();
-  } else {
-    return res.status(403).json({
-      ok: false,
-      err: {
-        message: "Actividad no autorizada.",
-      },
-    });
-  }
+  return errorMessage(res, {message: "Actividad no autorizada."}, 403);
 };
 
 module.exports = {
   verificaToken,
   verificaAdmin_Role,
   verificaArrayPropValue,
-  verificaBromatologia,
-  verificaSame,
-  verificaPaciente,
-  verificaTurno,
-  verificaHistorialClinico,
 };

@@ -2,15 +2,12 @@ const express = require("express");
 
 const _pick = require("lodash/pick");
 
-const {
-  verificaToken,
-  verificaAdmin_Role,
-  verificaArrayPropValue,
-} = require("../../middlewares/autenticacion");
-const {errorMessage} = require("../../tools/errorHandler");
-const {isVacio, objectSetUnset} = require("../../tools/object");
-const Insumo = require("./models/insumo");
+const {verificaToken, verificaArrayPropValue} = require(process.env.MAIN_FOLDER +
+  "/middlewares/autenticacion");
+const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
+const {isVacio, objectSetUnset} = require(process.env.MAIN_FOLDER + "/tools/object");
 
+const Insumo = require("./models/insumo");
 const FarmaciaDescarte = require("./models/farmacia_descarte");
 const FarmaciaEstadistica = require("./models/farmacia_estadistica");
 const FarmaciaIngreso = require("./models/farmacia_ingreso");
@@ -147,6 +144,10 @@ app.put(
         insumoDB = await new Insumo(body).save();
       }
 
+      if (!insumoDB) {
+        return errorMessage(res, {message: "Error al guardar el Insumo."}, 400);
+      }
+
       return res.status(201).json({
         ok: true,
         insumo: insumoDB,
@@ -160,69 +161,83 @@ app.put(
 // ============================
 // Borrar el Insumo si no se utilizo
 // ============================
-app.delete("/farmacia/insumo/:id", [verificaToken, verificaAdmin_Role], async (req, res) => {
-  try {
-    // FarmaciaEstadistica;
-    let insumoBorrado = await FarmaciaEstadistica.findOne({insumo: req.params.id}).exec();
-    if (insumoBorrado) {
-      return errorMessage(res, {message: "Insumo Utilizado, no borrable."}, 412);
-    }
-    // HistorialMedicacion; FALTA TESTEAR
-    insumoBorrado = await HistorialMedicacion.findOne({medicamento: req.params.id}).exec();
-    if (insumoBorrado) {
-      return errorMessage(res, {message: "Insumo Utilizado MED, no borrable."}, 412);
-    }
-    // FarmaciaIngreso;
-    insumoBorrado = await FarmaciaIngreso.findOne({"insumos.insumo": req.params.id}).exec();
-    if (insumoBorrado) {
-      return errorMessage(res, {message: "Insumo Utilizado, no borrable."}, 412);
-    }
-    // FarmaciaOpcion; FALTA TESTEAR
-    insumoBorrado = await FarmaciaOpcion.findOne({insumo: req.params.id}).exec();
-    if (insumoBorrado) {
-      return errorMessage(res, {message: "Insumo Utilizado OPC, no borrable."}, 412);
-    }
-    // FarmaciaSolicitud;
-    insumoBorrado = await FarmaciaSolicitud.findOne({"insumos.insumo": req.params.id}).exec();
-    if (insumoBorrado) {
-      return errorMessage(res, {message: "Insumo Utilizado, no borrable."}, 412);
-    }
-    // FarmaciaStock;
-    insumoBorrado = await FarmaciaStock.findOne({insumo: req.params.id}).exec();
-    if (insumoBorrado) {
-      return errorMessage(res, {message: "Insumo Utilizado, no borrable."}, 412);
-    }
-    // FarmaciaTransferencia;
-    insumoBorrado = await FarmaciaTransferencia.findOne({"insumos.insumo": req.params.id}).exec();
-    if (insumoBorrado) {
-      return errorMessage(res, {message: "Insumo Utilizado, no borrable."}, 412);
-    }
-    // InsumoEntrega;
-    insumoBorrado = await InsumoEntrega.findOne({insumo: req.params.id}).exec();
-    if (insumoBorrado) {
-      return errorMessage(res, {message: "Insumo Utilizado, no borrable."}, 412);
-    }
-    // FarmaciaDescarte;
-    insumoBorrado = await FarmaciaDescarte.findOne({insumo: req.params.id}).exec();
-    if (insumoBorrado) {
-      return errorMessage(res, {message: "Insumo Utilizado, no borrable."}, 412);
-    }
+app.delete(
+  "/farmacia/insumo/:id",
+  [
+    verificaToken,
+    (req, res, next) => {
+      req.verificacionArray = [
+        {prop: "farmacia.insumos", value: 1},
+        {prop: "farmacia.general.admin", value: 1},
+      ];
+      next();
+    },
+    verificaArrayPropValue,
+  ],
+  async (req, res) => {
+    try {
+      // FarmaciaEstadistica;
+      let insumoBorrado = await FarmaciaEstadistica.findOne({insumo: req.params.id}).exec();
+      if (insumoBorrado) {
+        return errorMessage(res, {message: "Insumo Utilizado, no borrable."}, 412);
+      }
+      // HistorialMedicacion; FALTA TESTEAR
+      insumoBorrado = await HistorialMedicacion.findOne({medicamento: req.params.id}).exec();
+      if (insumoBorrado) {
+        return errorMessage(res, {message: "Insumo Utilizado MED, no borrable."}, 412);
+      }
+      // FarmaciaIngreso;
+      insumoBorrado = await FarmaciaIngreso.findOne({"insumos.insumo": req.params.id}).exec();
+      if (insumoBorrado) {
+        return errorMessage(res, {message: "Insumo Utilizado, no borrable."}, 412);
+      }
+      // FarmaciaOpcion; FALTA TESTEAR
+      insumoBorrado = await FarmaciaOpcion.findOne({insumo: req.params.id}).exec();
+      if (insumoBorrado) {
+        return errorMessage(res, {message: "Insumo Utilizado OPC, no borrable."}, 412);
+      }
+      // FarmaciaSolicitud;
+      insumoBorrado = await FarmaciaSolicitud.findOne({"insumos.insumo": req.params.id}).exec();
+      if (insumoBorrado) {
+        return errorMessage(res, {message: "Insumo Utilizado, no borrable."}, 412);
+      }
+      // FarmaciaStock;
+      insumoBorrado = await FarmaciaStock.findOne({insumo: req.params.id}).exec();
+      if (insumoBorrado) {
+        return errorMessage(res, {message: "Insumo Utilizado, no borrable."}, 412);
+      }
+      // FarmaciaTransferencia;
+      insumoBorrado = await FarmaciaTransferencia.findOne({"insumos.insumo": req.params.id}).exec();
+      if (insumoBorrado) {
+        return errorMessage(res, {message: "Insumo Utilizado, no borrable."}, 412);
+      }
+      // InsumoEntrega;
+      insumoBorrado = await InsumoEntrega.findOne({insumo: req.params.id}).exec();
+      if (insumoBorrado) {
+        return errorMessage(res, {message: "Insumo Utilizado, no borrable."}, 412);
+      }
+      // FarmaciaDescarte;
+      insumoBorrado = await FarmaciaDescarte.findOne({insumo: req.params.id}).exec();
+      if (insumoBorrado) {
+        return errorMessage(res, {message: "Insumo Utilizado, no borrable."}, 412);
+      }
 
-    insumoBorrado = await Insumo.findOneAndDelete({_id: req.params.id}).exec();
+      insumoBorrado = await Insumo.findOneAndDelete({_id: req.params.id}).exec();
 
-    if (!insumoBorrado) {
-      return errorMessage(res, {message: "Insumo no encontrado."}, 404);
+      if (!insumoBorrado) {
+        return errorMessage(res, {message: "Insumo no encontrado."}, 404);
+      }
+      // return errorMessage(res, {message: "En Desarrollo."}, 404);
+
+      return res.json({
+        ok: true,
+        insumoBorrado,
+      });
+    } catch (err) {
+      return errorMessage(res, err, err.code);
     }
-    // return errorMessage(res, {message: "En Desarrollo."}, 404);
-
-    return res.json({
-      ok: true,
-      insumoBorrado,
-    });
-  } catch (err) {
-    return errorMessage(res, err, err.code);
   }
-});
+);
 
 // ============================
 // TITULO ¿?¿?¿?¿?

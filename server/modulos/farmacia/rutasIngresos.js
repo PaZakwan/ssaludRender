@@ -2,18 +2,21 @@ const express = require("express");
 
 const _pick = require("lodash/pick");
 
-const {verificaToken, verificaArrayPropValue} = require("../../middlewares/autenticacion");
-const {errorMessage} = require("../../tools/errorHandler");
+const {verificaToken, verificaArrayPropValue} = require(process.env.MAIN_FOLDER +
+  "/middlewares/autenticacion");
+const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
+const {isVacio, objectSetUnset, isObjectIdValid, sumarProps} = require(process.env.MAIN_FOLDER +
+  "/tools/object");
+
 const modificarStockInc = require("./farmaciaHelper");
 const FarmaciaTransferencia = require("./models/farmacia_transferencia");
 const FarmaciaIngreso = require("./models/farmacia_ingreso");
-const {isVacio, objectSetUnset, isObjectIdValid, sumarProps} = require("../../tools/object");
 
 const app = express();
 
 let listaIngreso = [
   "_id",
-  "fecha",
+  // "fecha",
   "remito_compra",
   "proveedor",
   "destino",
@@ -109,7 +112,10 @@ app.get(
         };
       }
       if (req.query.desde && req.query.hasta) {
-        filtro.fecha = {$gte: new Date(req.query.desde), $lte: new Date(req.query.hasta)};
+        filtro.fecha = {
+          $gte: new Date(req.query.desde),
+          $lte: new Date(`${req.query.hasta}T23:59:59.999+00:00`),
+        };
         if (isNaN(filtro.fecha.$gte) || isNaN(filtro.fecha.$lte)) {
           return errorMessage(res, {message: "La fecha de Busqueda no es valida."}, 400);
         }
@@ -120,7 +126,7 @@ app.get(
         .match(filtro)
         .sort({fecha: -1, _id: -1})
         .addFields({
-          fecha: {$dateToString: {format: "%Y-%m-%d", date: "$fecha"}},
+          // fecha: {$dateToString: {format: "%Y-%m-%d", date: "$fecha"}},
           // recibido si todos fueron recibidos...
           recibido: {
             $cond: [
@@ -135,12 +141,13 @@ app.get(
                 ],
               },
               // esta todo recibido
-              {
-                $dateToString: {
-                  format: "%Y-%m-%d",
-                  date: {$arrayElemAt: ["$insumos.recibido", -1]},
-                },
-              },
+              {$arrayElemAt: ["$insumos.recibido", -1]},
+              // {
+              //   $dateToString: {
+              //     format: "%Y-%m-%d",
+              //     date: {$arrayElemAt: ["$insumos.recibido", -1]},
+              //   },
+              // },
               // no esta todo recibido
               undefined,
             ],
@@ -178,7 +185,7 @@ app.get(
       let transferenciaRemitoDB = await FarmaciaTransferencia.aggregate()
         .match(filtro)
         .addFields({
-          fecha: {$dateToString: {format: "%Y-%m-%d", date: "$fecha"}},
+          // fecha: {$dateToString: {format: "%Y-%m-%d", date: "$fecha"}},
           fec_planificada: {$dateToString: {format: "%Y-%m-%d", date: "$fec_planificada"}},
           // recibido si todos fueron recibidos...
           recibido: {
@@ -194,12 +201,13 @@ app.get(
                 ],
               },
               // esta todo recibido
-              {
-                $dateToString: {
-                  format: "%Y-%m-%d",
-                  date: {$arrayElemAt: ["$insumos.recibido", -1]},
-                },
-              },
+              {$arrayElemAt: ["$insumos.recibido", -1]},
+              // {
+              //   $dateToString: {
+              //     format: "%Y-%m-%d",
+              //     date: {$arrayElemAt: ["$insumos.recibido", -1]},
+              //   },
+              // },
               // no esta todo recibido
               undefined,
             ],
@@ -218,12 +226,13 @@ app.get(
                 ],
               },
               // esta todo retirado
-              {
-                $dateToString: {
-                  format: "%Y-%m-%d",
-                  date: {$arrayElemAt: ["$insumos.retirado", -1]},
-                },
-              },
+              {$arrayElemAt: ["$insumos.retirado", -1]},
+              // {
+              //   $dateToString: {
+              //     format: "%Y-%m-%d",
+              //     date: {$arrayElemAt: ["$insumos.retirado", -1]},
+              //   },
+              // },
               // no esta todo retirado
               undefined,
             ],
@@ -369,54 +378,54 @@ app.put(
         }).exec();
       }
 
-      if (ingresoDB.remito_compra === "Carga inicial") {
-        // Si es Carga inicial autorecibir stock
-        let recibido = new Date();
-        for (let index = 0; index < ingresoDB.insumos.length; index++) {
-          let stockDB = null;
-          stockDB = await modificarStockInc(
-            ingresoDB.destino,
-            {
-              insumo: ingresoDB.insumos[index].insumo,
-              procedencia: ingresoDB.insumos[index].procedencia,
-              lote: ingresoDB.insumos[index].lote,
-              vencimiento: ingresoDB.insumos[index].vencimiento,
-              recibido: ingresoDB.insumos[index].recibido,
-            },
-            ingresoDB.insumos[index].cantidad
-          );
-          if (!stockDB || (stockDB && stockDB.err)) {
-            // o si tira error..
-            errors.push({
-              message: `${ingresoDB.insumos[index].insumo} - Modificar Stock - ${
-                stockDB?.err ?? "No contemplado"
-              }.`,
-              type: "Modificar Stock",
-            });
-          } else {
-            // si es exitoso..
-            ingresoDB.insumos[index].recibido = recibido;
-          }
-        }
-        // Recibir Update
-        let recibidoDB = null;
-        recibidoDB = await FarmaciaIngreso.findOneAndUpdate(
-          {
-            _id: ingresoDB.id,
-          },
-          {insumos: ingresoDB.insumos},
-          {
-            new: true,
-            runValidators: true,
-          }
-        ).exec();
-        if (recibidoDB === null) {
-          errors.push({
-            message: `${ingresoDB.remito_compra} - Recibir Ingreso Error`,
-            type: "Ingreso Recibido",
-          });
-        }
-      }
+      // Si es Carga inicial autorecibir stock
+      // if (ingresoDB.remito_compra === "Carga inicial") {
+      //   let recibido = Date.now();
+      //   for (let index = 0; index < ingresoDB.insumos.length; index++) {
+      //     let stockDB = null;
+      //     stockDB = await modificarStockInc(
+      //       ingresoDB.destino,
+      //       {
+      //         insumo: ingresoDB.insumos[index].insumo,
+      //         procedencia: ingresoDB.insumos[index].procedencia,
+      //         lote: ingresoDB.insumos[index].lote,
+      //         vencimiento: ingresoDB.insumos[index].vencimiento,
+      //         recibido: ingresoDB.insumos[index].recibido,
+      //       },
+      //       ingresoDB.insumos[index].cantidad
+      //     );
+      //     if (!stockDB || (stockDB && stockDB.err)) {
+      //       // o si tira error..
+      //       errors.push({
+      //         message: `${ingresoDB.insumos[index].insumo} - Modificar Stock - ${
+      //           stockDB?.err ?? "No contemplado"
+      //         }.`,
+      //         type: "Modificar Stock",
+      //       });
+      //     } else {
+      //       // si es exitoso..
+      //       ingresoDB.insumos[index].recibido = recibido;
+      //     }
+      //   }
+      //   // Recibir Update
+      //   let recibidoDB = null;
+      //   recibidoDB = await FarmaciaIngreso.findOneAndUpdate(
+      //     {
+      //       _id: ingresoDB.id,
+      //     },
+      //     {insumos: ingresoDB.insumos},
+      //     {
+      //       new: true,
+      //       runValidators: true,
+      //     }
+      //   ).exec();
+      //   if (recibidoDB === null) {
+      //     errors.push({
+      //       message: `${ingresoDB.remito_compra} - Recibir Ingreso Error`,
+      //       type: "Ingreso Recibido",
+      //     });
+      //   }
+      // }
 
       return res.status(errors.length > 0 ? 500 : 201).json({
         ok: errors.length > 0 ? false : true,
@@ -552,7 +561,10 @@ app.get(
         };
       }
       if (req.query.desde && req.query.hasta) {
-        filtro.fecha = {$gte: new Date(req.query.desde), $lte: new Date(req.query.hasta)};
+        filtro.fecha = {
+          $gte: new Date(req.query.desde),
+          $lte: new Date(`${req.query.hasta}T23:59:59.999+00:00`),
+        };
         if (isNaN(filtro.fecha.$gte) || isNaN(filtro.fecha.$lte)) {
           return errorMessage(res, {message: "La fecha de Busqueda no es valida."}, 400);
         }
@@ -576,7 +588,7 @@ app.get(
           ],
         })
         .addFields({
-          fecha: {$dateToString: {format: "%Y-%m-%d", date: "$fecha"}},
+          // fecha: {$dateToString: {format: "%Y-%m-%d", date: "$fecha"}},
           fec_planificada: {$dateToString: {format: "%Y-%m-%d", date: "$fec_planificada"}},
           // recibido si todos fueron recibidos...
           recibido: {
@@ -592,12 +604,13 @@ app.get(
                 ],
               },
               // esta todo recibido
-              {
-                $dateToString: {
-                  format: "%Y-%m-%d",
-                  date: {$arrayElemAt: ["$insumos.recibido", -1]},
-                },
-              },
+              {$arrayElemAt: ["$insumos.recibido", -1]},
+              // {
+              //   $dateToString: {
+              //     format: "%Y-%m-%d",
+              //     date: {$arrayElemAt: ["$insumos.recibido", -1]},
+              //   },
+              // },
               // no esta todo recibido
               undefined,
             ],
@@ -616,12 +629,13 @@ app.get(
                 ],
               },
               // esta todo retirado
-              {
-                $dateToString: {
-                  format: "%Y-%m-%d",
-                  date: {$arrayElemAt: ["$insumos.retirado", -1]},
-                },
-              },
+              {$arrayElemAt: ["$insumos.retirado", -1]},
+              // {
+              //   $dateToString: {
+              //     format: "%Y-%m-%d",
+              //     date: {$arrayElemAt: ["$insumos.retirado", -1]},
+              //   },
+              // },
               // no esta todo retirado
               undefined,
             ],
@@ -966,7 +980,10 @@ app.get(
         };
       }
       if (req.query.desde && req.query.hasta) {
-        filtro.fecha = {$gte: new Date(req.query.desde), $lte: new Date(req.query.hasta)};
+        filtro.fecha = {
+          $gte: new Date(req.query.desde),
+          $lte: new Date(`${req.query.hasta}T23:59:59.999+00:00`),
+        };
         if (isNaN(filtro.fecha.$gte) || isNaN(filtro.fecha.$lte)) {
           return errorMessage(res, {message: "La fecha de Busqueda no es valida."}, 400);
         }

@@ -65,5 +65,4 @@ lugarSchema.pre("findOneAndUpdate", function (next) {
 
 lugarSchema.plugin(uniqueValidator, {message: "{PATH} valor repetido, debe de ser único."});
 
-module.exports = mongoose.connections[1].model("Lugar", lugarSchema, "Lugares");
 module.exports = mongoose.model("Lugar", lugarSchema, "Lugares");

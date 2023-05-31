@@ -3,7 +3,8 @@ const fs = require("fs");
 const mongoose = require("mongoose");
 
 // Middleware de Permisos
-const {verificaToken, verificaAdmin_Role} = require("../../middlewares/autenticacion");
+const {verificaToken, verificaAdmin_Role} = require(process.env.MAIN_FOLDER +
+  "/middlewares/autenticacion");
 
 // Herramientas para excels
 const xlstojson = require("xls-to-json-lc");
@@ -315,7 +316,7 @@ app.post("/patrimonio/upload", [verificaToken, verificaAdmin_Role], (req, res) =
 
             if (object["inventario"] || object["categoria"] === "Insumos") {
               try {
-                let areaTMP = await AreaUnHilo.find({area: object["area"]});
+                let areaTMP = await AreaUnHilo.find({area: object["area"]}).exec();
                 if (areaTMP.length !== 0) {
                   for (const key in object) {
                     if (object.hasOwnProperty(key)) {

@@ -1,11 +1,12 @@
 const express = require("express");
 const {ObjectId} = require("mongodb");
 
+const {verificaToken, verificaArrayPropValue} = require(process.env.MAIN_FOLDER +
+  "/middlewares/autenticacion");
+const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
+
 const HistorialMotivo = require("./models/historial_motivo");
 const Nutricion = require("./models/especialidades/consultas_nutricion");
-
-const {verificaToken, verificaHistorialClinico} = require("../../middlewares/autenticacion");
-const {errorMessage} = require("../../tools/errorHandler");
 
 const app = express();
 
@@ -35,7 +36,14 @@ function sumarProps(object1, object2) {
 // ============================
 app.get(
   "/HistorialClinico/nutricion/permanencia",
-  [verificaToken, verificaHistorialClinico],
+  [
+    verificaToken,
+    (req, res, next) => {
+      req.verificacionArray = [{prop: "historial_clinico", value: 1}];
+      next();
+    },
+    verificaArrayPropValue,
+  ],
   async (req, res) => {
     try {
       let diasParaAbandono = Number(req.query.diasAbandono) || 14;
@@ -176,7 +184,14 @@ app.get(
 // ============================
 app.get(
   "/HistorialClinico/nutricion/peso",
-  [verificaToken, verificaHistorialClinico],
+  [
+    verificaToken,
+    (req, res, next) => {
+      req.verificacionArray = [{prop: "historial_clinico", value: 1}];
+      next();
+    },
+    verificaArrayPropValue,
+  ],
   async (req, res) => {
     try {
       let diasParaAbandono = Number(req.query.diasAbandono) || 14;
@@ -354,7 +369,14 @@ app.get(
 // ============================
 app.get(
   "/HistorialClinico/nutricion/IMC",
-  [verificaToken, verificaHistorialClinico],
+  [
+    verificaToken,
+    (req, res, next) => {
+      req.verificacionArray = [{prop: "historial_clinico", value: 1}];
+      next();
+    },
+    verificaArrayPropValue,
+  ],
   async (req, res) => {
     try {
       //  motivo(esp:nutri, desc/prog: red. de peso,estado:activo).
@@ -538,7 +560,14 @@ app.get(
 // ============================
 app.get(
   "/HistorialClinico/nutricion/habitos",
-  [verificaToken, verificaHistorialClinico],
+  [
+    verificaToken,
+    (req, res, next) => {
+      req.verificacionArray = [{prop: "historial_clinico", value: 1}];
+      next();
+    },
+    verificaArrayPropValue,
+  ],
   async (req, res) => {
     try {
       let filtro = {
@@ -708,7 +737,14 @@ app.get(
 // ============================
 app.get(
   "/HistorialClinico/nutricion/nutricionistas",
-  [verificaToken, verificaHistorialClinico],
+  [
+    verificaToken,
+    (req, res, next) => {
+      req.verificacionArray = [{prop: "historial_clinico", value: 1}];
+      next();
+    },
+    verificaArrayPropValue,
+  ],
   async (req, res) => {
     try {
       let filtro = {
@@ -798,7 +834,14 @@ app.get(
 // ============================
 app.get(
   "/HistorialClinico/control/nutricion/hoja2",
-  [verificaToken, verificaHistorialClinico],
+  [
+    verificaToken,
+    (req, res, next) => {
+      req.verificacionArray = [{prop: "historial_clinico", value: 1}];
+      next();
+    },
+    verificaArrayPropValue,
+  ],
   async (req, res) => {
     try {
       // edades/genero (menos de 1 mes/ 1-11 meses)(1-4 / 5-9 / 10-14 / 15-19 / 20-34 / 35-49 / 50-64 / 65+).

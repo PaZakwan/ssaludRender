@@ -265,7 +265,7 @@ pacienteSchema.pre("findOneAndUpdate", async function (next) {
 
 pacienteSchema.plugin(uniqueValidator, {message: "{PATH} debe de ser único."});
 
+// para usarlo en el Schema.pre("save")
 const Paciente = mongoose.model("Paciente", pacienteSchema);
 
-module.exports = mongoose.connections[1].model("Paciente", pacienteSchema);
 module.exports = Paciente;

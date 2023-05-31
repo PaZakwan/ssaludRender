@@ -1,12 +1,12 @@
 // ============================
 //  Puerto
 // ============================
-process.env.PORT = process.env.PORT || 443;
+process.env.PORT = process.env.PORT ?? 443;
 
 // ============================
 //  Entorno
 // ============================
-process.env.NODE_ENV = process.env.NODE_ENV || "dev";
+process.env.NODE_ENV = process.env.NODE_ENV ?? "dev";
 
 // ============================
 //  Vencimiento del Token
@@ -15,7 +15,7 @@ process.env.NODE_ENV = process.env.NODE_ENV || "dev";
 // 60 minutos
 // 24 horas
 // 30 días
-process.env.CADUCIDAD_TOKEN = process.env.CADUCIDAD_TOKEN || "2h";
+process.env.CADUCIDAD_TOKEN = process.env.CADUCIDAD_TOKEN ?? "2h";
 // process.env.CADUCIDAD_TOKEN = 10000;
 
 // ============================
@@ -31,11 +31,11 @@ process.env.DH = path.join(__dirname, "cert/dhparam.pem");
 //  IP LOCAL O SERVIDOR
 // ============================
 
-if (process.env.NODE_ENV === "dev") {
+if (process.env.BASE_URL) {
+  process.env.BASE_URL = process.env.BASE_URL;
+} else {
   const ip = require("ip");
   process.env.BASE_URL = ip.address().toString();
-} else {
-  process.env.BASE_URL = process.env.BASE_URL;
 }
 
 // ============================
@@ -80,23 +80,26 @@ process.env.CORS = JSON.stringify({
 // ============================
 //  SEED de autenticación
 // ============================
-process.env.SEED = process.env.SEED || "seed-desarrollo";
+process.env.SEED = process.env.SEED ?? "seed-desarrollo";
 
 // ============================
 //  Base de datos
 // ============================
-process.env.URLDB = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/test";
+process.env.URLDB = process.env.MONGO_URI ?? "mongodb://127.0.0.1:27017/test";
 if (process.env.NODE_ENV === "dev") {
   // serverSelectionTimeoutMS: Tiempo en retornar error de reconexion.
   // bufferCommands: Tiempo de espera en la ejecucion de las query de mongo, no espera antes de retornar un error.
+  // family: 4; No intenta conectar con IPv6.
   process.env.DBoptions = JSON.stringify({
     serverSelectionTimeoutMS: 8 * 1000,
     bufferCommands: false,
+    family: 4,
   });
 } else {
   process.env.DBoptions = JSON.stringify({
     serverSelectionTimeoutMS: 8 * 1000,
     bufferCommands: false,
+    family: 4,
     autoIndex: true,
   });
   // autoIndex, ... VER EL TEMA DE CRAFTEO DE INDEXS....

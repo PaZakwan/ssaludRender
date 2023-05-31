@@ -1,5 +1,5 @@
-exports.errorMessage = (res, error, statusTemp) => {
-  let status = Number.isInteger(statusTemp) ? statusTemp : error.responseCode || 500;
+const errorMessage = function (res, error, statusTemp) {
+  let status = Number.isInteger(statusTemp) ? statusTemp : error.responseCode ?? 500;
   let msjtemp = `${error.name ? `<${error.name}>: ` : ""}${error.message}` || "Error inesperado";
   let statusOriginal = undefined;
   if (status < 100 || 600 <= status) {
@@ -49,19 +49,22 @@ exports.errorMessage = (res, error, statusTemp) => {
     ok: false,
     err: {
       message: msjtemp,
-      code: error.code || status,
-      status: statusOriginal || status,
-      type: error.type || "Sin Tipo",
-      arguments: error.arguments || "Sin Argumentos",
+      code: error.code ?? status,
+      status: statusOriginal ?? status,
+      type: error.type ?? "Sin Tipo",
+      arguments: error.arguments ?? "Sin Argumentos",
       // Para que funcione mongoose
-      errors: error.errors || [],
+      errors: error.errors ?? [],
     },
   });
 };
+
+exports.errorMessage = errorMessage;
+
 // Examples
 
 // import
-// const { errorMessage } = require('../../tools/errorHandler');
+// const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
 
 // SERVER
 // 507 Insufficient Storage

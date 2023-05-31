@@ -1,90 +1,62 @@
-const express = require('express');
+const express = require("express");
 
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 
+const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
 
-
-const Usuario = require('./models/usuario');
+const Usuario = require("./models/usuario");
 
 const app = express();
 
-
-
-app.post('/login', (req, res) => {
-
+app.post("/login", async (req, res) => {
+  try {
     let body = req.body;
-
     if (!body.password || !body.usuario) {
-        return res.status(400).json({
-            ok: false,
-            err: {
-                message: 'Usuario y/o contraseña requeridos.'
-            }
-        });
-    };
+      return errorMessage(res, {message: "Usuario y/o contraseña requeridos."}, 400);
+    }
 
-    Usuario.findOne({ usuario: body.usuario }, (err, usuarioDB) => {
+    let usuarioDB = await Usuario.findOne({usuario: body.usuario}).exec();
 
-        if (err) {
-            return res.json({
-                ok: false,
-                err
-            }).status(500);
-        };
+    if (!usuarioDB) {
+      return errorMessage(res, {message: "Usuario y/o contraseña incorrectos."}, 400);
+    }
+    if (usuarioDB.estado === false) {
+      return errorMessage(
+        res,
+        {message: "Usuario desactivado.\n Comuníquese con un administrador."},
+        400
+      );
+    }
+    if (!bcrypt.compareSync(body.password, usuarioDB.password)) {
+      return errorMessage(res, {message: "Usuario y/o contraseña incorrectos."}, 400);
+    }
 
-        if (!usuarioDB) {
-            return res.status(400).json({
-                ok: false,
-                err: {
-                    message: 'Usuario y/o contraseña incorrectos.'
-                }
-            });
-        };
+    // Actualizar lastLogin
+    let usuarioLoginDB = await Usuario.findOneAndUpdate(
+      {usuario: body.usuario},
+      {lastLogin: Date.now()},
+      {new: true, runValidators: true}
+    ).exec();
 
-        if (usuarioDB.estado === false) {
-            return res.status(400).json({
-                ok: false,
-                err: {
-                    message: 'Usuario desactivado. \nComuníquese con un administrador.'
-                }
-            });
-        };
+    if (!usuarioLoginDB) {
+      return errorMessage(res, {message: "Usuario y/o contraseña incorrectos."}, 400);
+    }
 
-        if (!bcrypt.compareSync(body.password, usuarioDB.password)) {
-            return res.status(400).json({
-                ok: false,
-                err: {
-                    message: 'Usuario y/o contraseña incorrectos.'
-                }
-            });
-        };
-
-        // Actualizar lastLogin
-        Usuario.findOneAndUpdate({ usuario: body.usuario }, { lastLogin: new Date() }, { new: true, runValidators: true, context: 'query' }, (err, usuarioDB) => {
-
-            if (err) {
-                return res.status(500).json({
-                    ok: false,
-                    err
-                });
-            }
-
-            let token = jwt.sign({
-                usuario: usuarioDB
-            }, process.env.SEED, { expiresIn: process.env.CADUCIDAD_TOKEN });
-
-            res.json({
-                ok: true,
-                usuario: usuarioDB,
-                token
-            });
-
-        })
-
+    return res.status(201).json({
+      ok: true,
+      usuario: usuarioLoginDB,
+      token: jwt.sign(
+        {
+          usuario: usuarioLoginDB,
+        },
+        process.env.SEED,
+        {expiresIn: process.env.CADUCIDAD_TOKEN}
+      ),
     });
-
+  } catch (err) {
+    return errorMessage(res, err, err.code);
+  }
 });
-
 
 module.exports = app;

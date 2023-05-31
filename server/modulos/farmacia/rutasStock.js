@@ -2,13 +2,15 @@ const express = require("express");
 
 const _pick = require("lodash/pick");
 
-const {verificaToken, verificaArrayPropValue} = require("../../middlewares/autenticacion");
-const {errorMessage} = require("../../tools/errorHandler");
+const {verificaToken, verificaArrayPropValue} = require(process.env.MAIN_FOLDER +
+  "/middlewares/autenticacion");
+const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
+const {isObjectIdValid} = require(process.env.MAIN_FOLDER + "/tools/object");
+
 const modificarStockInc = require("./farmaciaHelper");
 const FarmaciaStock = require("./models/farmacia_stock");
 const FarmaciaTransferencia = require("./models/farmacia_transferencia");
 const FarmaciaIngreso = require("./models/farmacia_ingreso");
-const {isObjectIdValid} = require("../../tools/object");
 
 const app = express();
 
@@ -58,7 +60,7 @@ app.put(
         ) {
           return errorMessage(res, {message: "Acceso Denegado."}, 401);
         }
-        let recibido = new Date();
+        let recibido = Date.now();
         // recorrer insumos
         for (let index = 0; index < ingresoDB.insumos.length; index++) {
           // Modificar stock
@@ -513,8 +515,19 @@ app.get(
   ],
   async (req, res) => {
     try {
+      let filtro = {};
+      if (req.query.insumos) {
+        filtro.insumo = {
+          $in: JSON.parse(req.query.insumos),
+        };
+        filtro.insumo.$in.forEach((insumo, index) => {
+          // regresa mongoose.Types.ObjectId(area);
+          filtro.insumo.$in[index] = isObjectIdValid(insumo);
+        });
+      }
+
       let stockDB = await FarmaciaStock.aggregate()
-        // .match(filtro)
+        .match(filtro)
         .group({
           _id: {insumo: "$insumo"},
           // subtotal_Otros: {
@@ -609,7 +622,7 @@ app.get(
 
 // ============================
 // Mostrar Resumen General => GroupBy: area - insumo.
-//    Stock (actual), ultimo Ingreso Recibido (fecha/cantidad), Egresos (desde ultimo Ingreso), Solicitado (pendiente).
+//    Stock (actual), Solicitado (pendiente), Ingresos Recibido (cantidad entre fechas), Egresos (cantidad entre fechas).
 // ============================
 app.get(
   "/farmacia/estadistica/general",
@@ -626,8 +639,55 @@ app.get(
   ],
   async (req, res) => {
     try {
+      // para entregas/descartes
+      let filtroIndividual = {};
+      if (req.query.desde && req.query.hasta) {
+        filtroIndividual.fecha = {$gte: new Date(req.query.desde), $lte: new Date(req.query.hasta)};
+        if (isNaN(filtroIndividual.fecha.$gte) || isNaN(filtroIndividual.fecha.$lte)) {
+          return errorMessage(res, {message: "La fecha del Filtro no es valida."}, 400);
+        }
+      } else {
+        return errorMessage(res, {message: "Falta la Fecha del Filtro para proceder."}, 412);
+      }
+      if (req.query.areas) {
+        filtroIndividual.origen = {
+          $in: JSON.parse(req.query.areas),
+        };
+        for (const [index, area] of filtroIndividual.origen.$in.entries()) {
+          // regresa mongoose.Types.ObjectId(area);
+          filtroIndividual.origen.$in[index] = isObjectIdValid(area);
+        }
+      }
+      if (req.query.insumos && req.query.insumos !== "[]") {
+        filtroIndividual.insumo = {
+          $in: JSON.parse(req.query.insumos),
+        };
+        filtroIndividual.insumo.$in.forEach((insumo, index) => {
+          // regresa mongoose.Types.ObjectId(area);
+          filtroIndividual.insumo.$in[index] = isObjectIdValid(insumo);
+        });
+      }
+      if (req.query.procedencias && req.query.procedencias !== "[]") {
+        filtroIndividual.procedencia = {
+          $in: JSON.parse(req.query.procedencias),
+        };
+      }
+
+      let filtroStock = {...filtroIndividual};
+      delete filtroStock.fecha;
+      delete filtroStock.origen;
+      filtroStock.area = filtroIndividual.origen;
+
+      let filtroSolicitud = {...filtroIndividual};
+      delete filtroSolicitud.fecha;
+      delete filtroSolicitud.procedencia;
+      if (filtroIndividual.insumo) {
+        delete filtroSolicitud.insumo;
+        filtroSolicitud["insumos.insumo"] = filtroIndividual.insumo;
+      }
+
       let reporte = await FarmaciaStock.aggregate()
-        // .match(filtro)
+        .match(filtroStock)
         // unionWith() => Stock, Solicitudes, Minimos)?
         // Stock
         .project({
@@ -640,9 +700,15 @@ app.get(
         .unionWith({
           coll: "FarmaciaSolicitudes",
           pipeline: [
-            {$match: {estado: "Pendiente"}},
+            {
+              $match: {
+                ...filtroSolicitud,
+                estado: "Pendiente",
+              },
+            },
             {$project: {_id: 0, origen: 1, insumos: 1}},
             {$unwind: "$insumos"},
+            {$match: filtroSolicitud},
             {
               $project: {
                 area: "$origen",
@@ -687,7 +753,8 @@ app.get(
                     },
                   },
                   {
-                    "insumos.recibido": {$exists: true},
+                    "insumos.procedencia": filtroIndividual.procedencia || {$exists: true},
+                    "insumos.recibido": filtroIndividual.fecha,
                   },
                 ],
               },
@@ -697,11 +764,10 @@ app.get(
                 _id: 0,
                 "insumos.insumo": 1,
                 "insumos.cantidad": 1,
+                "insumos.procedencia": 1,
                 "insumos.recibido": 1,
               },
             },
-            {$sort: {"insumos.recibido": -1, _id: -1}},
-            {$limit: 1},
             // UNIR Transferencia(in) RECIBIDAS.
             {
               $unionWith: {
@@ -721,7 +787,8 @@ app.get(
                           },
                         },
                         {
-                          "insumos.recibido": {$exists: true},
+                          "insumos.procedencia": filtroIndividual.procedencia || {$exists: true},
+                          "insumos.recibido": filtroIndividual.fecha,
                         },
                       ],
                     },
@@ -731,17 +798,13 @@ app.get(
                       _id: 0,
                       "insumos.insumo": 1,
                       "insumos.cantidad": 1,
+                      "insumos.procedencia": 1,
                       "insumos.recibido": 1,
                     },
                   },
-                  {$sort: {"insumos.recibido": -1, _id: -1}},
-                  {$limit: 1},
                 ],
               },
             },
-            {$sort: {"insumos.recibido": -1, _id: -1}},
-            {$limit: 1},
-            // filter unwind.. or unwind and match..
             {$unwind: "$insumos"},
             {
               $match: {
@@ -752,7 +815,8 @@ app.get(
                     },
                   },
                   {
-                    "insumos.recibido": {$exists: true},
+                    "insumos.procedencia": filtroIndividual.procedencia || {$exists: true},
+                    "insumos.recibido": filtroIndividual.fecha,
                   },
                 ],
               },
@@ -760,7 +824,6 @@ app.get(
             {
               $group: {
                 _id: {insumo: "$insumos.insumo"},
-                recibido: {$first: "$insumos.recibido"},
                 cantidad: {$sum: "$insumos.cantidad"},
               },
             },
@@ -768,53 +831,60 @@ app.get(
           as: "total_ingreso",
         })
         .addFields({
-          recibido_ingreso: {$first: "$total_ingreso.recibido"},
-          total_ingreso: {$first: "$total_ingreso.cantidad"},
+          total_ingreso: {$ifNull: [{$first: "$total_ingreso.cantidad"}, 0]},
         })
-        // lookup() => Egresos. (Retirados desde ultimo Ingreso)
+        // lookup() => Egresos. (Retirados)
         // FarmaciaTransferencias
         .lookup({
           from: "FarmaciaTransferencias",
           let: {
             areaTmp: "$area",
-            fechaTmp: "$recibido_ingreso",
             insumoTmp: "$insumo",
           },
           pipeline: [
             {
               $match: {
-                $expr: {
-                  $and: [
-                    {
-                      $eq: ["$origen", "$$areaTmp"],
+                $and: [
+                  {
+                    $expr: {
+                      $and: [
+                        {
+                          $eq: ["$origen", "$$areaTmp"],
+                        },
+                        {$in: ["$$insumoTmp", "$insumos.insumo"]},
+                      ],
                     },
-                    {
-                      $gte: ["$fecha", "$$fechaTmp"],
-                    },
-                    {$in: ["$$insumoTmp", "$insumos.insumo"]},
-                  ],
-                },
+                  },
+                  {
+                    "insumos.procedencia": filtroIndividual.procedencia || {$exists: true},
+                    "insumos.retirado": filtroIndividual.fecha,
+                  },
+                ],
               },
             },
             {
               $project: {
                 _id: 0,
                 "insumos.insumo": 1,
-                "insumos.retirado": 1,
                 "insumos.cantidad": 1,
+                "insumos.procedencia": 1,
+                "insumos.retirado": 1,
               },
             },
             {$unwind: "$insumos"},
             {
               $match: {
-                $expr: {
-                  $and: [
-                    {$eq: ["$$insumoTmp", "$insumos.insumo"]},
-                    {
-                      $gte: ["$insumos.retirado", "$$fechaTmp"],
+                $and: [
+                  {
+                    $expr: {
+                      $eq: ["$insumos.insumo", "$$insumoTmp"],
                     },
-                  ],
-                },
+                  },
+                  {
+                    "insumos.procedencia": filtroIndividual.procedencia || {$exists: true},
+                    "insumos.retirado": filtroIndividual.fecha,
+                  },
+                ],
               },
             },
             {
@@ -834,25 +904,29 @@ app.get(
           from: "InsumoEntregas",
           let: {
             areaTmp: "$area",
-            fechaTmp: "$recibido_ingreso",
             insumoTmp: "$insumo",
           },
           pipeline: [
             {
               $match: {
-                $expr: {
-                  $and: [
-                    {
-                      $eq: ["$origen", "$$areaTmp"],
+                $and: [
+                  {
+                    $expr: {
+                      $and: [
+                        {
+                          $eq: ["$origen", "$$areaTmp"],
+                        },
+                        {
+                          $eq: ["$insumo", "$$insumoTmp"],
+                        },
+                      ],
                     },
-                    {
-                      $eq: ["$insumo", "$$insumoTmp"],
-                    },
-                    {
-                      $gte: ["$retirado", "$$fechaTmp"],
-                    },
-                  ],
-                },
+                  },
+                  {
+                    procedencia: filtroIndividual.procedencia || {$exists: true},
+                    retirado: filtroIndividual.fecha,
+                  },
+                ],
               },
             },
             {
@@ -879,25 +953,29 @@ app.get(
           from: "FarmaciaDescartes",
           let: {
             areaTmp: "$area",
-            fechaTmp: "$recibido_ingreso",
             insumoTmp: "$insumo",
           },
           pipeline: [
             {
               $match: {
-                $expr: {
-                  $and: [
-                    {
-                      $eq: ["$origen", "$$areaTmp"],
+                $and: [
+                  {
+                    $expr: {
+                      $and: [
+                        {
+                          $eq: ["$origen", "$$areaTmp"],
+                        },
+                        {
+                          $eq: ["$insumo", "$$insumoTmp"],
+                        },
+                      ],
                     },
-                    {
-                      $eq: ["$insumo", "$$insumoTmp"],
-                    },
-                    {
-                      $gte: ["$retirado", "$$fechaTmp"],
-                    },
-                  ],
-                },
+                  },
+                  {
+                    procedencia: filtroIndividual.procedencia || {$exists: true},
+                    retirado: filtroIndividual.fecha,
+                  },
+                ],
               },
             },
             {
@@ -925,7 +1003,7 @@ app.get(
           descartes_otros: {$first: "$descartes_otros.cantidad_otros"},
         })
         .addFields({
-          // egreso_consumido (entregas / descarte(utilizado)
+          // egreso_consumido (entregas / descarte(utilizado))
           egreso_consumido: {
             $add: [{$ifNull: ["$entregas", 0]}, {$ifNull: ["$descartes_consumido", 0]}],
           },
@@ -955,9 +1033,6 @@ app.get(
         .addFields({
           categoriaDB: "$insumoDB.categoria",
           insumoDB: "$insumoDB.nombre",
-          recibido_ingreso: {
-            $dateToString: {format: "%Y-%m-%d", date: "$recibido_ingreso"},
-          },
         })
         .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1});
 
@@ -966,7 +1041,6 @@ app.get(
         reporte,
       });
     } catch (err) {
-      console.log(err);
       return errorMessage(res, err, err.code);
     }
   }
@@ -1009,7 +1083,7 @@ app.put(
         ) {
           return errorMessage(res, {message: "Acceso Denegado."}, 401);
         }
-        let retirado = new Date();
+        let retirado = Date.now();
         // recorrer insumos
         for (let index = 0; index < transferenciaDB.insumos.length; index++) {
           // Modificar stock

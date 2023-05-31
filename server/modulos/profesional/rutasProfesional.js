@@ -2,9 +2,11 @@ const express = require("express");
 
 const _pick = require("lodash/pick");
 
-const Profesional = require("./models/profesional");
+const {verificaToken, verificaAdmin_Role} = require(process.env.MAIN_FOLDER +
+  "/middlewares/autenticacion");
+const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
 
-const {verificaToken, verificaAdmin_Role} = require("../../middlewares/autenticacion");
+const Profesional = require("./models/profesional");
 
 const app = express();
 
@@ -67,7 +69,7 @@ function especialidadBusqueda(filtro, todovacio) {
 // ============================
 // Crear Profesional
 // ============================
-app.post("/profesional", [verificaToken, verificaAdmin_Role], (req, res) => {
+app.post("/profesional", [verificaToken, verificaAdmin_Role], async (req, res) => {
   try {
     let listaProfesionalCrear = listaProfesional.slice();
 
@@ -84,80 +86,49 @@ app.post("/profesional", [verificaToken, verificaAdmin_Role], (req, res) => {
       }
     }
     if (todovacio === true) {
-      return res.status(400).json({
-        ok: false,
-        err: {
-          message: "No se envió ningún dato.",
-        },
-      });
+      return errorMessage(res, {message: "No se envió ningún dato."}, 412);
     }
 
     body["usuario_modifico"] = req.usuario._id;
 
-    let profesional = new Profesional(body);
-
     // SALVADO EN BD
-    profesional.save((err, profesionalDB) => {
-      if (err) {
-        return res.status(500).json({
-          ok: false,
-          err,
-        });
-      }
+    let profesionalDB = await new Profesional(body).save();
+    if (!profesionalDB) {
+      return errorMessage(res, {message: "Error al guardar el profesional."}, 400);
+    }
 
-      res.status(201).json({
-        ok: true,
-        profesional: profesionalDB,
-      });
+    return res.status(201).json({
+      ok: true,
+      profesional: profesionalDB,
     });
-  } catch (error) {
-    return res.status(666).json({
-      ok: false,
-      err: {
-        message: `Error Inesperado: ${error}`,
-      },
-    });
+  } catch (err) {
+    return errorMessage(res, err, err.code);
   }
 });
 
 // ===========================
 //  Buscar Profesionales con los filtros recibidos y mostrar select
 // ===========================
-app.get("/profesional/buscar", [verificaToken], (req, res) => {
+app.get("/profesional/buscar", [verificaToken], async (req, res) => {
   try {
     // Toma los datos Recibidos
     let filtro = req.query.profesional || "{}";
     try {
       filtro = JSON.parse(filtro);
     } catch (error) {
-      return res.status(400).json({
-        ok: false,
-        err: {
-          message: `Error con el dato, para el Filtro.`,
-        },
-      });
+      return errorMessage(res, {message: "Error con el dato, para el Filtro."}, 412);
     }
     let select = req.query.select || "";
     try {
       select = select.toString();
     } catch (error) {
-      return res.status(400).json({
-        ok: false,
-        err: {
-          message: `Error con el dato, para el Select.`,
-        },
-      });
+      return errorMessage(res, {message: "Error con el dato, para el Select."}, 412);
     }
     let populate = req.query.populate || "true";
     try {
       populate = populate.toString();
     } catch (error) {
-      return res.status(400).json({
-        ok: false,
-        err: {
-          message: `Error con el dato, para el Populate.`,
-        },
-      });
+      return errorMessage(res, {message: "Error con el dato, para el Populate."}, 412);
     }
     // Revisa que se haya enviado por lo menos un filtro y elimina propiedades vacias.
     let todovacio = true;
@@ -189,106 +160,42 @@ app.get("/profesional/buscar", [verificaToken], (req, res) => {
       }
     }
     // if (todovacio === true) {
-    //     return res.status(400).json({
-    //         ok: false,
-    //         err: {
-    //             message: `No se envió ningún filtro de busqueda.`
-    //         }
-    //     });
-    // };
+    //   return errorMessage(res, {message: "No se envió ningún filtro."}, 412);
+    // }
     // Revisa permisos del cliente
-    // if (!pacienteAdmin(req.usuario)) {
-    //     filtro.estado = true
-    // };
+    if (req.usuario.role !== "ADMIN_ROLE") {
+      filtro.estado = true;
+    }
+
+    // Prepara la busqueda para la BD
+    let profesionalesDB = Profesional.find(filtro)
+      .collation({locale: "es", numericOrdering: true})
+      .select(select);
+    if (populate == "true") {
+      profesionalesDB.populate("usuario_modifico", "nombre apellido nombreC");
+      profesionalesDB.populate("especialidades.unidad_atencion", "id area zona_us direccion");
+    }
 
     // Realiza la busqueda en la BD
-    if (populate == "true") {
-      Profesional.find(filtro)
-        .collation({locale: "es", numericOrdering: true})
-        .select(select)
-        // .sort(orden)
-        // .limit(limite)
-        .populate("usuario_modifico", "nombre apellido nombreC")
-        .populate("especialidades.unidad_atencion", "id area zona_us direccion")
-        .exec((err, profesionalesDB) => {
-          if (err) {
-            return res.status(500).json({
-              ok: false,
-              err,
-            });
-          }
+    profesionalesDB = await profesionalesDB.exec();
 
-          Profesional.countDocuments(filtro, (err, conteo) => {
-            if (err) {
-              return res.status(500).json({
-                ok: false,
-                err,
-              });
-            }
-
-            res.json({
-              ok: true,
-              profesionales: profesionalesDB,
-              cuantos: conteo,
-            });
-          });
-        });
-    } else {
-      Profesional.find(filtro)
-        .collation({locale: "es", numericOrdering: true})
-        .select(select)
-        // .sort(orden)
-        // .limit(limite)
-        // .populate('usuario_modifico', 'nombre apellido nombreC')
-        // .populate('especialidades.unidad_atencion', 'id area zona_us direccion')
-        .exec((err, profesionalesDB) => {
-          if (err) {
-            return res.status(500).json({
-              ok: false,
-              err,
-            });
-          }
-
-          Profesional.countDocuments(filtro, (err, conteo) => {
-            if (err) {
-              return res.status(500).json({
-                ok: false,
-                err,
-              });
-            }
-
-            res.json({
-              ok: true,
-              profesionales: profesionalesDB,
-              cuantos: conteo,
-            });
-          });
-        });
-    }
-  } catch (error) {
-    return res.status(666).json({
-      ok: false,
-      err: {
-        message: `Error Inesperado: ${error}`,
-      },
+    return res.status(200).json({
+      ok: true,
+      profesionales: profesionalesDB,
     });
+  } catch (err) {
+    return errorMessage(res, err, err.code);
   }
 });
 
 // ============================
 // Modificar Profesional por id
 // ============================
-app.put("/profesional/:id", [verificaToken, verificaAdmin_Role], (req, res) => {
+app.put("/profesional/:id", [verificaToken, verificaAdmin_Role], async (req, res) => {
   try {
     if (!req.params.id || req.params.id === "undefined") {
-      return res.status(400).json({
-        ok: false,
-        err: {
-          message: "No se envió el ID.",
-        },
-      });
+      return errorMessage(res, {message: "No se envió el ID."}, 412);
     }
-    let id = req.params.id;
 
     let listaProfesionalCrear = listaProfesional.slice();
 
@@ -305,12 +212,7 @@ app.put("/profesional/:id", [verificaToken, verificaAdmin_Role], (req, res) => {
       }
     }
     if (todovacio === true) {
-      return res.status(400).json({
-        ok: false,
-        err: {
-          message: "No se envió ningún dato.",
-        },
-      });
+      return errorMessage(res, {message: "No se envió ningún filtro."}, 412);
     }
 
     body["usuario_modifico"] = req.usuario._id;
@@ -351,96 +253,50 @@ app.put("/profesional/:id", [verificaToken, verificaAdmin_Role], (req, res) => {
     body = {$set, $unset};
 
     // Realiza la busqueda y el Update
-    Profesional.findOneAndUpdate(
-      {_id: id},
-      body,
-      {new: true, runValidators: true, context: "query"},
-      (err, profesionalDB) => {
-        if (err) {
-          return res.status(500).json({
-            ok: false,
-            err,
-          });
-        }
+    let profesionalDB = await Profesional.findOneAndUpdate({_id: req.params.id}, body, {
+      new: true,
+      runValidators: true,
+    }).exec();
 
-        if (!profesionalDB) {
-          return res.status(400).json({
-            ok: false,
-            err: {
-              message: "Profesional no encontrado.",
-            },
-          });
-        }
+    if (!profesionalDB) {
+      return errorMessage(res, {message: "Error al modificar el profesional."}, 400);
+    }
 
-        res.json({
-          ok: true,
-          profesional: profesionalDB,
-        });
-      }
-    );
-  } catch (error) {
-    return res.status(666).json({
-      ok: false,
-      err: {
-        message: `Error Inesperado: ${error}`,
-      },
+    return res.status(200).json({
+      ok: true,
+      profesional: profesionalDB,
     });
+  } catch (err) {
+    return errorMessage(res, err, err.code);
   }
 });
 
 // ============================
 // "Borrar" edita estado a false de Profesional por id
 // ============================
-app.delete("/profesional/:id", [verificaToken, verificaAdmin_Role], (req, res) => {
+app.delete("/profesional/:id", [verificaToken, verificaAdmin_Role], async (req, res) => {
   try {
     if (!req.params.id || req.params.id === "undefined") {
-      return res.status(400).json({
-        ok: false,
-        err: {
-          message: "No se envió el ID.",
-        },
-      });
+      return errorMessage(res, {message: "No se envió el ID."}, 412);
     }
-    let id = req.params.id;
 
-    let cambiaEstado = {
-      estado: false,
-    };
+    // Realiza la busqueda y el Update del estado
+    let profesionalBorrado = await Profesional.findOneAndUpdate(
+      {_id: req.params.id},
+      {estado: false},
+      {new: true}
+    ).exec();
 
-    Profesional.findOneAndUpdate(
-      {_id: id},
-      cambiaEstado,
-      {new: true},
-      (err, profesionalBorrado) => {
-        if (err) {
-          return res.status(500).json({
-            ok: false,
-            err,
-          });
-        }
+    if (!profesionalBorrado) {
+      return errorMessage(res, {message: "Error al borrar el profesional."}, 400);
+    }
 
-        if (!profesionalBorrado) {
-          return res.status(400).json({
-            ok: false,
-            err: {
-              message: "Profesional no encontrado.",
-            },
-          });
-        }
-
-        res.json({
-          ok: true,
-          profesional: profesionalBorrado,
-        });
-      }
-    );
-  } catch (error) {
-    return res.status(666).json({
-      ok: false,
-      err: {
-        message: `Error Inesperado: ${error}`,
-      },
+    return res.status(200).json({
+      ok: true,
+      profesional: profesionalBorrado,
     });
+  } catch (err) {
+    return errorMessage(res, err, err.code);
   }
 });
 

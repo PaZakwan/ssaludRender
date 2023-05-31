@@ -3,10 +3,11 @@ const axios = require("axios");
 
 const _pick = require("lodash/pick");
 
+const {verificaToken} = require(process.env.MAIN_FOLDER + "/middlewares/autenticacion");
+const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
+const {isVacio, objectSetUnset} = require(process.env.MAIN_FOLDER + "/tools/object");
+
 const Paciente = require("./models/paciente");
-const {verificaToken, verificaPaciente} = require("../../middlewares/autenticacion");
-const {errorMessage} = require("../../tools/errorHandler");
-const {isVacio, objectSetUnset} = require("../../tools/object");
 
 const app = express();
 
@@ -37,9 +38,32 @@ let listaPaciente = [
   "estado",
 ];
 
-function pacienteAdmin(usuario) {
+const verificaPacienteLectura = (req, res, next) => {
+  let usuario = req.usuario;
+  if (
+    usuario.tuberculosis > 0 ||
+    usuario.turnero > 0 ||
+    usuario.historial_clinico > 0 ||
+    usuario.farmacia?.general?.reportes ||
+    usuario.farmacia?.general?.admin ||
+    (usuario.farmacia &&
+      Array.isArray(usuario.farmacia.entregas) &&
+      usuario.farmacia.entregas.length >= 1)
+  ) {
+    return next();
+  } else {
+    return errorMessage(res, {message: "Actividad no autorizada."}, 403);
+  }
+};
+
+const verificaPacienteAdmin = (usuario) => {
   try {
-    if (usuario.tuberculosis === 3 || usuario.turnero === 3 || usuario.historial_clinico === 3) {
+    if (
+      usuario.tuberculosis === 3 ||
+      usuario.turnero === 3 ||
+      usuario.historial_clinico === 3 ||
+      usuario.farmacia?.general?.admin
+    ) {
       return true;
     } else {
       return false;
@@ -47,9 +71,9 @@ function pacienteAdmin(usuario) {
   } catch (error) {
     return false;
   }
-}
+};
 
-function pacienteEdit(usuario) {
+const verificaPacienteEdit = (usuario) => {
   try {
     if (
       usuario.tuberculosis > 1 ||
@@ -67,7 +91,7 @@ function pacienteEdit(usuario) {
   } catch (error) {
     return false;
   }
-}
+};
 
 function tuberculosisBusqueda(filtro, todovacio) {
   if (filtro["hist_tuberculosis"]) {
@@ -102,10 +126,10 @@ function tuberculosisBusqueda(filtro, todovacio) {
       delete filtro["hist_tuberculosis.$exists"];
     }
   }
-  return (respuesta = {
+  return {
     filtro,
     todovacio,
-  });
+  };
 }
 
 function historialSalitasBusqueda(filtro, todovacio) {
@@ -151,7 +175,7 @@ function historialSalitasBusqueda(filtro, todovacio) {
 // ============================
 // Mostrar todo los pacientes con un desde y con limite(opcional para paginar respuesta).
 // ============================
-app.get("/paciente", [verificaToken, verificaPaciente], async (req, res) => {
+app.get("/paciente", [verificaToken, verificaPacienteLectura], async (req, res) => {
   try {
     let desde = req.query.desde || 0;
     try {
@@ -177,7 +201,7 @@ app.get("/paciente", [verificaToken, verificaPaciente], async (req, res) => {
     // Revisa permisos del cliente
     let filtro = {};
 
-    if (!pacienteAdmin(req.usuario)) {
+    if (!verificaPacienteAdmin(req.usuario)) {
       filtro = {estado: true};
     }
 
@@ -205,7 +229,7 @@ app.get("/paciente", [verificaToken, verificaPaciente], async (req, res) => {
 // ============================
 // Mostrar un Paciente por ID.
 // ============================
-app.get("/paciente/buscar/:id", [verificaToken, verificaPaciente], async (req, res) => {
+app.get("/paciente/buscar/:id", [verificaToken, verificaPacienteLectura], async (req, res) => {
   try {
     if (!req.params.id) {
       return errorMessage(res, {message: "Falta información para proceder."}, 412);
@@ -214,7 +238,13 @@ app.get("/paciente/buscar/:id", [verificaToken, verificaPaciente], async (req, r
       return errorMessage(res, {message: "El ID de Busqueda no es valido."}, 400);
     }
 
-    let pacienteDB = await Paciente.findOne({_id: req.params.id})
+    let filtro = {_id: req.params.id};
+    // Revisa permisos del cliente
+    if (!verificaPacienteAdmin(req.usuario)) {
+      filtro.estado = true;
+    }
+
+    let pacienteDB = await Paciente.findOne(filtro)
       // .populate("usuario_modifico", "nombre apellido nombreC")
       .populate(
         "hist_tuberculosis.indice.id",
@@ -239,7 +269,7 @@ app.get("/paciente/buscar/:id", [verificaToken, verificaPaciente], async (req, r
 // Mostrar select de Pacientes segun los filtros
 // Agregar sort y limit para obtener solo el ultimo
 // ============================
-app.get("/paciente/buscar", [verificaToken, verificaPaciente], async (req, res) => {
+app.get("/paciente/buscar", [verificaToken, verificaPacienteLectura], async (req, res) => {
   try {
     let filtro = req.query.filtro || "todos";
     if (filtro !== "todos") {
@@ -320,36 +350,30 @@ app.get("/paciente/buscar", [verificaToken, verificaPaciente], async (req, res) 
     }
 
     // Revisa permisos del cliente
-    if (!pacienteAdmin(req.usuario)) {
+    if (!verificaPacienteAdmin(req.usuario)) {
       filtro.estado = true;
     }
 
-    // Realiza la busqueda en la BD
-    let pacientes = null;
+    // Prepara la consulta para la BD
+    let pacientesDB = Paciente.find(filtro)
+      .collation({locale: "es", numericOrdering: true})
+      .select(select)
+      .sort(orden)
+      .limit(limite);
     if (populate === "si") {
-      pacientes = await Paciente.find(filtro)
-        .collation({locale: "es", numericOrdering: true})
-        .select(select)
-        .sort(orden)
-        .limit(limite)
-        // .populate("usuario_modifico", "nombre apellido nombreC")
-        .populate(
-          "hist_tuberculosis.indice.id",
-          "nombre apellido nombreC tipo_doc documento documentoC hist_tuberculosis.tratamiento"
-        )
-        .exec();
-    } else {
-      pacientes = await Paciente.find(filtro)
-        .collation({locale: "es", numericOrdering: true})
-        .select(select)
-        .sort(orden)
-        .limit(limite)
-        .exec();
+      // pacientesDB.populate("usuario_modifico", "nombre apellido nombreC");
+      pacientesDB.populate(
+        "hist_tuberculosis.indice.id",
+        "nombre apellido nombreC tipo_doc documento documentoC hist_tuberculosis.tratamiento"
+      );
     }
+
+    // Realiza la busqueda en la BD
+    pacientesDB = await pacientesDB.exec();
 
     return res.json({
       ok: true,
-      pacientes,
+      pacientes: pacientesDB,
     });
   } catch (err) {
     return errorMessage(res, err, err.code);
@@ -359,9 +383,9 @@ app.get("/paciente/buscar", [verificaToken, verificaPaciente], async (req, res) 
 // ============================
 // Registrar Paciente
 // ============================
-app.post("/paciente", [verificaToken, verificaPaciente], async (req, res) => {
+app.post("/paciente", [verificaToken, verificaPacienteLectura], async (req, res) => {
   try {
-    if (!pacienteEdit(req.usuario)) {
+    if (!verificaPacienteEdit(req.usuario)) {
       return errorMessage(res, {message: "Acceso Denegado."}, 401);
     }
 
@@ -393,14 +417,14 @@ app.post("/paciente", [verificaToken, verificaPaciente], async (req, res) => {
 // ============================
 // Modificar Paciente por id
 // ============================
-app.put("/paciente/:id", [verificaToken, verificaPaciente], async (req, res) => {
+app.put("/paciente/:id", [verificaToken, verificaPacienteLectura], async (req, res) => {
   try {
-    if (!req.params.id || req.params.id == "undefined") {
-      return errorMessage(res, {message: "Falta información para proceder (ID)."}, 412);
+    if (!verificaPacienteEdit(req.usuario)) {
+      return errorMessage(res, {message: "Acceso Denegado."}, 401);
     }
 
-    if (!pacienteEdit(req.usuario)) {
-      return errorMessage(res, {message: "Acceso Denegado."}, 401);
+    if (!req.params.id || req.params.id == "undefined") {
+      return errorMessage(res, {message: "Falta información para proceder (ID)."}, 412);
     }
 
     let listaPacienteUpdate = listaPaciente.slice();
@@ -440,96 +464,81 @@ app.put("/paciente/:id", [verificaToken, verificaPaciente], async (req, res) => 
 // ============================
 // Modificar hist_tuberculosis de Paciente por id
 // ============================
-app.put("/tuberculosis/paciente/:id", [verificaToken, verificaPaciente], (req, res) => {
-  try {
-    if (!req.params.id || req.params.id == "undefined") {
-      return errorMessage(res, {message: "Falta información para proceder (ID)."}, 412);
-    }
+app.put(
+  "/tuberculosis/paciente/:id",
+  [verificaToken, verificaPacienteLectura],
+  async (req, res) => {
+    try {
+      if (req.usuario.tuberculosis < 2) {
+        return errorMessage(res, {message: "Acceso Denegado."}, 401);
+      }
 
-    if (req.usuario.tuberculosis < 2) {
-      return errorMessage(res, {message: "Acceso Denegado."}, 401);
-    }
+      if (!req.params.id || req.params.id == "undefined") {
+        return errorMessage(res, {message: "Falta información para proceder (ID)."}, 412);
+      }
 
-    let listaPacienteTuberculosis = listaPaciente.slice();
-    // Se Agrega hist_tuberculosis a la lista para su modificacion
-    listaPacienteTuberculosis.push("hist_tuberculosis");
+      let listaPacienteTuberculosis = listaPaciente.slice();
+      // Se Agrega hist_tuberculosis a la lista para su modificacion
+      listaPacienteTuberculosis.push("hist_tuberculosis");
 
-    let body = _pick(req.body, listaPacienteTuberculosis);
+      let body = _pick(req.body, listaPacienteTuberculosis);
 
-    // Revisa que se haya enviado por lo menos una propiedad en hist_tuberculosis.
-    let todovacio = true;
-    let $set = {};
-    let $unset = {};
-    for (const key in body) {
-      if (body.hasOwnProperty(key)) {
-        const element = body[key];
-        if (key === "hist_tuberculosis") {
-          // Delete del campo si esta como "null" o "" en hist_tuberculosis
-          for (let key in body["hist_tuberculosis"]) {
-            if (body["hist_tuberculosis"].hasOwnProperty(key)) {
-              let element = body["hist_tuberculosis"][key];
-              if (element === null || element === "" || element.length === 0) {
-                delete body["hist_tuberculosis"][key];
-              } else {
-                todovacio = false;
+      // Revisa que se haya enviado por lo menos una propiedad en hist_tuberculosis.
+      let todovacio = true;
+      let $set = {};
+      let $unset = {};
+      for (const key in body) {
+        if (body.hasOwnProperty(key)) {
+          const element = body[key];
+          if (key === "hist_tuberculosis") {
+            // Delete del campo si esta como "null" o "" en hist_tuberculosis
+            for (let key in body["hist_tuberculosis"]) {
+              if (body["hist_tuberculosis"].hasOwnProperty(key)) {
+                let element = body["hist_tuberculosis"][key];
+                if (element === null || element === "" || element.length === 0) {
+                  delete body["hist_tuberculosis"][key];
+                } else {
+                  todovacio = false;
+                }
               }
             }
-          }
-          $set["hist_tuberculosis"] = body["hist_tuberculosis"];
-        } else {
-          // Delete del campo si esta como "null" o "" en body
-          if (element === null || element === "" || element.length === 0) {
-            $unset[key] = 1;
+            $set["hist_tuberculosis"] = body["hist_tuberculosis"];
           } else {
-            $set[key] = element;
+            // Delete del campo si esta como "null" o "" en body
+            if (element === null || element === "" || element.length === 0) {
+              $unset[key] = 1;
+            } else {
+              $set[key] = element;
+            }
           }
         }
       }
-    }
-    if (todovacio === true) {
-      return res.status(400).json({
-        ok: false,
-        err: {
-          message: "No se envió ningún dato.",
-        },
-      });
-    }
-    $set["usuario_modifico"] = req.usuario._id;
-    $set["hist_tuberculosis"]["usuario_modifico"] = req.usuario._id;
-    body = {$set, $unset};
-
-    // Realiza la busqueda y el Update
-    Paciente.findOneAndUpdate(
-      {_id: req.params.id},
-      body,
-      {new: true, runValidators: true},
-      (err, pacienteDB) => {
-        if (err) {
-          return res.status(500).json({
-            ok: false,
-            err,
-          });
-        }
-
-        if (!pacienteDB) {
-          return res.status(400).json({
-            ok: false,
-            err: {
-              message: "Paciente no encontrado.",
-            },
-          });
-        }
-
-        res.json({
-          ok: true,
-          paciente: pacienteDB,
-        });
+      if (todovacio === true) {
+        return errorMessage(res, {message: "No se envió ningún dato."}, 412);
       }
-    );
-  } catch (err) {
-    return errorMessage(res, err, err.code);
+      $set["usuario_modifico"] = req.usuario._id;
+      $set["hist_tuberculosis"]["usuario_modifico"] = req.usuario._id;
+      body = {$set, $unset};
+
+      // Realiza la busqueda y el Update
+      let pacienteDB = await Paciente.findOneAndUpdate({_id: req.params.id}, body, {
+        new: true,
+        runValidators: true,
+      }).exec();
+
+      if (!pacienteDB) {
+        return errorMessage(res, {message: "Error al guardar el Paciente."}, 400);
+      }
+
+      return res.status(200).json({
+        ok: true,
+        paciente: pacienteDB,
+      });
+    } catch (err) {
+      return errorMessage(res, err, err.code);
+    }
   }
-});
+);
 
 // ============================
 // "Borrar" edita estado a false del Paciente por id
@@ -542,8 +551,12 @@ app.put("/tuberculosis/paciente/:id", [verificaToken, verificaPaciente], (req, r
 // Buscar en RENAPER
 // ============================
 let RENAPER = {tkn: "", date: ""};
-app.get("/paciente/renaper/buscar", [verificaToken, verificaPaciente], async (req, res) => {
+app.get("/paciente/renaper/buscar", [verificaToken, verificaPacienteLectura], async (req, res) => {
   try {
+    // verificar que pueda modificar pacientes
+    if (!verificaPacienteEdit(req.usuario)) {
+      return errorMessage(res, {message: "Acceso Denegado."}, 401);
+    }
     // return errorMessage(res, {message: "El sistema no tiene usuario de RENAPER."}, 444);
     // verificar que el sistema cuanta con la APIKEY del renaper
     // process.env.RENAPER_USR;
@@ -560,11 +573,6 @@ app.get("/paciente/renaper/buscar", [verificaToken, verificaPaciente], async (re
     // req.query.dni; req.query.sx
     if (!req.query.dni || !req.query.sx) {
       return errorMessage(res, {message: "Falta información para proceder (DNI y/o Sexo)."}, 412);
-    }
-
-    // verificar que pueda modificar pacientes
-    if (!pacienteEdit(req.usuario)) {
-      return errorMessage(res, {message: "Acceso Denegado."}, 401);
     }
 
     // verificar que no haya sido verificado, si el paciente ya se encuentra en la BD y Verificado => denegar
