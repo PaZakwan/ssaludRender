@@ -52,7 +52,7 @@ process.env.CORS = JSON.stringify({
     "http://localhost:80",
     "http://localhost:8080", //VUE develop
     `http://${process.env.BASE_URL}:8080`, //VUE develop
-    "http://ssalud.herokuapp.com",
+    "http://ssaludmoreno.onrender.com",
     "http://www.ssaludmoreno.com",
     "http://www.secretariadesaludmoreno.com",
     "http://192.168.185.9",
@@ -65,11 +65,12 @@ process.env.CORS = JSON.stringify({
     "https://localhost:443",
     "https://localhost:8080", //VUE develop
     `https://${process.env.BASE_URL}:8080`, //VUE develop
-    "https://ssalud.herokuapp.com",
+    "https://ssaludmoreno.onrender.com",
     "https://www.ssaludmoreno.com",
     "https://www.secretariadesaludmoreno.com",
     "https://192.168.185.9",
     "https://192.168.104.6",
+    "https://www.google.com",
   ], //servidor que deseas que consuma(FrontEnd) o (*) en caso que sea acceso libre
   credentials: true,
   methods: ["OPTIONS", "GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"],

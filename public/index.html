@@ -1,4 +1,33 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Secretaria de Salud - Moreno</title><link rel="shortcut icon" href="/favicon.ico"/><link rel="icon" type="image/gif" href="/animated_favicon1.gif"/><script async src="/static/fontawesome6.1.1/js/all.min.js"></script><script defer="defer" src="/js/chunk-vendors.99481e3a.js"></script><script defer="defer" src="/js/app.1c1a2547.js"></script><link href="/css/chunk-vendors.b90566c8.css" rel="stylesheet"><link href="/css/app.f66a2ae5.css" rel="stylesheet"></head><body><noscript><strong>Lo siento, pero la pagina no funcionara sin Javascript Habilitado. Por favor Habilite Javascript para poder continuar</strong></noscript><div id="app"></div></body><script>// Elimina el comportamiento de modificar los valores con la rueda en los input type number
+<!doctype html><html lang="es"><head><meta charset="utf-8"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Secretaria de Salud - Moreno</title><link rel="shortcut icon" href="/favicon.ico"/><link rel="icon" type="image/gif" href="/animated_favicon1.gif"/><script async src="/static/fontawesome6.1.1/js/all.min.js"></script><style>.mainLoad {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 80vh;
+      }
+      .loadingText {
+        margin-bottom: 18px;
+        width: 100%;
+        text-align: center;
+        font-size: 26px;
+        font-weight: bold;
+        color: black;
+      }
+      .loading {
+        border: 16px solid #bdbdbd;
+        border-top: 16px solid teal;
+        border-radius: 50%;
+        width: 120px;
+        height: 120px;
+        animation: spin 2s linear infinite;
+      }
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }</style><script defer="defer" src="/js/chunk-vendors.99481e3a.js"></script><script defer="defer" src="/js/app.60db996d.js"></script><link href="/css/chunk-vendors.b90566c8.css" rel="stylesheet"><link href="/css/app.f66a2ae5.css" rel="stylesheet"></head><body><noscript><strong>Lo siento, pero la pagina no funcionara sin Javascript Habilitado. Por favor Habilite Javascript para poder continuar</strong></noscript><div id="app" class="mainLoad"><div><div class="loadingText">Cargando...</div><div class="loading"></div></div></div></body><script>// Elimina el comportamiento de modificar los valores con la rueda en los input type number
     document.addEventListener("wheel", function (event) {
       if (
         document.activeElement.type === "number"

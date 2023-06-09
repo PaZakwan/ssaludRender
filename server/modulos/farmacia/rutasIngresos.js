@@ -149,7 +149,7 @@ app.get(
               //   },
               // },
               // no esta todo recibido
-              undefined,
+              "$noRetornaNada",
             ],
           },
           // Permitir editar todo solamente si no tiene nada recibido.
@@ -209,7 +209,7 @@ app.get(
               //   },
               // },
               // no esta todo recibido
-              undefined,
+              "$noRetornaNada",
             ],
           },
           // retirado si todos fueron retirados...
@@ -234,7 +234,7 @@ app.get(
               //   },
               // },
               // no esta todo retirado
-              undefined,
+              "$noRetornaNada",
             ],
           },
           // Permitir editar todo solamente si no tiene nada retirado.
@@ -267,8 +267,14 @@ app.get(
         .addFields({
           "insumos.insumoDB": "$insumos.insumoDB.nombre",
           "insumos.categoriaDB": "$insumos.insumoDB.categoria",
+          "insumos.lote": {$ifNull: ["$insumos.lote", "$noRetornaNada"]},
           "insumos.vencimiento": {
-            $dateToString: {format: "%Y-%m-%d", date: "$insumos.vencimiento"},
+            $ifNull: [
+              {
+                $dateToString: {format: "%Y-%m-%d", date: "$insumos.vencimiento"},
+              },
+              "$noRetornaNada",
+            ],
           },
         })
         // recomprimir
@@ -589,7 +595,12 @@ app.get(
         })
         .addFields({
           // fecha: {$dateToString: {format: "%Y-%m-%d", date: "$fecha"}},
-          fec_planificada: {$dateToString: {format: "%Y-%m-%d", date: "$fec_planificada"}},
+          fec_planificada: {
+            $ifNull: [
+              {$dateToString: {format: "%Y-%m-%d", date: "$fec_planificada"}},
+              "$noRetornaNada",
+            ],
+          },
           // recibido si todos fueron recibidos...
           recibido: {
             $cond: [
@@ -612,7 +623,7 @@ app.get(
               //   },
               // },
               // no esta todo recibido
-              undefined,
+              "$noRetornaNada",
             ],
           },
           // retirado si todos fueron retirados...
@@ -637,7 +648,7 @@ app.get(
               //   },
               // },
               // no esta todo retirado
-              undefined,
+              "$noRetornaNada",
             ],
           },
           // Permitir editar todo solamente si no tiene nada retirado.
@@ -670,8 +681,14 @@ app.get(
         .addFields({
           "insumos.insumoDB": "$insumos.insumoDB.nombre",
           "insumos.categoriaDB": "$insumos.insumoDB.categoria",
+          "insumos.lote": {$ifNull: ["$insumos.lote", "$noRetornaNada"]},
           "insumos.vencimiento": {
-            $dateToString: {format: "%Y-%m-%d", date: "$insumos.vencimiento"},
+            $ifNull: [
+              {
+                $dateToString: {format: "%Y-%m-%d", date: "$insumos.vencimiento"},
+              },
+              "$noRetornaNada",
+            ],
           },
         })
         // recomprimir
