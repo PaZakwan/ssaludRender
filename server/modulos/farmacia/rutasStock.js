@@ -5,7 +5,7 @@ const _pick = require("lodash/pick");
 const {verificaToken, verificaArrayPropValue} = require(process.env.MAIN_FOLDER +
   "/middlewares/autenticacion");
 const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
-const {isObjectIdValid} = require(process.env.MAIN_FOLDER + "/tools/object");
+const {isObjectIdValid, dateUTC} = require(process.env.MAIN_FOLDER + "/tools/object");
 
 const modificarStockInc = require("./farmaciaHelper");
 const FarmaciaStock = require("./models/farmacia_stock");
@@ -642,13 +642,64 @@ app.get(
       // para entregas/descartes
       let filtroIndividual = {};
       if (req.query.desde && req.query.hasta) {
-        filtroIndividual.fecha = {$gte: new Date(req.query.desde), $lte: new Date(req.query.hasta)};
-        if (isNaN(filtroIndividual.fecha.$gte) || isNaN(filtroIndividual.fecha.$lte)) {
-          return errorMessage(res, {message: "La fecha del Filtro no es valida."}, 400);
+        let temp = dateUTC({
+          date: req.query.desde,
+          hours: "00:00:00.000",
+          timezone: req.get("timezoneoffset"),
+        });
+        switch (temp.error) {
+          case "fecha":
+            return errorMessage(res, {message: "La fecha de Busqueda 'desde' no es valida."}, 400);
+
+          case "timezone":
+            return errorMessage(
+              res,
+              {message: "La zona horaria de Busqueda 'desde' no es valida."},
+              400
+            );
+
+          case "hours":
+            return errorMessage(
+              res,
+              {message: "El horario de Busqueda 'desde' no es valido."},
+              400
+            );
+
+          default:
+            break;
         }
+        (filtroIndividual.fecha ??= {}).$gte = temp;
+        temp = dateUTC({
+          date: req.query.hasta,
+          hours: "23:59:59.999",
+          timezone: req.get("timezoneoffset"),
+        });
+        switch (temp.error) {
+          case "fecha":
+            return errorMessage(res, {message: "La fecha de Busqueda 'hasta' no es valida."}, 400);
+
+          case "timezone":
+            return errorMessage(
+              res,
+              {message: "La zona horaria de Busqueda 'hasta' no es valida."},
+              400
+            );
+
+          case "hours":
+            return errorMessage(
+              res,
+              {message: "El horario de Busqueda 'hasta' no es valido."},
+              400
+            );
+
+          default:
+            break;
+        }
+        (filtroIndividual.fecha ??= {}).$lte = temp;
       } else {
-        return errorMessage(res, {message: "Falta la Fecha del Filtro para proceder."}, 412);
+        return errorMessage(res, {message: "Faltan las Fechas del Filtro para proceder."}, 412);
       }
+
       if (req.query.areas) {
         filtroIndividual.origen = {
           $in: JSON.parse(req.query.areas),

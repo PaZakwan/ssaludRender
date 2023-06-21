@@ -15,8 +15,9 @@ server/uploads/*
 server/uploads/logs/*
 
 # Ignora archivos
-# package-lock.json
-# public/static/config.json
+package-lock.json
+public/static/config.json
+nodemon.json
 
 # omitir ignoracion xD
 !server/config/cert/LEER cert.txt

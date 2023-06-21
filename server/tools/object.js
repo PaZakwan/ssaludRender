@@ -24,6 +24,24 @@ const isDateValid = (date) => {
   }
 };
 
+const dateUTC = ({date, hours = "00:00:00.000", timezone = "+00:00"}) => {
+  try {
+    if (!isDateValid(date)) {
+      return {dato: {date, hours, timezone}, error: "fecha"};
+    }
+    if (!/^(?:[+-](?:2[0-3]|[01][0-9]):[0-5][0-9])$/.test(timezone)) {
+      // offset = req.get("timezoneoffset");
+      return {dato: {date, hours, timezone}, error: "timezone"};
+    }
+    if (!/^(?:(?:2[0-3]|[01][0-9]):[0-5][0-9]:[0-5][0-9].[0-9][0-9][0-9])$/.test(hours)) {
+      return {dato: {date, hours, timezone}, error: "hours"};
+    }
+    return new Date(`${date}T${hours}${timezone}`);
+  } catch (error) {
+    return {dato: {date, hours, timezone}, error};
+  }
+};
+
 const isVacio = (dato, borrar) => {
   try {
     if (!!dato && dato !== null && dato !== undefined) {
@@ -213,6 +231,8 @@ const groupBy = ({array, keys}) => {
 exports.isObjectIdValid = isObjectIdValid;
 
 exports.isDateValid = isDateValid;
+
+exports.dateUTC = dateUTC;
 
 exports.isVacio = isVacio;
 

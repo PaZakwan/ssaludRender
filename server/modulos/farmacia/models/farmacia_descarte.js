@@ -1,4 +1,7 @@
 const mongoose = require("mongoose");
+const {resolve} = require("path");
+
+const {trim_between} = require(resolve(process.env.MAIN_FOLDER, "tools/string"));
 
 let schemaOptions = {
   toObject: {
@@ -52,6 +55,12 @@ let FarmaciaDescarteSchema = new Schema(
       type: String,
       trim: true,
       required: [true, "El Motivo del egreso del mismo es necesario."],
+    },
+
+    justificacion: {
+      type: String,
+      trim: true,
+      set: trim_between,
     },
 
     retirado: {

@@ -4,32 +4,12 @@ const {ObjectId} = require("mongodb");
 const {verificaToken, verificaArrayPropValue} = require(process.env.MAIN_FOLDER +
   "/middlewares/autenticacion");
 const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
+const {sumarProps, dateUTC} = require(process.env.MAIN_FOLDER + "/tools/object");
 
 const HistorialMotivo = require("./models/historial_motivo");
 const Nutricion = require("./models/especialidades/consultas_nutricion");
 
 const app = express();
-
-function sumarProps(object1, object2) {
-  try {
-    let temp = {};
-    Object.keys(object1).forEach((key) => {
-      if (typeof object1[key] == "number" && typeof object2[key] == "number") {
-        temp[key] = object1[key] + object2[key];
-      } else if (typeof object1[key] == "object" && typeof object2[key] == "object") {
-        temp[key] = sumarProps(object1[key], object2[key]);
-      } else {
-        temp[key] = object1[key];
-      }
-    });
-    return temp;
-  } catch (error) {
-    if (!!error.errors) {
-      return error;
-    }
-    return false;
-  }
-}
 
 // ============================
 // Permanencia de las personas que iniciaron "Programa" entre fechas [x,y].
@@ -54,8 +34,66 @@ app.get(
         // estado: {$in: ["Activo", "Abandonado"]},
         motivo_especialidad: "Nutricion",
         descripcion: req.query.programa || "reduccion de peso",
-        createdAt: {$gte: new Date(req.query.desde), $lte: new Date(req.query.hasta)},
       };
+
+      if (req.query.desde) {
+        let temp = dateUTC({
+          date: req.query.desde,
+          hours: "00:00:00.000",
+          timezone: req.get("timezoneoffset"),
+        });
+        switch (temp.error) {
+          case "fecha":
+            return errorMessage(res, {message: "La fecha de Busqueda 'desde' no es valida."}, 400);
+
+          case "timezone":
+            return errorMessage(
+              res,
+              {message: "La zona horaria de Busqueda 'desde' no es valida."},
+              400
+            );
+
+          case "hours":
+            return errorMessage(
+              res,
+              {message: "El horario de Busqueda 'desde' no es valido."},
+              400
+            );
+
+          default:
+            break;
+        }
+        (filtro.createdAt ??= {}).$gte = temp;
+      }
+      if (req.query.hasta) {
+        let temp = dateUTC({
+          date: req.query.hasta,
+          hours: "23:59:59.999",
+          timezone: req.get("timezoneoffset"),
+        });
+        switch (temp.error) {
+          case "fecha":
+            return errorMessage(res, {message: "La fecha de Busqueda 'hasta' no es valida."}, 400);
+
+          case "timezone":
+            return errorMessage(
+              res,
+              {message: "La zona horaria de Busqueda 'hasta' no es valida."},
+              400
+            );
+
+          case "hours":
+            return errorMessage(
+              res,
+              {message: "El horario de Busqueda 'hasta' no es valido."},
+              400
+            );
+
+          default:
+            break;
+        }
+        (filtro.createdAt ??= {}).$lte = temp;
+      }
 
       let historialesRespuestaDB = await HistorialMotivo.aggregate([
         {
@@ -202,8 +240,67 @@ app.get(
         // estado: {$in: ["Activo", "Abandonado"]},
         motivo_especialidad: "Nutricion",
         descripcion: req.query.programa || "reduccion de peso",
-        createdAt: {$gte: new Date(req.query.desde), $lte: new Date(req.query.hasta)},
       };
+
+      if (req.query.desde) {
+        let temp = dateUTC({
+          date: req.query.desde,
+          hours: "00:00:00.000",
+          timezone: req.get("timezoneoffset"),
+        });
+        switch (temp.error) {
+          case "fecha":
+            return errorMessage(res, {message: "La fecha de Busqueda 'desde' no es valida."}, 400);
+
+          case "timezone":
+            return errorMessage(
+              res,
+              {message: "La zona horaria de Busqueda 'desde' no es valida."},
+              400
+            );
+
+          case "hours":
+            return errorMessage(
+              res,
+              {message: "El horario de Busqueda 'desde' no es valido."},
+              400
+            );
+
+          default:
+            break;
+        }
+        (filtro.createdAt ??= {}).$gte = temp;
+      }
+      if (req.query.hasta) {
+        let temp = dateUTC({
+          date: req.query.hasta,
+          hours: "23:59:59.999",
+          timezone: req.get("timezoneoffset"),
+        });
+        switch (temp.error) {
+          case "fecha":
+            return errorMessage(res, {message: "La fecha de Busqueda 'hasta' no es valida."}, 400);
+
+          case "timezone":
+            return errorMessage(
+              res,
+              {message: "La zona horaria de Busqueda 'hasta' no es valida."},
+              400
+            );
+
+          case "hours":
+            return errorMessage(
+              res,
+              {message: "El horario de Busqueda 'hasta' no es valido."},
+              400
+            );
+
+          default:
+            break;
+        }
+        (filtro.createdAt ??= {}).$lte = temp;
+      }
+
       let pesoPerdidoEsperado =
         req.query.pesoPerdido == 0 ? 0 : Number(req.query.pesoPerdido) || 1000;
 
@@ -384,8 +481,67 @@ app.get(
         // estado: {$in: ["Activo", "Abandonado"]},
         motivo_especialidad: "Nutricion",
         descripcion: req.query.programa || "reduccion de peso",
-        createdAt: {$gte: new Date(req.query.desde), $lte: new Date(req.query.hasta)},
       };
+
+      if (req.query.desde) {
+        let temp = dateUTC({
+          date: req.query.desde,
+          hours: "00:00:00.000",
+          timezone: req.get("timezoneoffset"),
+        });
+        switch (temp.error) {
+          case "fecha":
+            return errorMessage(res, {message: "La fecha de Busqueda 'desde' no es valida."}, 400);
+
+          case "timezone":
+            return errorMessage(
+              res,
+              {message: "La zona horaria de Busqueda 'desde' no es valida."},
+              400
+            );
+
+          case "hours":
+            return errorMessage(
+              res,
+              {message: "El horario de Busqueda 'desde' no es valido."},
+              400
+            );
+
+          default:
+            break;
+        }
+        (filtro.createdAt ??= {}).$gte = temp;
+      }
+      if (req.query.hasta) {
+        let temp = dateUTC({
+          date: req.query.hasta,
+          hours: "23:59:59.999",
+          timezone: req.get("timezoneoffset"),
+        });
+        switch (temp.error) {
+          case "fecha":
+            return errorMessage(res, {message: "La fecha de Busqueda 'hasta' no es valida."}, 400);
+
+          case "timezone":
+            return errorMessage(
+              res,
+              {message: "La zona horaria de Busqueda 'hasta' no es valida."},
+              400
+            );
+
+          case "hours":
+            return errorMessage(
+              res,
+              {message: "El horario de Busqueda 'hasta' no es valido."},
+              400
+            );
+
+          default:
+            break;
+        }
+        (filtro.createdAt ??= {}).$lte = temp;
+      }
+
       let IMCPerdidoEsperado = req.query.IMCPerdido == 0 ? 0 : Number(req.query.IMCPerdido) || 5;
 
       let historialesRespuestaDB = await HistorialMotivo.aggregate([
@@ -574,8 +730,67 @@ app.get(
         // estado: {$in: ["Activo", "Abandonado"]},
         motivo_especialidad: "Nutricion",
         descripcion: req.query.programa || "reduccion de peso",
-        createdAt: {$gte: new Date(req.query.desde), $lte: new Date(req.query.hasta)},
       };
+
+      if (req.query.desde) {
+        let temp = dateUTC({
+          date: req.query.desde,
+          hours: "00:00:00.000",
+          timezone: req.get("timezoneoffset"),
+        });
+        switch (temp.error) {
+          case "fecha":
+            return errorMessage(res, {message: "La fecha de Busqueda 'desde' no es valida."}, 400);
+
+          case "timezone":
+            return errorMessage(
+              res,
+              {message: "La zona horaria de Busqueda 'desde' no es valida."},
+              400
+            );
+
+          case "hours":
+            return errorMessage(
+              res,
+              {message: "El horario de Busqueda 'desde' no es valido."},
+              400
+            );
+
+          default:
+            break;
+        }
+        (filtro.createdAt ??= {}).$gte = temp;
+      }
+      if (req.query.hasta) {
+        let temp = dateUTC({
+          date: req.query.hasta,
+          hours: "23:59:59.999",
+          timezone: req.get("timezoneoffset"),
+        });
+        switch (temp.error) {
+          case "fecha":
+            return errorMessage(res, {message: "La fecha de Busqueda 'hasta' no es valida."}, 400);
+
+          case "timezone":
+            return errorMessage(
+              res,
+              {message: "La zona horaria de Busqueda 'hasta' no es valida."},
+              400
+            );
+
+          case "hours":
+            return errorMessage(
+              res,
+              {message: "El horario de Busqueda 'hasta' no es valido."},
+              400
+            );
+
+          default:
+            break;
+        }
+        (filtro.createdAt ??= {}).$lte = temp;
+      }
+
       let habitoEsperado =
         req.query.habitoEsperado == 0 ? 0 : Number(req.query.habitoEsperado) || 2;
       let saludable = req.query.saludable || "Si";

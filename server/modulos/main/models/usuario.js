@@ -34,6 +34,11 @@ const permisosFarmacia = new mongoose.Schema({
       min: 0,
       max: 1,
     },
+    opciones: {
+      type: Number,
+      min: 0,
+      max: 1,
+    },
     reportes: {
       type: Number,
       min: 0,

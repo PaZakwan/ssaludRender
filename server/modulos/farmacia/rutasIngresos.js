@@ -5,10 +5,10 @@ const _pick = require("lodash/pick");
 const {verificaToken, verificaArrayPropValue} = require(process.env.MAIN_FOLDER +
   "/middlewares/autenticacion");
 const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
-const {isVacio, objectSetUnset, isObjectIdValid, sumarProps} = require(process.env.MAIN_FOLDER +
-  "/tools/object");
+const {isVacio, objectSetUnset, isObjectIdValid, sumarProps, dateUTC} = require(process.env
+  .MAIN_FOLDER + "/tools/object");
 
-const modificarStockInc = require("./farmaciaHelper");
+// const modificarStockInc = require("./farmaciaHelper");
 const FarmaciaTransferencia = require("./models/farmacia_transferencia");
 const FarmaciaIngreso = require("./models/farmacia_ingreso");
 
@@ -111,14 +111,63 @@ app.get(
           },
         };
       }
-      if (req.query.desde && req.query.hasta) {
-        filtro.fecha = {
-          $gte: new Date(req.query.desde),
-          $lte: new Date(`${req.query.hasta}T23:59:59.999+00:00`),
-        };
-        if (isNaN(filtro.fecha.$gte) || isNaN(filtro.fecha.$lte)) {
-          return errorMessage(res, {message: "La fecha de Busqueda no es valida."}, 400);
+      if (req.query.desde) {
+        let temp = dateUTC({
+          date: req.query.desde,
+          hours: "00:00:00.000",
+          timezone: req.get("timezoneoffset"),
+        });
+        switch (temp.error) {
+          case "fecha":
+            return errorMessage(res, {message: "La fecha de Busqueda 'desde' no es valida."}, 400);
+
+          case "timezone":
+            return errorMessage(
+              res,
+              {message: "La zona horaria de Busqueda 'desde' no es valida."},
+              400
+            );
+
+          case "hours":
+            return errorMessage(
+              res,
+              {message: "El horario de Busqueda 'desde' no es valido."},
+              400
+            );
+
+          default:
+            break;
         }
+        (filtro.fecha ??= {}).$gte = temp;
+      }
+      if (req.query.hasta) {
+        let temp = dateUTC({
+          date: req.query.hasta,
+          hours: "23:59:59.999",
+          timezone: req.get("timezoneoffset"),
+        });
+        switch (temp.error) {
+          case "fecha":
+            return errorMessage(res, {message: "La fecha de Busqueda 'hasta' no es valida."}, 400);
+
+          case "timezone":
+            return errorMessage(
+              res,
+              {message: "La zona horaria de Busqueda 'hasta' no es valida."},
+              400
+            );
+
+          case "hours":
+            return errorMessage(
+              res,
+              {message: "El horario de Busqueda 'hasta' no es valido."},
+              400
+            );
+
+          default:
+            break;
+        }
+        (filtro.fecha ??= {}).$lte = temp;
       }
 
       // Ingresos
@@ -566,14 +615,63 @@ app.get(
           },
         };
       }
-      if (req.query.desde && req.query.hasta) {
-        filtro.fecha = {
-          $gte: new Date(req.query.desde),
-          $lte: new Date(`${req.query.hasta}T23:59:59.999+00:00`),
-        };
-        if (isNaN(filtro.fecha.$gte) || isNaN(filtro.fecha.$lte)) {
-          return errorMessage(res, {message: "La fecha de Busqueda no es valida."}, 400);
+      if (req.query.desde) {
+        let temp = dateUTC({
+          date: req.query.desde,
+          hours: "00:00:00.000",
+          timezone: req.get("timezoneoffset"),
+        });
+        switch (temp.error) {
+          case "fecha":
+            return errorMessage(res, {message: "La fecha de Busqueda 'desde' no es valida."}, 400);
+
+          case "timezone":
+            return errorMessage(
+              res,
+              {message: "La zona horaria de Busqueda 'desde' no es valida."},
+              400
+            );
+
+          case "hours":
+            return errorMessage(
+              res,
+              {message: "El horario de Busqueda 'desde' no es valido."},
+              400
+            );
+
+          default:
+            break;
         }
+        (filtro.fecha ??= {}).$gte = temp;
+      }
+      if (req.query.hasta) {
+        let temp = dateUTC({
+          date: req.query.hasta,
+          hours: "23:59:59.999",
+          timezone: req.get("timezoneoffset"),
+        });
+        switch (temp.error) {
+          case "fecha":
+            return errorMessage(res, {message: "La fecha de Busqueda 'hasta' no es valida."}, 400);
+
+          case "timezone":
+            return errorMessage(
+              res,
+              {message: "La zona horaria de Busqueda 'hasta' no es valida."},
+              400
+            );
+
+          case "hours":
+            return errorMessage(
+              res,
+              {message: "El horario de Busqueda 'hasta' no es valido."},
+              400
+            );
+
+          default:
+            break;
+        }
+        (filtro.fecha ??= {}).$lte = temp;
       }
 
       // Transferencias Remitos (clearing)
@@ -996,14 +1094,63 @@ app.get(
           },
         };
       }
-      if (req.query.desde && req.query.hasta) {
-        filtro.fecha = {
-          $gte: new Date(req.query.desde),
-          $lte: new Date(`${req.query.hasta}T23:59:59.999+00:00`),
-        };
-        if (isNaN(filtro.fecha.$gte) || isNaN(filtro.fecha.$lte)) {
-          return errorMessage(res, {message: "La fecha de Busqueda no es valida."}, 400);
+      if (req.query.desde) {
+        let temp = dateUTC({
+          date: req.query.desde,
+          hours: "00:00:00.000",
+          timezone: req.get("timezoneoffset"),
+        });
+        switch (temp.error) {
+          case "fecha":
+            return errorMessage(res, {message: "La fecha de Busqueda 'desde' no es valida."}, 400);
+
+          case "timezone":
+            return errorMessage(
+              res,
+              {message: "La zona horaria de Busqueda 'desde' no es valida."},
+              400
+            );
+
+          case "hours":
+            return errorMessage(
+              res,
+              {message: "El horario de Busqueda 'desde' no es valido."},
+              400
+            );
+
+          default:
+            break;
         }
+        (filtro.fecha ??= {}).$gte = temp;
+      }
+      if (req.query.hasta) {
+        let temp = dateUTC({
+          date: req.query.hasta,
+          hours: "23:59:59.999",
+          timezone: req.get("timezoneoffset"),
+        });
+        switch (temp.error) {
+          case "fecha":
+            return errorMessage(res, {message: "La fecha de Busqueda 'hasta' no es valida."}, 400);
+
+          case "timezone":
+            return errorMessage(
+              res,
+              {message: "La zona horaria de Busqueda 'hasta' no es valida."},
+              400
+            );
+
+          case "hours":
+            return errorMessage(
+              res,
+              {message: "El horario de Busqueda 'hasta' no es valido."},
+              400
+            );
+
+          default:
+            break;
+        }
+        (filtro.fecha ??= {}).$lte = temp;
       }
 
       // Ingresos Proveedores/Carga inicial

@@ -1,5 +1,9 @@
 require("./config/config");
 
+// Variable global para la ruta donde corre el server
+const path = require("path");
+process.env.MAIN_FOLDER = path.resolve(__dirname);
+
 // MONGO CONEXIONES DB
 require("./db_connection");
 
@@ -9,7 +13,6 @@ schedule_task.scheduleRun().catch((error) => console.error("schedule_task.schedu
 
 // WebServer + API Routes
 const express = require("express");
-const path = require("path");
 const history = require("connect-history-api-fallback");
 const cors = require("cors");
 const helmet = require("helmet");
@@ -112,9 +115,6 @@ app.use(function (error, req, res, next) {
   });
   console.error(error.stack);
 });
-
-// Variable global para la ruta donde corre el server
-process.env.MAIN_FOLDER = path.resolve(__dirname);
 
 //Revisando si esta en Heroku
 if (process.env.HEROKU) {

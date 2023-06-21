@@ -27,7 +27,16 @@
         100% {
           transform: rotate(360deg);
         }
-      }</style><script defer="defer" src="/js/chunk-vendors.99481e3a.js"></script><script defer="defer" src="/js/app.60db996d.js"></script><link href="/css/chunk-vendors.b90566c8.css" rel="stylesheet"><link href="/css/app.f66a2ae5.css" rel="stylesheet"></head><body><noscript><strong>Lo siento, pero la pagina no funcionara sin Javascript Habilitado. Por favor Habilite Javascript para poder continuar</strong></noscript><div id="app" class="mainLoad"><div><div class="loadingText">Cargando...</div><div class="loading"></div></div></div></body><script>// Elimina el comportamiento de modificar los valores con la rueda en los input type number
+      }</style><script defer="defer" src="/js/chunk-vendors.61845ecf.js"></script><script defer="defer" src="/js/app.c9eaf180.js"></script><link href="/css/chunk-vendors.caae11f6.css" rel="stylesheet"><link href="/css/app.28776262.css" rel="stylesheet"></head><body><noscript><strong>Lo siento, pero la pagina no funcionara sin Javascript Habilitado. Por favor Habilite Javascript para poder continuar</strong></noscript><div id="app" class="mainLoad"><div id="pageLoading"></div></div></body><script>const pageLoading = document.getElementById("pageLoading");
+    let loadingText = document.createElement("div");
+    loadingText.className = "loadingText";
+    loadingText.innerText = "Cargando...";
+    pageLoading.appendChild(loadingText);
+    let loading = document.createElement("div");
+    loading.className = "loading";
+    pageLoading.appendChild(loading);
+
+    // Elimina el comportamiento de modificar los valores con la rueda en los input type number
     document.addEventListener("wheel", function (event) {
       if (
         document.activeElement.type === "number"

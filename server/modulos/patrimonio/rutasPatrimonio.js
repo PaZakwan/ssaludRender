@@ -202,7 +202,8 @@ app.put(
       }
 
       // Delete del campo si esta como null / "" / undefined /array vacio
-      body = objectSetUnset(body, "unsetCero").dato;
+      // los ceros los guarda para los casos de insumos con stock 0
+      body = objectSetUnset(body, false).dato;
 
       let objetoDB = null;
       if (!isObjectIdValid(req.params.id)) {

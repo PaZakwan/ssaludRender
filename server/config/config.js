@@ -74,7 +74,7 @@ process.env.CORS = JSON.stringify({
   ], //servidor que deseas que consuma(FrontEnd) o (*) en caso que sea acceso libre
   credentials: true,
   methods: ["OPTIONS", "GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"],
-  allowedHeaders: ["Origin", "Content-Type", "Accept", "Authorization", "token"],
+  allowedHeaders: ["Origin", "Content-Type", "Accept", "Authorization", "TimezoneOffset", "token"],
   optionsSuccessStatus: 200,
 });
 
