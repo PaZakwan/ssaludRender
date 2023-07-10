@@ -27,14 +27,17 @@ const isDateValid = (date) => {
 const dateUTC = ({date, hours = "00:00:00.000", timezone = "+00:00"}) => {
   try {
     if (!isDateValid(date)) {
-      return {dato: {date, hours, timezone}, error: "fecha"};
+      return {dato: {date, hours, timezone}, error: "La Fecha no es valida."};
     }
     if (!/^(?:[+-](?:2[0-3]|[01][0-9]):[0-5][0-9])$/.test(timezone)) {
       // offset = req.get("timezoneoffset");
-      return {dato: {date, hours, timezone}, error: "timezone"};
+      return {
+        dato: {date, hours, timezone},
+        error: "La Zona Horaria no es valida.",
+      };
     }
     if (!/^(?:(?:2[0-3]|[01][0-9]):[0-5][0-9]:[0-5][0-9].[0-9][0-9][0-9])$/.test(hours)) {
-      return {dato: {date, hours, timezone}, error: "hours"};
+      return {dato: {date, hours, timezone}, error: "El Horario no es valido."};
     }
     return new Date(`${date}T${hours}${timezone}`);
   } catch (error) {

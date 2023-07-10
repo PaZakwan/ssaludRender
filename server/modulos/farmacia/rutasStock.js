@@ -208,12 +208,18 @@ app.get(
         : {
             detalle: {
               $push: {
-                procedencia: "$procedencia",
-                lote: "$lote",
-                vencimiento: {$dateToString: {format: "%Y-%m-%d", date: "$vencimiento"}},
-                cantidad: "$cantidad",
-                expirado: "$expirado",
-                porExpirar: "$porExpirar",
+                $cond: [
+                  "$cantidad",
+                  {
+                    procedencia: "$procedencia",
+                    lote: "$lote",
+                    vencimiento: {$dateToString: {format: "%Y-%m-%d", date: "$vencimiento"}},
+                    cantidad: "$cantidad",
+                    expirado: "$expirado",
+                    porExpirar: "$porExpirar",
+                  },
+                  "$$REMOVE",
+                ],
               },
             },
           };
@@ -258,12 +264,26 @@ app.get(
             ],
           },
         })
+        // Opciones Minimos
+        .unionWith({
+          coll: "FarmaciaOpciones",
+          pipeline: [
+            {
+              $match: {
+                area: filtro.area,
+                insumo: filtro.insumo || {$exists: true},
+              },
+            },
+            {$project: {_id: 0, area: 1, insumo: 1, cant_min: 1}},
+          ],
+        })
         .group({
           ...{
             _id: {area: "$area", insumo: "$insumo"},
             total: {$sum: "$cantidad"},
             total_expirado: {$sum: {$cond: ["$expirado", "$cantidad", 0]}},
             total_porExpirar: {$sum: {$cond: ["$porExpirar", "$cantidad", 0]}},
+            cant_min: {$sum: "$cant_min"},
           },
           ...detallado,
         })
@@ -275,6 +295,7 @@ app.get(
           total_expirado: 1,
           total_porExpirar: 1,
           detalle: 1,
+          cant_min: {$cond: [{$eq: ["$cant_min", 0]}, "$noRetornaNada", "$cant_min"]},
         })
         .lookup({
           from: "areas",
@@ -301,10 +322,6 @@ app.get(
           _id: {$concat: ["$areaDB", "-", "$insumoDB"]},
         })
         .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1});
-      // XXXXXX  Desarrollar  XXXXXXX
-      // buscar cantidad minima cant_min
-      // $unionWith
-      // cant_min: 14,
 
       return res.status(200).json({
         ok: true,
@@ -528,6 +545,16 @@ app.get(
 
       let stockDB = await FarmaciaStock.aggregate()
         .match(filtro)
+        // Opciones Minimos
+        .unionWith({
+          coll: "FarmaciaOpciones",
+          pipeline: [
+            {
+              $match: filtro,
+            },
+            {$project: {_id: 0, insumo: 1, cant_min: 1}},
+          ],
+        })
         .group({
           _id: {insumo: "$insumo"},
           // subtotal_Otros: {
@@ -579,6 +606,7 @@ app.get(
             },
           },
           total: {$sum: "$cantidad"},
+          cant_min_prom: {$avg: "$cant_min"},
         })
         .addFields({
           subtotal_Otros: {
@@ -647,26 +675,8 @@ app.get(
           hours: "00:00:00.000",
           timezone: req.get("timezoneoffset"),
         });
-        switch (temp.error) {
-          case "fecha":
-            return errorMessage(res, {message: "La fecha de Busqueda 'desde' no es valida."}, 400);
-
-          case "timezone":
-            return errorMessage(
-              res,
-              {message: "La zona horaria de Busqueda 'desde' no es valida."},
-              400
-            );
-
-          case "hours":
-            return errorMessage(
-              res,
-              {message: "El horario de Busqueda 'desde' no es valido."},
-              400
-            );
-
-          default:
-            break;
+        if (temp.error) {
+          return errorMessage(res, {message: temp.error}, 400);
         }
         (filtroIndividual.fecha ??= {}).$gte = temp;
         temp = dateUTC({
@@ -674,26 +684,8 @@ app.get(
           hours: "23:59:59.999",
           timezone: req.get("timezoneoffset"),
         });
-        switch (temp.error) {
-          case "fecha":
-            return errorMessage(res, {message: "La fecha de Busqueda 'hasta' no es valida."}, 400);
-
-          case "timezone":
-            return errorMessage(
-              res,
-              {message: "La zona horaria de Busqueda 'hasta' no es valida."},
-              400
-            );
-
-          case "hours":
-            return errorMessage(
-              res,
-              {message: "El horario de Busqueda 'hasta' no es valido."},
-              400
-            );
-
-          default:
-            break;
+        if (temp.error) {
+          return errorMessage(res, {message: temp.error}, 400);
         }
         (filtroIndividual.fecha ??= {}).$lte = temp;
       } else {
@@ -739,7 +731,7 @@ app.get(
 
       let reporte = await FarmaciaStock.aggregate()
         .match(filtroStock)
-        // unionWith() => Stock, Solicitudes, Minimos)?
+        // unionWith() => Stock, Solicitudes, Minimos
         // Stock
         .project({
           _id: 0,
@@ -769,11 +761,25 @@ app.get(
             },
           ],
         })
+        // Opciones Minimos
+        .unionWith({
+          coll: "FarmaciaOpciones",
+          pipeline: [
+            {
+              $match: {
+                area: filtroIndividual.origen,
+                insumo: filtroIndividual.insumo || {$exists: true},
+              },
+            },
+            {$project: {_id: 0, area: 1, insumo: 1, cant_min: 1}},
+          ],
+        })
         // group() => area - insumo.
         .group({
           _id: {area: "$area", insumo: "$insumo"},
           total_stock: {$sum: "$stock"},
           total_solicitado: {$sum: "$solicitado"},
+          cant_min: {$sum: "$cant_min"},
         })
         .project({
           _id: 0,
@@ -781,6 +787,7 @@ app.get(
           insumo: "$_id.insumo",
           total_stock: 1,
           total_solicitado: 1,
+          cant_min: {$cond: [{$eq: ["$cant_min", 0]}, "$noRetornaNada", "$cant_min"]},
         })
         // lookup() => Ingresos (Recibidos). [Ingreso / Transferencia(in)]
         .lookup({

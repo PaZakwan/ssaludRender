@@ -90,26 +90,8 @@ app.get(
           hours: "00:00:00.000",
           timezone: req.get("timezoneoffset"),
         });
-        switch (temp.error) {
-          case "fecha":
-            return errorMessage(res, {message: "La fecha de Busqueda 'desde' no es valida."}, 400);
-
-          case "timezone":
-            return errorMessage(
-              res,
-              {message: "La zona horaria de Busqueda 'desde' no es valida."},
-              400
-            );
-
-          case "hours":
-            return errorMessage(
-              res,
-              {message: "El horario de Busqueda 'desde' no es valido."},
-              400
-            );
-
-          default:
-            break;
+        if (temp.error) {
+          return errorMessage(res, {message: temp.error}, 400);
         }
         (filtro.fecha ??= {}).$gte = temp;
       }
@@ -119,26 +101,8 @@ app.get(
           hours: "23:59:59.999",
           timezone: req.get("timezoneoffset"),
         });
-        switch (temp.error) {
-          case "fecha":
-            return errorMessage(res, {message: "La fecha de Busqueda 'hasta' no es valida."}, 400);
-
-          case "timezone":
-            return errorMessage(
-              res,
-              {message: "La zona horaria de Busqueda 'hasta' no es valida."},
-              400
-            );
-
-          case "hours":
-            return errorMessage(
-              res,
-              {message: "El horario de Busqueda 'hasta' no es valido."},
-              400
-            );
-
-          default:
-            break;
+        if (temp.error) {
+          return errorMessage(res, {message: temp.error}, 400);
         }
         (filtro.fecha ??= {}).$lte = temp;
       }
@@ -348,26 +312,8 @@ app.get(
           hours: "00:00:00.000",
           timezone: req.get("timezoneoffset"),
         });
-        switch (temp.error) {
-          case "fecha":
-            return errorMessage(res, {message: "La fecha de Busqueda 'desde' no es valida."}, 400);
-
-          case "timezone":
-            return errorMessage(
-              res,
-              {message: "La zona horaria de Busqueda 'desde' no es valida."},
-              400
-            );
-
-          case "hours":
-            return errorMessage(
-              res,
-              {message: "El horario de Busqueda 'desde' no es valido."},
-              400
-            );
-
-          default:
-            break;
+        if (temp.error) {
+          return errorMessage(res, {message: temp.error}, 400);
         }
         (filtro.fecha ??= {}).$gte = temp;
       }
@@ -377,26 +323,8 @@ app.get(
           hours: "23:59:59.999",
           timezone: req.get("timezoneoffset"),
         });
-        switch (temp.error) {
-          case "fecha":
-            return errorMessage(res, {message: "La fecha de Busqueda 'hasta' no es valida."}, 400);
-
-          case "timezone":
-            return errorMessage(
-              res,
-              {message: "La zona horaria de Busqueda 'hasta' no es valida."},
-              400
-            );
-
-          case "hours":
-            return errorMessage(
-              res,
-              {message: "El horario de Busqueda 'hasta' no es valido."},
-              400
-            );
-
-          default:
-            break;
+        if (temp.error) {
+          return errorMessage(res, {message: temp.error}, 400);
         }
         (filtro.fecha ??= {}).$lte = temp;
       }

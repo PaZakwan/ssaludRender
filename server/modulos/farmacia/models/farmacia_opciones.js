@@ -18,7 +18,6 @@ let FarmaciaOpcionesSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "Area",
       required: [true, "El Area a configurar es necesaria."],
-      unique: true,
     },
 
     insumo: {
@@ -30,29 +29,24 @@ let FarmaciaOpcionesSchema = new Schema(
     cant_min: {
       type: Number,
       required: [true, "La Cantidad Minima Alarmante es necesaria."],
+      min: [1, "El valor de {VALUE}, debe ser mayor a 0."],
     },
 
     // cant_solicitar: {
     //   type: Number,
     //   required: [true, "La Cantidad a Solicitar es necesaria."],
     // },
-
-    updatedAt: {
-      type: Date,
-      default: Date.now,
-    },
   },
   schemaOptions
 );
 
-FarmaciaOpcionesSchema.pre("findOneAndUpdate", function (next) {
-  if (this.getUpdate().$set) {
-    this.getUpdate().$set.updatedAt = new Date();
-  } else {
-    this.getUpdate().updatedAt = new Date();
+FarmaciaOpcionesSchema.index(
+  {area: 1, insumo: 1},
+  {
+    name: "Insumo en la Farmacia",
+    unique: "Opcion de Insumo ya existente en la Farmacia, debe ser unico.",
   }
-  next();
-});
+);
 
 FarmaciaOpcionesSchema.plugin(uniqueValidator, {message: "{PATH} debe de ser único."});
 

@@ -177,3 +177,5 @@ const timeNow = function () {
 // +isVacio               todovacio = true          como rutasInsumos
 // +objectSetUnset        $set = {} $unset          como rutasInsumos
 // +populate optional                               como en rutasPatrimonio
+// +librerias             xls-to-json-lc            por alguna como node-xlsx
+// +librerias             xlsx-to-json-lc           por alguna como node-xlsx

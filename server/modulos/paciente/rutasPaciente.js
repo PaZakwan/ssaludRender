@@ -25,6 +25,7 @@ let listaPaciente = [
   "dir_localidad",
   "dir_descripcion",
   "telefono",
+  "telefono_alt",
   "email",
   "fec_nac",
   "sexo",

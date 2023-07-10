@@ -11,30 +11,67 @@
 
 ##### Unreleased
 
+##### [1.7.20230710] - 2023-07-10
+
+- Added a Sistema - Pacientes => Nuevo campo opcional para agregar un Telefono Alternativo del Paciente.
+- Improve a Sistema - Fechas => +object.dateUTC => Mensajes de error centralizados.
+- Improve a Sistema - PDF => key_fillColor => Mejor personalizacion.
+- Fix/Improve a Sistema - Store => Requerido => Ahora tiene en cuenta el valor del 0 (cero) antes no lo contaba como valor posible.
+
+- Added a Farmacia - Insumos => Advertencia al Crear insumos, revisar que no este ya Creado.
+
+- Changed a Farmacia - Ingreso => Colores.
+- Added a Farmacia - Ingreso => +Referencia de Colores, +nuevo filtro Mostrar "Aptos para que Recibamos".
+
+- Changed a Farmacia - Transferencias => Colores.
+- Added a Farmacia - Transferencias => +Referencia de Colores, +nuevo filtro Mostrar "Aptos para que Recibamos" y "Aptos para que Retiremos".
+
+- Changed a Farmacia - Stock => Colores.
+- Added a Farmacia - Stock => +Referencia de Colores, +nuevo filtro Mostrar "Por Debajo Del Recomendado", "Proximo Al Recomendado".
+- Improve a Farmacia - Stock => PDFs => Stocks en cero (con color rojo) segun las opciones de Minimos Recomendados.
+
+- Added a Farmacia - Opciones => Posibilidad de agregar "Minimos Recomendados" de "Insumos" por "Farmacia", con el cual varios reportes tendran en encuenta estos valores.
+
+- Added a Farmacia - Reportes => En el PDF General Detallado se agrego la columna de "Cantidad Recomendada" en base a los minimos seleccionados en Opciones, y la columna de Stock cambia de color en base a su proximidad a la "Cantidad Recomendada".
+  -Rojo : el Stock es 0.
+  -Anaranjado : El Stock es menor a la "Cantidad Recomendada".
+  -Amarillo : El Stock es menor a la "Cantidad Recomendada" x 1.2.
+- Added a Farmacia - Reportes => En el PDF Stock Total del Sistema se agregaron los insumos con cantidad 0 en color Rojo.
+
+- Added a Farmacia - Egresos => +Referencia de Colores.
+- Added a Farmacia - Solicitudes => +Referencia de Colores.
+
+- Improve a Farmacia - Dialogs => Responsive => Mejora la lectura de la celda de Insumo en pantallas mas chicas.
+- Fix a Farmacia - Salidas => Estadistica => No estaba teniendo en cuenta la fecha de los filtros.
+- Fix a Farmacia - Transferencias => Remito => El color en la columna de Vencimientos segun sus fechas no se estaban reflejando en el PDF.
+
 ##### [1.7.20230621] - 2023-06-21
+
+- Added a Sistema - Usuarios => Permiso farmacia.general.opciones para configurar los minimos de insumos en Farmacias.
+- Added a Sistema - Confirm => Se agrego dialog global para confirmacion de funciones.
+- Improve Sistema - Mensajes => Mejor detallados, formato/estilo de texto y sonido en errores.
+- Improve a Sistema - Index => pageLoading => Ahora solo se muestra si el navegador permite scripts sino dialogo de error.
+- Fix/Improve a Sistema - Fechas => +object.dateUTC => fecha UTC con TimezoneOffset.
+- Fix/Improve a Sistema - pdfGen => +generarPDF() => Ahora muestra problemas al generar PDF y no genera PDF en blanco.
 
 - Added a Farmacia - Egresos => Egresos con motivo "Error" ahora solicitara una "Justificacion" Obligatoria.
 - Improve Farmacia - Transferencia => Ahora permite modificar el campo de "Observacion" si algun insumo no se logro retirar.
 - Fix a Farmacia - Transferencia => Formato de Fecha/hora de los encabezados en los Remitos.
+
 - Fix/Improve a Patrimonio - Crear Bien => Mensaje de error, cuando no fallaba y se actualizo codigo con requestAPI.
 - Fix/Improve a Patrimonio - Editar Bien => Al editarse un Insumos con cantidad 0, este perdia la cantidad y con el sus propiedades de entrega/deposito.
-- Added a Sistema - Usuarios => Permiso farmacia.general.opciones para configurar los minimos de insumos en Farmacias.
-- Added a Sistema - Confirm => Se agrego dialog global para confirmacion de funciones.
-- Improve Sistema - Mensajes => Mejor detallados, formato/estilo de texto y sonido en errores.
-- Fix/Improve a Sistema - Fechas => +object.dateUTC => fecha UTC con TimezoneOffset.
-- Fix/Improve a Sistema - pdfGen => +generarPDF() => Ahora muestra problemas al generar PDF y no genera PDF en blanco.
-- Improve a Sistema - Index => pageLoading => Ahora solo se muestra si el navegador permite scripts sino dialogo de error.
 
 ##### [1.7.20230609] - 2023-06-09
 
 - Added a Sistema => Muestra un "Cargando..." cuando se esta cargando la app.. Notable con conexiones lentas.
+- Fix a Sistema - Dialogs => Ahora muestran bien el primer mostrarLoading, en conexiones lentas se notaba mucho mas.
+
 - Added a Farmacia - Entregas/Egresos => Fecha de Carga con hora y minutos.
 - Changed a Farmacia - Entregas/Egresos => Ahora permite borrar las Entregas/Egresos creados en el mismo dia, independientemente de la fecha seleccionada por el usuario.
+- Improve a Farmacia - componentEgresoInsumo => input de insumos.
 - Fix a Farmacia - Insumos => Visibilidad del boton de Borrar.
 - Fix a Farmacia - Ingresos/Transferencias => Formato de Fecha, Hora, en los Dialogs.
 - Fix a Farmacia - Ingresos => Los cargados en versiones anteriores se mostraban mal las procedencias de los mismos.
-- Fix a Sistema - Dialogs => Ahora muestran bien el primer mostrarLoading, en conexiones lentas se notaba mucho mas.
-- Improve a Farmacia - componentEgresoInsumo => input de insumos.
 
 ##### [1.7.20230531] - 2023-05-31
 

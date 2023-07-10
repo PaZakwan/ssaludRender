@@ -77,6 +77,9 @@ let pacienteSchema = new mongoose.Schema(
     telefono: {
       type: String,
     },
+    telefono_alt: {
+      type: String,
+    },
     email: {
       type: String,
       match: [/^([\w-\.]+@([\w-]+\.)+[\w-]{2,12})?$/, "El e-mail no es valido."],
