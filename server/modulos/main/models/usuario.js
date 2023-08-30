@@ -50,8 +50,10 @@ const permisosFarmacia = new mongoose.Schema({
       max: 1,
     },
   },
-  // entrega de insumos a pacientes
+  // entrega de insumos (No Vacunas) a pacientes
   entregas: {type: [{type: mongoose.Schema.Types.ObjectId, ref: "Area"}], default: void 0},
+  // Aplicacion de insumos (Vacunas) a pacientes
+  vacunas: {type: [{type: mongoose.Schema.Types.ObjectId, ref: "Area"}], default: void 0},
   // visualizacion de stock del area...
   stock: {type: [{type: mongoose.Schema.Types.ObjectId, ref: "Area"}], default: void 0},
   // gestion del area: opciones, solicitudes propias, entradas, clearing, descartes, reportes locales.

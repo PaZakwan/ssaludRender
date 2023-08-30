@@ -34,6 +34,16 @@ let patrimonioMovimientoSchema = new Schema(
     ubicacion_destino: {
       type: String,
     },
+    lugar_anterior: {
+      type: Schema.Types.ObjectId,
+      ref: "Lugar",
+      // required: [true, 'El Lugar en donde se encontraba es necesario.']
+    },
+    lugar_destino: {
+      type: Schema.Types.ObjectId,
+      ref: "Lugar",
+      required: [true, "El Lugar a donde sera trasladado es necesario."],
+    },
     area_anterior: {
       type: Schema.Types.ObjectId,
       ref: "Area",

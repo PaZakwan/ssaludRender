@@ -5,6 +5,7 @@ const {resolve} = require("path");
 const TuberculosisSchema = require("./schemas/Tuberculosis");
 
 const {capitalize, trim_between} = require(resolve(process.env.MAIN_FOLDER, "tools/string"));
+const {getEdad} = require(resolve(process.env.MAIN_FOLDER, "tools/object"));
 
 let schemaOptions = {
   toObject: {
@@ -120,7 +121,7 @@ let pacienteSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
-    // Ver de no guardar si esta vacio...
+    // No guardar si esta vacio...
     hist_salitas: {
       type: [
         {
@@ -210,6 +211,21 @@ pacienteSchema.virtual("direccion").get(function () {
   }
 });
 
+pacienteSchema.virtual("edad").get(function () {
+  try {
+    // edad_years: "",
+    // edad_months: "",
+    // edad_weeks: "",
+    // edad_days: "",
+    if (!!this.fec_nac) {
+      return getEdad({date: this.fec_nac, onlyYear: false});
+    }
+    return undefined;
+  } catch (error) {
+    return "ERROR Edad";
+  }
+});
+
 // antes del save()
 pacienteSchema.pre("save", async function (next) {
   // NUMERO DE HISTORIAL DE SALITAS NO REPETIBLE...
@@ -235,6 +251,11 @@ pacienteSchema.pre("save", async function (next) {
 // antes del update()
 pacienteSchema.pre("findOneAndUpdate", async function (next) {
   // Actualiza horario de edicion
+  if (this.getUpdate().$set) {
+    this.getUpdate().$set.updatedAt = new Date();
+  } else {
+    this.getUpdate().updatedAt = new Date();
+  }
   if (this.getUpdate().$set.hist_tuberculosis) {
     this.getUpdate().$set.hist_tuberculosis.updatedAt = new Date();
   } else if (this.getUpdate().hist_tuberculosis) {
@@ -258,11 +279,6 @@ pacienteSchema.pre("findOneAndUpdate", async function (next) {
     }
   }
 
-  if (this.getUpdate().$set) {
-    this.getUpdate().$set.updatedAt = new Date();
-  } else {
-    this.getUpdate().updatedAt = new Date();
-  }
   next();
 });
 

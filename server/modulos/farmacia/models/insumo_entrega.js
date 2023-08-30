@@ -33,6 +33,9 @@ let InsumoEntregaSchema = new Schema(
       ref: "Paciente",
       required: [true, "El Paciente que recibe es necesario."],
     },
+    oSocial: {
+      type: String,
+    },
 
     insumo: {
       type: Schema.Types.ObjectId,

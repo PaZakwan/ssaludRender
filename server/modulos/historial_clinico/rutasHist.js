@@ -21,10 +21,17 @@ let listaHistorial = [
   // 'updatedAt',
   "paciente",
   "profesional_cabecera",
-  "observacion",
+  "zona_sanitaria",
+  "prematuro",
+  "peso_nacer_menor_2500",
+  "peso_nacer_mayor_3800",
   "antecedentes_patologicos",
-  "embarazada",
+  "inmunodeprimida",
   "fuma",
+  "embarazada",
+  "puerpera",
+  "observacion",
+  // "embarazada_semana" //virtual
   // "motivos", //[motivosSchema]
 ];
 
@@ -79,38 +86,29 @@ async function buscarConsultas(motivoId) {
   }
 }
 
-async function crearConsulta(data) {
+async function crearConsulta(body) {
   try {
-    switch (data.especialidad) {
+    switch (body.especialidad) {
       case "Nutricion":
-        // Si no existe lo crea.
-        if (!data._id) {
-          consultaTemp = new Nutricion(data);
-          consultaTemp = await consultaTemp.save();
+        let consultaTemp = null;
+        if (body._id) {
+          // update
+          body = objectSetUnset({dato: body, unsetCero: false, unsetBoolean: true}).dato;
+          let _id = body.$set._id;
+          delete body.$set._id;
+          consultaTemp = await Nutricion.findOneAndUpdate({_id}, body, {
+            new: true,
+            runValidators: true,
+          }).exec();
+        } else {
+          // nuevo
+          // true (borra, los vacios)
+          body = isVacio(body, true).dato;
+          consultaTemp = await new Nutricion(body).save();
         }
-        // Existe entonces la edita
-        // Delete del campo si esta como "null" o ""
-        else {
-          $set = {};
-          $unset = {};
-          for (const key in data) {
-            if (data.hasOwnProperty(key)) {
-              if (data[key] === null || data[key] === "") {
-                $unset[key] = 1;
-              } else {
-                $set[key] = data[key];
-              }
-            }
-          }
-          delete $set._id;
-          consultaTemp = await Nutricion.findOneAndUpdate(
-            {_id: data._id},
-            {$set, $unset},
-            {
-              new: true,
-              runValidators: true,
-            }
-          ).exec();
+
+        if (!consultaTemp) {
+          return errorMessage(res, {message: "Consulta no encontrada."}, 404);
         }
         return consultaTemp;
       default:
@@ -132,7 +130,13 @@ app.get(
   [
     verificaToken,
     (req, res, next) => {
-      req.verificacionArray = [{prop: "historial_clinico", value: 1}];
+      req.verificacionArray = [
+        {prop: "historial_clinico", value: 1},
+        // {prop: "farmacia.entregas"},
+        {prop: "farmacia.vacunas"},
+        {prop: "farmacia.general.reportes", value: 1},
+        {prop: "farmacia.general.admin", value: 1},
+      ];
       next();
     },
     verificaArrayPropValue,
@@ -173,73 +177,53 @@ app.put(
   [
     verificaToken,
     (req, res, next) => {
-      req.verificacionArray = [{prop: "historial_clinico", value: 2}];
+      req.verificacionArray = [
+        {prop: "historial_clinico", value: 2},
+        // {prop: "farmacia.entregas"},
+        {prop: "farmacia.vacunas"},
+        {prop: "farmacia.general.admin", value: 1},
+      ];
       next();
     },
     verificaArrayPropValue,
   ],
   async (req, res) => {
     try {
-      let body = _pick(req.body, listaHistorial);
-
-      let _id = body._id || null;
-
-      if (!!_id && _id !== null && !/^[a-fA-F\d]{24}$/.test(_id)) {
-        return errorMessage(res, {message: "El ID del Historial no es valido."}, 400);
-      }
-
-      let todovacio = true;
-      for (const key in body) {
-        if (body.hasOwnProperty(key)) {
-          if (body[key] !== "" && body[key] !== null && body[key].length !== 0) {
-            todovacio = false;
-            break;
-          }
-        }
-      }
-      if (todovacio === true) {
+      // false (no borra, los vacios)
+      let body = isVacio(_pick(req.body, listaHistorial), false);
+      if (body.vacio === true) {
         return errorMessage(res, {message: "No se envió ningún dato."}, 412);
+      }
+      body = body.dato;
+
+      if (!!body._id && body._id !== null && !/^[a-fA-F\d]{24}$/.test(body._id)) {
+        return errorMessage(res, {message: "El ID del Historial no es valido."}, 400);
       }
 
       body["usuario_modifico"] = req.usuario._id;
 
-      if (!_id) {
-        // Si no existe el historial lo crea.
-        let nuevoHistorial = new HistorialClinico(body);
-
-        historialDB = await nuevoHistorial.save();
-
-        return res.status(201).json({
-          ok: true,
-          historial: historialDB,
-        });
+      let historialDB = null;
+      if (body._id) {
+        // update
+        body = objectSetUnset({dato: body, unsetCero: true, unsetBoolean: true}).dato;
+        let _id = body.$set._id;
+        delete body.$set._id;
+        historialDB = await HistorialClinico.findOneAndUpdate({_id}, body, {
+          new: true,
+          runValidators: true,
+        }).exec();
+      } else {
+        // nuevo
+        // true (borra, los vacios)
+        body = isVacio(body, true).dato;
+        historialDB = await new HistorialClinico(body).save();
       }
-      // Existe entonces la edita
-      // Delete del campo si esta como "null" o ""
-      let $set = {};
-      let $unset = {};
-      for (const key in body) {
-        if (body.hasOwnProperty(key)) {
-          if (body[key] === null || body[key] === "" || body[key].length === 0) {
-            $unset[key] = 1;
-          } else {
-            $set[key] = body[key];
-          }
-        }
-      }
-      body = {$set, $unset};
-
-      delete body.$set._id;
-      historialDB = await HistorialClinico.findOneAndUpdate({_id}, body, {
-        new: true,
-        runValidators: true,
-      }).exec();
 
       if (!historialDB) {
         return errorMessage(res, {message: "Historial no encontrado."}, 404);
       }
 
-      return res.json({
+      return res.status(201).json({
         ok: true,
         historial: historialDB,
       });
@@ -301,64 +285,41 @@ app.put(
   ],
   async (req, res) => {
     try {
-      let body = _pick(req.body, listaMotivo);
+      // false (no borra, los vacios)
+      let body = isVacio(_pick(req.body, listaMotivo), false);
+      if (body.vacio === true) {
+        return errorMessage(res, {message: "No se envió ningún dato."}, 412);
+      }
+      body = body.dato;
 
-      let _id = body._id || null;
-
-      if (!!_id && _id !== null && !/^[a-fA-F\d]{24}$/.test(_id)) {
+      if (!!body._id && body._id !== null && !/^[a-fA-F\d]{24}$/.test(body._id)) {
         return errorMessage(res, {message: "El ID del Motivo no es valido."}, 400);
       }
 
-      let todovacio = true;
-      for (const key in body) {
-        if (body.hasOwnProperty(key)) {
-          if (body[key] !== "" && body[key] !== null && body[key].length !== 0) {
-            todovacio = false;
-            break;
-          }
-        }
-      }
-      if (todovacio === true) {
-        return errorMessage(res, {message: "No se envió ningún dato."}, 412);
-      }
       body["usuario_modifico"] = req.usuario._id;
 
-      if (!_id) {
-        // Si no existe el motivo lo crea.
-        let nuevoMotivo = new HistorialMotivo(body);
-
-        motivoDB = await nuevoMotivo.save();
-
-        return res.status(201).json({
-          ok: true,
-          motivo: motivoDB,
-        });
+      let motivoDB = null;
+      if (body._id) {
+        // update
+        body = objectSetUnset({dato: body, unsetCero: true, unsetBoolean: true}).dato;
+        let _id = body.$set._id;
+        delete body.$set._id;
+        motivoDB = await HistorialMotivo.findOneAndUpdate({_id}, body, {
+          new: true,
+          runValidators: true,
+        }).exec();
+      } else {
+        // nuevo
+        // true (borra, los vacios)
+        body = isVacio(body, true).dato;
+        motivoDB = await new HistorialMotivo(body).save();
       }
-      // Existe entonces la edita
-      // Delete del campo si esta como "null" o ""
-      let $set = {};
-      let $unset = {};
-      for (const key in body) {
-        if (body.hasOwnProperty(key)) {
-          if (body[key] === null || body[key] === "" || body[key].length === 0) {
-            $unset[key] = 1;
-          } else {
-            $set[key] = body[key];
-          }
-        }
-      }
-      body = {$set, $unset};
-
-      motivoDB = await HistorialMotivo.findOneAndUpdate({_id}, body, {
-        new: true,
-        runValidators: true,
-      }).exec();
 
       if (!motivoDB) {
         return errorMessage(res, {message: "Motivo no encontrado."}, 404);
       }
 
-      return res.json({
+      return res.status(201).json({
         ok: true,
         motivo: motivoDB,
       });
@@ -429,28 +390,21 @@ app.put(
   ],
   async (req, res) => {
     try {
-      let body = req.body;
+      // false (no borra, los vacios)
+      let body = isVacio(req.body, false);
+      if (body.vacio === true) {
+        return errorMessage(res, {message: "No se envió ningún dato."}, 412);
+      }
+      body = body.dato;
 
       if (!body.motivo) {
         return errorMessage(res, {message: "Falta información para proceder."}, 412);
       }
 
       if (!!body._id && body._id !== null && !/^[a-fA-F\d]{24}$/.test(body._id)) {
-        return errorMessage(res, {message: "El ID de la Consulta no es valido."}, 400);
+        return errorMessage(res, {message: "El ID de la Consulta no es valida."}, 400);
       }
 
-      let todovacio = true;
-      for (const key in body) {
-        if (body.hasOwnProperty(key)) {
-          if (body[key] !== "" && body[key] !== null && body[key].length !== 0) {
-            todovacio = false;
-            break;
-          }
-        }
-      }
-      if (todovacio === true) {
-        return errorMessage(res, {message: "No se envió ningún dato."}, 412);
-      }
       body["usuario_modifico"] = req.usuario._id;
 
       // Funcion que crea y/o guarda cambios de la consulta
@@ -545,7 +499,7 @@ app.put(
       let medicacionDB = null;
       if (body._id) {
         // update
-        body = objectSetUnset(body, "unsetCero").dato;
+        body = objectSetUnset({dato: body, unsetCero: true, unsetBoolean: true}).dato;
         let _id = body.$set._id;
         delete body.$set._id;
         medicacionDB = await HistorialMedicacion.findOneAndUpdate({_id}, body, {

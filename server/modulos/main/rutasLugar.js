@@ -17,6 +17,7 @@ const listaLugar = [
   "nombre",
   "direccion",
   "descripcion",
+  "ip",
 
   "estado",
 ];
@@ -40,7 +41,7 @@ app.post("/lugar/:nombre", [verificaToken, verificaAdmin_Role], async (req, res)
     if (_id) {
       // Existe entonces la edita
       // Delete del campo si esta como null / "" / undefined /array vacio
-      body = objectSetUnset(body).dato;
+      body = objectSetUnset({dato: body}).dato;
       // actualiza el lugar, si se esta editando
       delete body.$set._id;
       lugarDB = await Lugar.findOneAndUpdate({_id}, body, {
@@ -62,7 +63,7 @@ app.post("/lugar/:nombre", [verificaToken, verificaAdmin_Role], async (req, res)
     if (lugarDB) {
       // Existe entonces la edita
       // Delete del campo si esta como null / "" / undefined /array vacio
-      body = objectSetUnset(body).dato;
+      body = objectSetUnset({dato: body}).dato;
       delete body.$set._id;
       // actualiza el lugar por el nombre(para uploads o cuando se crea con el mismo nombre del lugar)
       lugarDB = await Lugar.findOneAndUpdate({nombre: req.params.nombre}, body, {

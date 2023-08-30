@@ -51,6 +51,7 @@ app.get("/usuario", [verificaToken, verificaAdmin_Role], async (req, res) => {
       .limit(limite)
       .populate("area", "area")
       .populate("farmacia.entregas", "area")
+      .populate("farmacia.vacunas", "area")
       .populate("farmacia.stock", "area")
       .populate("farmacia.gestion", "area")
       .exec();
@@ -72,6 +73,7 @@ app.get("/usuario/:id", [verificaToken, verificaAdmin_Role], async (req, res) =>
     let usuarioDB = await Usuario.findOne({_id: req.params.id})
       .populate("area", "area")
       .populate("farmacia.entregas", "area")
+      .populate("farmacia.vacunas", "area")
       .populate("farmacia.stock", "area")
       .populate("farmacia.gestion", "area")
       .exec();
@@ -102,6 +104,7 @@ app.get("/usuario/perfil/:id", [verificaToken], async (req, res) => {
     let usuarioDB = await Usuario.findOne({_id: req.params.id})
       .populate("area", "area")
       .populate("farmacia.entregas", "area")
+      .populate("farmacia.vacunas", "area")
       .populate("farmacia.stock", "area")
       .populate("farmacia.gestion", "area")
       .exec();
@@ -235,8 +238,8 @@ app.put("/usuario/:id", [verificaToken, verificaAdmin_Role], async (req, res) =>
       body.password = bcrypt.hashSync(body.password, 10);
     }
 
-    // Delete del campo si esta como null / "" / undefined /array vacio
-    body = objectSetUnset(body, "unsetCero").dato;
+    // Delete del campo si esta como null / "" / undefined /array vacio o cero
+    body = objectSetUnset({dato: body, unsetCero: true}).dato;
 
     // Modificacion de los datos
     usuarioDB = await Usuario.findOneAndUpdate({_id: req.params.id}, body, {
@@ -297,8 +300,8 @@ app.put("/usuario/perfil/:id", [verificaToken], async (req, res) => {
       body.password = bcrypt.hashSync(body.password, 10);
     }
 
-    // Delete del campo si esta como null / "" / undefined /array vacio
-    body = objectSetUnset(body, "unsetCero").dato;
+    // Delete del campo si esta como null / "" / undefined /array vacio o cero
+    body = objectSetUnset({dato: body, unsetCero: true}).dato;
 
     // Actualiza usuario.
     usuarioDB = await Usuario.findOneAndUpdate({_id: req.params.id}, body, {

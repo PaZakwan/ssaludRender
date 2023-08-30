@@ -21,19 +21,23 @@ let lugarSchema = new Schema(
     },
     nombre: {
       type: String,
-      lowercase: true,
       trim: true,
       unique: true,
       required: [true, "El nombre del lugar es necesario."],
     },
     direccion: {
       type: String,
-      lowercase: true,
       trim: true,
       required: [true, "La direccion del lugar es necesaria."],
     },
     descripcion: {
       type: String,
+      trim: true,
+    },
+
+    ip: {
+      type: String,
+      lowercase: true,
       trim: true,
     },
 

@@ -29,19 +29,94 @@ const dateUTC = ({date, hours = "00:00:00.000", timezone = "+00:00"}) => {
     if (!isDateValid(date)) {
       return {dato: {date, hours, timezone}, error: "La Fecha no es valida."};
     }
-    if (!/^(?:[+-](?:2[0-3]|[01][0-9]):[0-5][0-9])$/.test(timezone)) {
+    if (timezone != "+00:00" && !/^(?:[+-](?:2[0-3]|[01][0-9]):[0-5][0-9])$/.test(timezone)) {
       // offset = req.get("timezoneoffset");
       return {
         dato: {date, hours, timezone},
         error: "La Zona Horaria no es valida.",
       };
     }
-    if (!/^(?:(?:2[0-3]|[01][0-9]):[0-5][0-9]:[0-5][0-9].[0-9][0-9][0-9])$/.test(hours)) {
+    if (
+      hours != "00:00:00.000" &&
+      !/^(?:(?:2[0-3]|[01][0-9]):[0-5][0-9]:[0-5][0-9].[0-9][0-9][0-9])$/.test(hours)
+    ) {
       return {dato: {date, hours, timezone}, error: "El Horario no es valido."};
     }
     return new Date(`${date}T${hours}${timezone}`);
   } catch (error) {
     return {dato: {date, hours, timezone}, error};
+  }
+};
+
+const getEdad = ({date, onlyYear = true}) => {
+  try {
+    let hoy = dateUTC({
+      date: new Date().toISOString().slice(0, 10),
+      hours: "00:00:00.000",
+    });
+    if (Object.prototype.toString.call(date) === "[object Date]" && !isNaN(date)) {
+      date = date.toISOString().slice(0, 10);
+    }
+    let fec_nac = dateUTC({
+      date: date,
+      hours: "00:00:00.000",
+    });
+    if (fec_nac.error) {
+      return {dato: {date, onlyYear}, error: `getEdad fec_nac: ${fec_nac.error}`};
+    }
+    // edad_years
+    let edad_years = hoy.getUTCFullYear() - fec_nac.getUTCFullYear();
+    let mes = hoy.getUTCMonth() - fec_nac.getUTCMonth();
+
+    if (mes < 0 || (mes === 0 && hoy.getUTCDate() < fec_nac.getUTCDate())) {
+      edad_years--;
+    }
+
+    if (onlyYear) {
+      return `${edad_years}`;
+    }
+
+    // edad_months
+    // edad_weeks
+    // edad_days
+    let diferenciaDias = getDiferenciaDias({date, dateHasta: hoy.toISOString().slice(0, 10)});
+    return {
+      edad_years,
+      edad_months: Math.floor(diferenciaDias / 30.41), // 30.4375
+      edad_weeks: Math.floor(diferenciaDias / 7),
+      edad_days: Math.round(diferenciaDias),
+    };
+  } catch (error) {
+    return {dato: {date, onlyYear}, error};
+  }
+};
+
+const getDiferenciaDias = ({date, dateHasta = new Date().toISOString().slice(0, 10)}) => {
+  try {
+    if (Object.prototype.toString.call(dateHasta) === "[object Date]" && !isNaN(dateHasta)) {
+      dateHasta = dateHasta.toISOString().slice(0, 10);
+    }
+    let hasta = dateUTC({
+      date: dateHasta,
+      hours: "00:00:00.000",
+    });
+    if (hasta.error) {
+      return {dato: {date, dateHasta}, error: `getDiferenciaDias hasta: ${hasta.error}`};
+    }
+    if (Object.prototype.toString.call(date) === "[object Date]" && !isNaN(date)) {
+      date = date.toISOString().slice(0, 10);
+    }
+    let desde = dateUTC({
+      date: date,
+      hours: "00:00:00.000",
+    });
+    if (desde.error) {
+      return {dato: {date, dateHasta}, error: `getDiferenciaDias desde: ${desde.error}`};
+    }
+
+    return (hasta.getTime() - desde.getTime()) / (1000 * 60 * 60 * 24);
+  } catch (error) {
+    return {dato: {date, dateHasta}, error};
   }
 };
 
@@ -94,14 +169,16 @@ const isVacio = (dato, borrar) => {
   }
 };
 
-const objectSetUnset = (dato, cero) => {
+const objectSetUnset = ({dato, unsetCero = false, unsetBoolean = false}) => {
   try {
     let todovacio = true;
     let $set = {};
     let $unset = {};
     for (const key in dato) {
       if (dato.hasOwnProperty(key)) {
-        if (cero && (dato[key] === 0 || dato[key] === "0")) {
+        if (unsetCero && (dato[key] === 0 || dato[key] === "0")) {
+          $unset[key] = 1;
+        } else if (unsetBoolean && (dato[key] === false || dato[key] === "false")) {
           $unset[key] = 1;
         } else if (
           (typeof dato[key] === "string" && dato[key].trim() === "") ||
@@ -236,6 +313,10 @@ exports.isObjectIdValid = isObjectIdValid;
 exports.isDateValid = isDateValid;
 
 exports.dateUTC = dateUTC;
+
+exports.getEdad = getEdad;
+
+exports.getDiferenciaDias = getDiferenciaDias;
 
 exports.isVacio = isVacio;
 

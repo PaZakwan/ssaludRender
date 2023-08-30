@@ -23,7 +23,8 @@ let NutricionSchema = new Schema(
     // updatedAt
     // profesional
     // paciente
-    // edad_años
+    // edad_valor
+    // edad_unidad
     // sexo
     // area
     // fecha
@@ -39,12 +40,15 @@ let NutricionSchema = new Schema(
     // H2 Nutricion
     embarazada_semana: {
       type: Number,
-      min: 0,
     },
-
     fuma: {
       type: Boolean,
     },
+    antecedentes_patologicos: [
+      {
+        type: String,
+      },
+    ],
 
     tipo_presentacion: {
       type: String,
@@ -53,22 +57,6 @@ let NutricionSchema = new Schema(
         message: "{VALUE} no es una presentacion valida.",
       },
     },
-
-    antecedentes_patologicos: [
-      {
-        type: String,
-        enum: {
-          values: [
-            "Diabetes (DM)",
-            "Dislipidemia (DSP)",
-            "Enfermedad Celíaca",
-            "Hipertensión Arterial (HTA)",
-            "Insuficiencia Renal Crónica",
-          ],
-          message: "{VALUE} no es un antecedente valido.",
-        },
-      },
-    ],
 
     // T.A Alta
     tension_arterial_sistolica: {

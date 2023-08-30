@@ -61,8 +61,8 @@ app.put("/config/:opc", [verificaToken, verificaAdmin_Role], async (req, res) =>
         config: configDB,
       });
     } else {
-      // Delete del campo si esta como null / "" / undefined /array vacio
-      body = objectSetUnset(body, "unsetCero").dato;
+      // Delete del campo si esta como null / "" / undefined /array vacio o cero
+      body = objectSetUnset({dato: body, unsetCero: true}).dato;
 
       // Modificando la BD
       configDB = await Config.findOneAndUpdate({_id: configDB.id}, body, {

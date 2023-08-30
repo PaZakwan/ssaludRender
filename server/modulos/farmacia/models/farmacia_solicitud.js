@@ -56,6 +56,9 @@ let FarmaciaSolicitudSchema = new Schema(
       type: String,
       required: [true, "El Motivo de la solicitud es necesario."],
     },
+    categoria: {
+      type: String,
+    },
 
     fec_resolucion: {
       type: Date,

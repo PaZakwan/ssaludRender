@@ -1,0 +1,53 @@
+{
+  "json": {
+    "insumo_procedencia": [
+      "Municipal",
+      "Remediar",
+      "SUMAR",
+      "Region",
+      "Nacion",
+      "Donacion",
+      "PURPSI",
+      "Open Door",
+      "Carga inicial"
+    ],
+    "insumo_categorias": [
+      "Medicamento",
+      "Vacuna",
+      "Higiene/Limpieza",
+      "Enfermeria/Medico",
+      "Alimento",
+      "Varios"
+    ],
+    "vacunas_condiciones": [
+      "No Embarazada",
+      "No Puerpera",
+      "No Antecedentes Patologicos",
+      "No Inmunodeprimida"
+    ],
+    "vacunas_dosis_posibles": [
+      "Unica",
+      "Neonatal",
+      "1era",
+      "2da",
+      "3era",
+      "4ta",
+      "5ta",
+      "6ta",
+      "7ma",
+      "Refuerzo",
+      "Refuerzo 2do",
+      "Refuerzo 3ero"
+    ],
+    "vacunas_estrategia": [
+      "Calendario",
+      "Campaña",
+      "Contactos",
+      "Terreno",
+      "Internacion",
+      "Pre Exposicion",
+      "Post Exposicion"
+    ]
+  },
+  "ok": true
+}

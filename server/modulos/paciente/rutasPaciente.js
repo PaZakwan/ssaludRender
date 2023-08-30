@@ -47,9 +47,8 @@ const verificaPacienteLectura = (req, res, next) => {
     usuario.historial_clinico > 0 ||
     usuario.farmacia?.general?.reportes ||
     usuario.farmacia?.general?.admin ||
-    (usuario.farmacia &&
-      Array.isArray(usuario.farmacia.entregas) &&
-      usuario.farmacia.entregas.length >= 1)
+    usuario.farmacia?.entregas?.length >= 1 ||
+    usuario.farmacia?.vacunas?.length >= 1
   ) {
     return next();
   } else {
@@ -81,9 +80,8 @@ const verificaPacienteEdit = (usuario) => {
       usuario.turnero > 1 ||
       usuario.historial_clinico > 1 ||
       usuario.farmacia?.general?.admin ||
-      (usuario.farmacia &&
-        Array.isArray(usuario.farmacia.entregas) &&
-        usuario.farmacia.entregas.length >= 1)
+      usuario.farmacia?.entregas?.length >= 1 ||
+      usuario.farmacia?.vacunas?.length >= 1
     ) {
       return true;
     } else {
@@ -441,7 +439,7 @@ app.put("/paciente/:id", [verificaToken, verificaPacienteLectura], async (req, r
     body["usuario_modifico"] = req.usuario._id;
 
     // Delete del campo si esta como null / "" / undefined /array vacio
-    body = objectSetUnset(body).dato;
+    body = objectSetUnset({dato: body}).dato;
 
     // Realiza la busqueda y el Update
     let pacienteDB = await Paciente.findOneAndUpdate({_id: req.params.id}, body, {

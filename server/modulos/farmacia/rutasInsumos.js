@@ -16,11 +16,21 @@ const FarmaciaSolicitud = require("./models/farmacia_solicitud");
 const FarmaciaStock = require("./models/farmacia_stock");
 const FarmaciaTransferencia = require("./models/farmacia_transferencia");
 const InsumoEntrega = require("./models/insumo_entrega");
+const VacunaAplicacion = require("./models/vacuna_aplicacion");
 const HistorialMedicacion = require("../historial_clinico/models/historial_medicacion");
 
 const app = express();
 
-let listaInsumo = ["_id", "nombre", "categoria", "descripcion", "unique_code", "estado"];
+let listaInsumo = [
+  "_id",
+  "nombre",
+  "categoria",
+  "descripcion",
+  "unique_code",
+  "dosis_posibles",
+  "condiciones",
+  "estado",
+];
 
 // ============================
 // Mostrar Insumo segun filtros
@@ -129,9 +139,14 @@ app.put(
       }
       body = body.dato;
 
+      if (body.categoria !== "Vacuna") {
+        delete body.condiciones;
+        delete body.dosis_posibles;
+      }
+
       let insumoDB = null;
       if (body._id) {
-        body = objectSetUnset(body, "unsetCero").dato;
+        body = objectSetUnset({dato: body, unsetCero: true}).dato;
         let _id = body.$set._id;
         delete body.$set._id;
         // update
@@ -191,7 +206,7 @@ app.delete(
       if (insumoBorrado) {
         return errorMessage(res, {message: "Insumo Utilizado, no borrable."}, 412);
       }
-      // FarmaciaOpcion; FALTA TESTEAR
+      // FarmaciaOpcion;
       insumoBorrado = await FarmaciaOpcion.findOne({insumo: req.params.id}).exec();
       if (insumoBorrado) {
         return errorMessage(res, {message: "Insumo Utilizado OPC, no borrable."}, 412);
@@ -213,6 +228,11 @@ app.delete(
       }
       // InsumoEntrega;
       insumoBorrado = await InsumoEntrega.findOne({insumo: req.params.id}).exec();
+      if (insumoBorrado) {
+        return errorMessage(res, {message: "Insumo Utilizado, no borrable."}, 412);
+      }
+      // VacunaAplicacion; FALTA TESTEAR
+      insumoBorrado = await VacunaAplicacion.findOne({insumo: req.params.id}).exec();
       if (insumoBorrado) {
         return errorMessage(res, {message: "Insumo Utilizado, no borrable."}, 412);
       }

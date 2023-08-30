@@ -387,8 +387,8 @@ app.put(
           return errorMessage(res, {message: "Ya Recibido, no editable."}, 401);
         }
 
-        // Delete del campo si esta como null / "" / undefined /array vacio
-        body = objectSetUnset(body, "unsetCero").dato;
+        // Delete del campo si esta como null / "" / undefined /array vacio o cero
+        body = objectSetUnset({dato: body, unsetCero: true}).dato;
 
         // Modificando la BD
         ingresoDB = await FarmaciaIngreso.findOneAndUpdate({_id: body.$set._id}, body, {
@@ -909,8 +909,8 @@ app.put(
           return errorMessage(res, {message: "Ya Retirado, no editable."}, 401);
         }
 
-        // Delete del campo si esta como null / "" / undefined /array vacio
-        body = objectSetUnset(body, "unsetCero").dato;
+        // Delete del campo si esta como null / "" / undefined /array vacio o cero
+        body = objectSetUnset({dato: body, unsetCero: true}).dato;
 
         // Modificando la BD
         transferenciaDB = await FarmaciaTransferencia.findOneAndUpdate({_id: body.$set._id}, body, {

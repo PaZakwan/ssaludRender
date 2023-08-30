@@ -1,5 +1,8 @@
 const mongoose = require("mongoose");
 const uniqueValidator = require("mongoose-unique-validator");
+const {resolve} = require("path");
+
+const {getEdad} = require(resolve(process.env.MAIN_FOLDER, "tools/object"));
 
 let schemaOptions = {
   toObject: {
@@ -40,6 +43,26 @@ let HistorialClinicoUniversalSchema = new Schema(
       trim: true,
     },
 
+    zona_sanitaria: {
+      type: String,
+      required: [
+        true,
+        "La Zona Sanitaria de donde vive la persona es necesaria para Estadisticas.",
+      ],
+    },
+
+    prematuro: {
+      type: Boolean,
+    },
+
+    peso_nacer_menor_2500: {
+      type: Boolean,
+    },
+
+    peso_nacer_mayor_3800: {
+      type: Boolean,
+    },
+
     antecedentes_patologicos: [
       {
         type: String,
@@ -60,19 +83,35 @@ let HistorialClinicoUniversalSchema = new Schema(
       type: Date,
     },
 
-    fuma: {
+    puerpera: {
       type: Boolean,
     },
 
-    // ### obtenerlos apartir de un find de id paciente..
-    // Motivos
-    // historial: [{
-    //     type: Schema.Types.ObjectId,
-    //     ref: "Paciente",
-    //   }],
+    inmunodeprimida: {
+      type: Boolean,
+    },
+
+    fuma: {
+      type: Boolean,
+    },
   },
   schemaOptions
 );
+
+HistorialClinicoUniversalSchema.virtual("embarazada_semana").get(function () {
+  try {
+    // edad_years: "",
+    // edad_months: "",
+    // edad_weeks: "",
+    // edad_days: "",
+    if (!!this.embarazada) {
+      return getEdad({date: this.embarazada, onlyYear: false})?.edad_weeks;
+    }
+    return undefined;
+  } catch (error) {
+    return "ERROR Edad";
+  }
+});
 
 HistorialClinicoUniversalSchema.pre("findOneAndUpdate", async function (next) {
   if (this.getUpdate().$set) {

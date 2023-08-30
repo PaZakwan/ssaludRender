@@ -11,6 +11,39 @@
 
 ##### Unreleased
 
+##### [1.7.20230830] - 2023-08-30
+
+- Added a Sistema - Usuario => Permiso de +farmacia.vacunas.
+- Fix a Sistema - Usuario => Buscar No mostraba el campo de Opciones (Minimos).
+- Added a Sistema - Pacientes => Posibilidad de dar de Alta y Editar Pacientes al permiso de +farmacia.vacunas.
+- Added a Sistema - Pacientes => Un componente para la busqueda y seleccion de Pacientes (selectPaciente).
+- Improve a Sistema => Mejor aprovechamiento de espacios en general (margin/padding).
+- Improve a Sistema => objectSetUnset -> forma de objeto y se agrego +unsetBoolean.
+- Added a Sistema => +getEdad +getDiferenciaDias -> Funciones para manejar mejor las fechas.
+- Fix a Sistema - v-expansion-panel => deprecated v-model expandOpen => +expandPanel.
+
+- Changed a Farmacia - Entregas => Ahora la Entrega cuenta de dos "pasos", primero la seleccion del Paciente mediante filtros para la busqueda y luego se procede a buscar el Inusmo, esto mejorara los tiempos de carga porque cada vez que se iba a realizar una entrega el sistema "descargaba" todos los pacientes del Sistema.
+- Changed a Farmacia - Entregas => Ahora se pueden entregar a Pacientes todas las categorias de insumos menos las "Vacunas". +Higiene/Limpieza +Varios
+- Removed a Farmacia - Entregas => No se podran entregar mas Insumos de Categoria Vacuna, las mismas seran Aplicadas desde su Seccion.
+- Fix a Farmacia - Entregas/Descartes => No se podian borrar las entregas/Descartes realizadas segun la fecha de carga (retirado).
+
+- Fix a Farmacia - Transferencia => Remito, PDF -> tabla quedaba afuera de la hoja A4.
+
+- Added a Farmacia - Egresos => Nuevo Motivo "Rotura cadena de Frio".
+
+- Changed a Farmacia - Ingresos => El Ingreso de insumos con Categoria "Vacuna" requieren obligatoriamente los campos de Lote y Vencimiento.
+
+- Added a Farmacia - Insumos => Los insumos con Categoria "Vacuna" requieren obligatoriamente el campo de Dosis Posibles y Opcional las Condiciones de Aplicacion.
+
+- Changed a Farmacia - Solicitudes => Ahora es obligatorio un campo nuevo de Categoria de insumos, el cual servira para diferenciar las solicitudes.
+
+- Added a Farmacia => Las listas de insumos ahora permiten borrar el primer elemento.
+
+- Added a HICLEM - Historial Gral => +Embarazada +Puerpera +Prematuro +Peso_nacer_menor_2500 +Peso_nacer_mayor_3800 +Fuma +Antecedentes +inmunodeprimida +Zona Sanitaria
+
+- Added a Patrimonio - Objeto/Movimiento/Info => +Lugar -> ubicacion fisica del objeto con direccion e IP.
+- fix a Patrimonio - Excel => inventario/serie -> numeros que inician con 0 o -0... generaban que se omitieran los 0.
+
 ##### [1.7.20230710] - 2023-07-10
 
 - Added a Sistema - Pacientes => Nuevo campo opcional para agregar un Telefono Alternativo del Paciente.

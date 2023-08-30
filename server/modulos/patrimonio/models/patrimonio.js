@@ -63,6 +63,11 @@ let patrimonioSchema = new Schema(
     ubicacion: {
       type: String,
     },
+    lugar: {
+      type: Schema.Types.ObjectId,
+      ref: "Lugar",
+      required: [true, "El Lugar en donde se encuentra es necesario."],
+    },
     area: {
       type: Schema.Types.ObjectId,
       ref: "Area",

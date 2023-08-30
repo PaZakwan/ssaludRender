@@ -38,6 +38,18 @@ let InsumoSchema = new Schema(
       sparse: true,
     },
 
+    dosis_posibles: [
+      {
+        type: String,
+      },
+    ],
+
+    condiciones: [
+      {
+        type: String,
+      },
+    ],
+
     estado: {
       type: Boolean,
       default: true,

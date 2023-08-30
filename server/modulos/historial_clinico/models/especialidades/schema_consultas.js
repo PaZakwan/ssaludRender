@@ -46,10 +46,16 @@ let ConsultaSchema = {
     required: true,
   },
 
-  edad_años: {
-    // Numeros para group etario estadistica
+  edad_valor: {
+    // para group etario estadistica
     // calcular en base a la fecha de nacimiento y la consulta..
     type: Number,
+    required: true,
+  },
+  edad_unidad: {
+    // para group etario estadistica
+    // calcular en base a la fecha de nacimiento y la consulta..
+    type: String,
     required: true,
   },
 

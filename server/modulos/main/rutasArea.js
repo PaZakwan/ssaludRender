@@ -173,7 +173,7 @@ app.put("/area/:area", [verificaToken, verificaAdmin_Role], async (req, res) => 
     } else {
       // Existe entonces la edita
       // Delete del campo si esta como null / "" / undefined /array vacio
-      body = objectSetUnset(body).dato;
+      body = objectSetUnset({dato: body}).dato;
 
       if (_id) {
         // actualiza el area, si se esta editando

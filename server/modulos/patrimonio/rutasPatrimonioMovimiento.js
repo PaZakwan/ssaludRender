@@ -21,6 +21,8 @@ const listaPatrimonioMovimiento = [
   "fec_movio",
   "ubicacion_anterior",
   "ubicacion_destino",
+  "lugar_anterior",
+  "lugar_destino",
   "area_anterior",
   "area_destino",
   "usuario_movio",
@@ -69,7 +71,13 @@ app.post(
       body["usuario_modifico"] = req.usuario._id;
 
       // UnSet del campo si esta como null / "" / undefined /array vacio
-      body = objectSetUnset(body).dato;
+      body = objectSetUnset({dato: body}).dato;
+      if (body.$set.fec_entregado) {
+        body.$set.fec_entregado = new Date().toISOString().slice(0, 10);
+      }
+      if (body.$set.fec_patrimonio) {
+        body.$set.fec_patrimonio = new Date().toISOString().slice(0, 10);
+      }
       delete body.$set._id;
 
       let movimientoDB = null;
@@ -78,6 +86,13 @@ app.post(
           new: true,
           runValidators: true,
         }).exec();
+        if (body.$set.fec_patrimonio || body.$set.fec_entregado) {
+          return res.json({
+            ok: true,
+            movimiento: movimientoDB,
+            objeto: undefined,
+          });
+        }
       } else {
         movimientoDB = await new PatrimonioMovimiento(body.$set).save();
       }
@@ -85,15 +100,18 @@ app.post(
         return errorMessage(res, {message: "Movimiento no cargado."}, 400);
       }
 
-      let objetoActualizado = null;
-      objetoActualizado = await Patrimonio.findOneAndUpdate(
+      let objetoActualizado = await Patrimonio.findOneAndUpdate(
         {_id: req.body.id_objeto},
         objectSetUnset({
-          area: req.body.area_destino,
-          ubicacion: req.body.ubicacion_destino,
-          usuario_verifico: req.usuario._id,
-          fec_verifico: Date.now(),
-          verificado: true,
+          dato: {
+            area: req.body.area_destino,
+            ubicacion: req.body.ubicacion_destino,
+            lugar: req.body.lugar_destino,
+            funciona: req.body.funciona,
+            usuario_verifico: req.usuario._id,
+            fec_verifico: Date.now(),
+            verificado: true,
+          },
         }).dato,
         {
           new: true,
@@ -182,6 +200,18 @@ app.get(
         filtro.area_destino = req.query.destiny;
       }
 
+      if (req.query.l_from && !isObjectIdValid(req.query.l_from)) {
+        return errorMessage(res, {message: "El Lugar Anterior no es valido."}, 400);
+      } else if (req.query.l_from) {
+        filtro.lugar_anterior = req.query.l_from;
+      }
+
+      if (req.query.l_destiny && !isObjectIdValid(req.query.l_destiny)) {
+        return errorMessage(res, {message: "El Lugar Destino no es valido."}, 400);
+      } else if (req.query.l_destiny) {
+        filtro.lugar_destino = req.query.l_destiny;
+      }
+
       let movimientos = await PatrimonioMovimiento.find(filtro)
         .collation({locale: "es", numericOrdering: true})
         .sort({fec_movio: -1, id_objeto: 1, _id: -1})
@@ -191,6 +221,8 @@ app.get(
         )
         .populate("area_anterior", "area oficina_nro")
         .populate("area_destino", "area oficina_nro")
+        .populate("lugar_anterior", "nombre direccion ip")
+        .populate("lugar_destino", "nombre direccion ip")
         .exec();
 
       return res.json({

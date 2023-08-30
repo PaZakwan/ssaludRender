@@ -20,6 +20,7 @@ let listaSolicitud = [
 
   "estado",
   "motivo",
+  "categoria",
 
   "fec_resolucion",
   "condicion_aceptada",
@@ -428,8 +429,8 @@ app.put(
 
       if (body._id) {
         // Update de solicitud
-        // Delete del campo si esta como null / "" / undefined /array vacio
-        body = objectSetUnset(body, "unsetCero").dato;
+        // Delete del campo si esta como null / "" / undefined /array vacio o cero
+        body = objectSetUnset({dato: body, unsetCero: true}).dato;
 
         // Modificando la BD
         solicitudDB = await FarmaciaSolicitud.findOneAndUpdate({_id: body.$set._id}, body, {

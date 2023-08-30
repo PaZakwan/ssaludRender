@@ -21,6 +21,7 @@ const listaPatrimonio = [
   "cantidad_deposito", // insumos
 
   "categoria",
+  "lugar",
   "serie", // no insumos / no muebles
 
   "marca",
@@ -203,7 +204,7 @@ app.put(
 
       // Delete del campo si esta como null / "" / undefined /array vacio
       // los ceros los guarda para los casos de insumos con stock 0
-      body = objectSetUnset(body, false).dato;
+      body = objectSetUnset({dato: body}).dato;
 
       let objetoDB = null;
       if (!isObjectIdValid(req.params.id)) {
@@ -355,7 +356,7 @@ app.delete(
 
 // ============================
 // Mostrar Objetos de inventario segun filtro, "select", {orden}, "limite"
-//    opcional: populate {area, usuario_eliminacion, usuario_verifico}
+//    opcional: populate {area, lugar, usuario_eliminacion, usuario_verifico}
 // ============================
 app.get(
   "/patrimonio/buscar",
@@ -444,6 +445,9 @@ app.get(
       let populate = JSON.parse(req.query.populate || null);
       if (populate?.area) {
         objetosDB.populate("area", "area subsecretaria");
+      }
+      if (populate?.lugar) {
+        objetosDB.populate("lugar", "nombre direccion ip");
       }
       if (populate?.usuario_eliminacion) {
         objetosDB.populate("usuario_eliminacion", "nombre apellido nombreC");
