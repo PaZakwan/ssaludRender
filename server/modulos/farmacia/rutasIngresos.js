@@ -602,9 +602,6 @@ app.get(
         (filtro.fecha ??= {}).$lte = temp;
       }
 
-      let hoy = new Date();
-      let porExpirar = new Date(new Date().setDate(hoy.getDate() + 90));
-
       // Transferencias Remitos (clearing)
       let transferenciasDB = await FarmaciaTransferencia.aggregate()
         .match({
@@ -697,6 +694,10 @@ app.get(
               true,
             ],
           },
+          porExpirarFecha: {
+            //90 dias 24 hs 60 min 60 sec 1000 millsec
+            $add: ["$fecha", 90 * 24 * 60 * 60 * 1000],
+          },
         })
         // descomprimir para buscar los insumos
         .unwind({path: "$insumos"})
@@ -720,7 +721,8 @@ app.get(
               {
                 $cond: [
                   {
-                    $gt: ["$insumos.vencimiento", hoy],
+                    // $gt: ["$insumos.vencimiento", hoy],
+                    $gt: ["$insumos.vencimiento", "$fecha"],
                   },
                   false,
                   true,
@@ -737,7 +739,8 @@ app.get(
               {
                 $cond: [
                   {
-                    $gt: ["$insumos.vencimiento", porExpirar],
+                    // $gt: ["$insumos.vencimiento", porExpirar],
+                    $gt: ["$insumos.vencimiento", "$porExpirarFecha"],
                   },
                   false,
                   true,
@@ -841,6 +844,7 @@ app.get(
         estadistica,
       });
     } catch (err) {
+      console.log("err", err);
       return errorMessage(res, err, err.code);
     }
   }

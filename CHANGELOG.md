@@ -11,6 +11,16 @@
 
 ##### Unreleased
 
+##### [1.7.20230906] - 2023-09-06
+
+- Fix a Farmacia - Transferencia => Color de vencimientos en base a la fecha de la trasnferencias y no a la del dia de la consulta.
+- Fix a Farmacia - Entregas/Descartes => Recargar Stock al abrir de nuevo el dialog.
+- Fix a Farmacia - Vacunaciones-Imprimir => Permiso de Vacuna.
+- Add a Farmacia - Vacunaciones => Vacunador (Usuario logueado) obligatorio.
+- Changed a Farmacia - Vacunaciones => Autocompletar Cantidad con 1 vacuna.
+- Add a Sistema - Navegacion => Abre automaticamente el menu de navegacion al loguear o recargar la pagina.
+- Changed a Sistema - Navegacion => Vacunaciones y Farmacia Entregas estan afuera de un submenu.
+
 ##### [1.7.20230830] - 2023-08-30
 
 - Added a Sistema - Usuario => Permiso de +farmacia.vacunas.

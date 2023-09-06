@@ -49,14 +49,16 @@ app.get(
         for (const [index, area] of filtro.origen.$in.entries()) {
           // verificar Acceso a las areas.
           if (
-            // existe en general/reportes o en general/admin o en entregas o en gestion
+            // existe en general/reportes o en general/admin o en entregas o vacunas o en gestion
             // o modelo entregas para verlas todas.
             !(
               modelos.entr ||
+              modelos.vac ||
               req.usuario.farmacia.general?.reportes === 1 ||
               req.usuario.farmacia.general?.admin === 1 ||
+              req.usuario.farmacia.gestion?.includes(area) ||
               req.usuario.farmacia.entregas?.includes(area) ||
-              req.usuario.farmacia.gestion?.includes(area)
+              req.usuario.farmacia.vacunas?.includes(area)
             )
           ) {
             return errorMessage(res, {message: "Acceso Denegado."}, 401);

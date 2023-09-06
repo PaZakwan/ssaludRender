@@ -143,6 +143,22 @@ app.get(
           },
         })
         .lookup({
+          from: "usuarios",
+          localField: "vacunador",
+          foreignField: "_id",
+          as: "vacunadorDB",
+        })
+        .unwind({
+          path: "$vacunadorDB",
+          // SI vacunador no existe, return null en vez de no return el documento
+          preserveNullAndEmptyArrays: true,
+        })
+        .addFields({
+          vacunadorDB: {
+            $concat: ["$vacunadorDB.apellido", ", ", "$vacunadorDB.nombre"],
+          },
+        })
+        .lookup({
           from: "Insumos",
           localField: "insumo",
           foreignField: "_id",
@@ -160,6 +176,7 @@ app.get(
           fecha: 1,
           origen: 1,
           origenDB: 1,
+          vacunadorDB: 1,
           pacienteDB: 1,
           pacienteDocDB: 1,
           oSocial: 1,
@@ -226,6 +243,7 @@ app.put(
       let vacunacionesDB = null;
       body.retirado = new Date();
       body.usuario_creador = req.usuario.id;
+      body.vacunador = req.usuario.id;
 
       // recorrer array de insumos
       for (const insumo of body.insumos) {

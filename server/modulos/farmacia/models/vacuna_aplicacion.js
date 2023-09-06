@@ -34,7 +34,9 @@ let VacunaAplicacionSchema = new Schema(
       required: [true, "El Paciente que recibe es necesario."],
     },
     vacunador: {
-      type: String,
+      type: Schema.Types.ObjectId,
+      ref: "Usuario",
+      required: true,
     },
     fecha_futura_cita: {
       type: Date,
