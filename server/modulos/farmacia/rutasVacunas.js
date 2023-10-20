@@ -33,6 +33,9 @@ let listaVacunaciones = [
   "fuma",
   "antecedentes_patologicos",
   "oSocial",
+  "riesgo",
+  "personal_salud",
+  "personal_esencial",
 
   "insumos",
   // "insumo",

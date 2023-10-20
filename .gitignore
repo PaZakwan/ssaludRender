@@ -11,8 +11,9 @@ node_modules/
 public2/
 sgs/
 server/config/cert/*
-server/uploads/*
-server/uploads/logs/*
+file_server/uploads/*
+file_server/logs/*
+file_server/opciones/*
 
 # Ignora archivos
 package-lock.json
@@ -21,6 +22,6 @@ nodemon.json
 
 # omitir ignoracion xD
 !server/config/cert/LEER cert.txt
-!server/uploads/.gitkeep
-!server/uploads/logs/
-!server/uploads/logs/.gitkeep
+!file_server/uploads/.gitkeep
+!file_server/logs/.gitkeep
+!file_server/opciones/.gitkeep

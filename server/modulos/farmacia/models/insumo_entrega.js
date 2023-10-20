@@ -48,6 +48,7 @@ let InsumoEntregaSchema = new Schema(
     },
     procedencia: {
       type: String,
+      default: "Carga inicial",
     },
     lote: {
       type: String,

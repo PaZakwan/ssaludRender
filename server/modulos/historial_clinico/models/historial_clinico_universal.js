@@ -91,6 +91,16 @@ let HistorialClinicoUniversalSchema = new Schema(
       type: Boolean,
     },
 
+    riesgo: {
+      type: Boolean,
+    },
+    personal_salud: {
+      type: Boolean,
+    },
+    personal_esencial: {
+      type: Boolean,
+    },
+
     fuma: {
       type: Boolean,
     },

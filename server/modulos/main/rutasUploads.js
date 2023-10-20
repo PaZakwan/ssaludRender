@@ -7,8 +7,8 @@ const {verificaToken, verificaAdmin_Role} = require(process.env.MAIN_FOLDER +
   "/middlewares/autenticacion");
 
 // Herramientas para excels
-const xlstojson = require("xls-to-json-lc");
-const xlsxtojson = require("xlsx-to-json-lc");
+// const xlstojson = require("xls-to-json-lc");
+// const xlsxtojson = require("xlsx-to-json-lc");
 
 const app = express();
 

@@ -35,6 +35,10 @@ let listaPaciente = [
   "fec_fallecimiento",
   "validadoRENAPER",
 
+  // PS
+  // "ps_id",
+  "doc_responsable",
+
   //todos
   "estado",
 ];

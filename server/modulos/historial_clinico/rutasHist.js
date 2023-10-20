@@ -28,8 +28,11 @@ let listaHistorial = [
   "antecedentes_patologicos",
   "inmunodeprimida",
   "fuma",
+  "riesgo",
   "embarazada",
   "puerpera",
+  "personal_salud",
+  "personal_esencial",
   "observacion",
   // "embarazada_semana" //virtual
   // "motivos", //[motivosSchema]

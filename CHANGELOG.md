@@ -11,15 +11,28 @@
 
 ##### Unreleased
 
+##### [1.7.20231020] - 2023-10-20
+
+- Added a Sistema - Fechas => +object.dateUTC -> excelValue to UTC.
+- Added a Sistema - Pacientes => Tipos de Documento -> +Paises.
+- Fix a Sistema - Navegacion => Se abria el menu de navegacion cuando se hacia cualquier consulta.
+
+- Added a Bromatologia - Analaisis => Bacteriologico/Fisico-Quimico -> Nuevas opciones en "Fuente de Analisis" "Dispenser" y "Otros".
+- Fix a Bromatologia - Info => Btn Validar ahora se puede presionar mantiendo Ctrl para abrir el link en nuevas pestaña sin problema.
+
+- Added a Farmacia - Entregas => expandInsumosRecibidos -> Ahora se pueden ver todos los Insumos Recibidos por el Paciente seleccionado.
+- Fix a Farmacia - Ingreso => Insumos sin procedencia al no seleccionar Proveedor/Procedencia.
+
 ##### [1.7.20230906] - 2023-09-06
+
+- Added a Sistema - Navegacion => Abre automaticamente el menu de navegacion al loguear o recargar la pagina.
+- Changed a Sistema - Navegacion => Vacunaciones y Farmacia Entregas estan afuera de un submenu.
 
 - Fix a Farmacia - Transferencia => Color de vencimientos en base a la fecha de la trasnferencias y no a la del dia de la consulta.
 - Fix a Farmacia - Entregas/Descartes => Recargar Stock al abrir de nuevo el dialog.
 - Fix a Farmacia - Vacunaciones-Imprimir => Permiso de Vacuna.
-- Add a Farmacia - Vacunaciones => Vacunador (Usuario logueado) obligatorio.
+- Added a Farmacia - Vacunaciones => Vacunador (Usuario logueado) obligatorio.
 - Changed a Farmacia - Vacunaciones => Autocompletar Cantidad con 1 vacuna.
-- Add a Sistema - Navegacion => Abre automaticamente el menu de navegacion al loguear o recargar la pagina.
-- Changed a Sistema - Navegacion => Vacunaciones y Farmacia Entregas estan afuera de un submenu.
 
 ##### [1.7.20230830] - 2023-08-30
 

@@ -93,6 +93,15 @@ let VacunaAplicacionSchema = new Schema(
     oSocial: {
       type: String,
     },
+    riesgo: {
+      type: Boolean,
+    },
+    personal_salud: {
+      type: Boolean,
+    },
+    personal_esencial: {
+      type: Boolean,
+    },
     // FIN Valores del Paciente para acelerar Reportes...
 
     insumo: {
@@ -106,6 +115,7 @@ let VacunaAplicacionSchema = new Schema(
     },
     procedencia: {
       type: String,
+      default: "Carga inicial",
     },
     lote: {
       type: String,
@@ -131,4 +141,9 @@ let VacunaAplicacionSchema = new Schema(
   schemaOptions
 );
 
+module.exports = mongoose.connections[1].model(
+  "VacunaAplicacion",
+  VacunaAplicacionSchema,
+  "VacunaAplicaciones"
+);
 module.exports = mongoose.model("VacunaAplicacion", VacunaAplicacionSchema, "VacunaAplicaciones");

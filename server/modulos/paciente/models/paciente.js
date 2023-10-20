@@ -32,9 +32,8 @@ let pacienteSchema = new mongoose.Schema(
       required: [true, "El apellido es necesario."],
       validate: {
         validator: function (v) {
-          // \u00f1 y \u00d1 son el equivalente para "ñ" y "Ñ", \s es el espacio
-          let re = /^[A-Za-z\sÀ-ÿ\u00f1\u00d1]+$/;
-          return re.test(v);
+          // \u00f1 y \u00d1 son el equivalente para "ñ" y "Ñ", \s es el espacio y '
+          return /^[A-Za-z\sÀ-ÿ\u00f1\u00d1']+$/.test(v);
         },
         message: "No se admiten caracteres especiales ni numeros.",
       },
@@ -46,9 +45,8 @@ let pacienteSchema = new mongoose.Schema(
       required: [true, "El nombre es necesario."],
       validate: {
         validator: function (v) {
-          // \u00f1 y \u00d1 son el equivalente para "ñ" y "Ñ", \s es el espacio
-          let re = /^[A-Za-z\sÀ-ÿ\u00f1\u00d1]+$/;
-          return re.test(v);
+          // \u00f1 y \u00d1 son el equivalente para "ñ" y "Ñ", \s es el espacio y '
+          return /^[A-Za-z\sÀ-ÿ\u00f1\u00d1']+$/.test(v);
         },
         message: "No se admiten caracteres especiales ni numeros.",
       },
@@ -56,17 +54,16 @@ let pacienteSchema = new mongoose.Schema(
     },
     tipo_doc: {
       type: String,
-      trim: true,
     },
     documento: {
       type: String,
       trim: true,
+      uppercase: true,
       validate: {
         validator: function (v) {
-          let re = /^[0-9]+$/;
-          return re.test(v);
+          return /^[A-Z0-9]+$/.test(v);
         },
-        message: "Solo se admiten numeros.",
+        message: "Solo se admiten numeros y letras Mayusculas.",
       },
     },
     sexo: {
@@ -102,11 +99,9 @@ let pacienteSchema = new mongoose.Schema(
     },
     dir_barrio: {
       type: String,
-      trim: true,
     },
     dir_localidad: {
       type: String,
-      trim: true,
     },
     dir_descripcion: {
       type: String,
@@ -115,7 +110,6 @@ let pacienteSchema = new mongoose.Schema(
     },
     oSocial: {
       type: String,
-      trim: true,
     },
     oSocialNumero: {
       type: String,
@@ -150,6 +144,14 @@ let pacienteSchema = new mongoose.Schema(
       type: Boolean,
     },
 
+    // PSVacunas
+    ps_id: {
+      type: String,
+    },
+    doc_responsable: {
+      type: String,
+    },
+
     estado: {
       type: Boolean,
       default: true,
@@ -167,8 +169,12 @@ let pacienteSchema = new mongoose.Schema(
 );
 
 pacienteSchema.index(
-  {tipo_doc: 1, documento: 1},
-  {name: "documento_unico", unique: "Documento ya existente en el sistema, debe ser unico."}
+  {documento: 1, tipo_doc: 1},
+  {
+    name: "documento_unico",
+    unique: "Documento ya existente en el sistema, debe ser unico ({PATH}={VALUE}).",
+    sparse: true,
+  }
 );
 
 pacienteSchema.virtual("nombreC").get(function () {
@@ -287,4 +293,5 @@ pacienteSchema.plugin(uniqueValidator, {message: "{PATH} debe de ser único."});
 // para usarlo en el Schema.pre("save")
 const Paciente = mongoose.model("Paciente", pacienteSchema);
 
+module.exports = mongoose.connections[1].model("Paciente", pacienteSchema);
 module.exports = Paciente;

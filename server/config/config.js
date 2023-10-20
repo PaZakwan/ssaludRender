@@ -95,6 +95,7 @@ if (process.env.NODE_ENV === "dev") {
     serverSelectionTimeoutMS: 8 * 1000,
     bufferCommands: false,
     family: 4,
+    autoIndex: true,
   });
 } else {
   process.env.DBoptions = JSON.stringify({

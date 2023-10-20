@@ -24,11 +24,8 @@ const isDateValid = (date) => {
   }
 };
 
-const dateUTC = ({date, hours = "00:00:00.000", timezone = "+00:00"}) => {
+const dateUTC = ({date, hours = "00:00:00.000", timezone = "+00:00", excelValue = false}) => {
   try {
-    if (!isDateValid(date)) {
-      return {dato: {date, hours, timezone}, error: "La Fecha no es valida."};
-    }
     if (timezone != "+00:00" && !/^(?:[+-](?:2[0-3]|[01][0-9]):[0-5][0-9])$/.test(timezone)) {
       // offset = req.get("timezoneoffset");
       return {
@@ -42,7 +39,21 @@ const dateUTC = ({date, hours = "00:00:00.000", timezone = "+00:00"}) => {
     ) {
       return {dato: {date, hours, timezone}, error: "El Horario no es valido."};
     }
-    return new Date(`${date}T${hours}${timezone}`);
+    if (excelValue) {
+      if (!date) {
+        return {dato: {date, hours, timezone}, error: "El Valor de Excel no es valido."};
+      }
+      return new Date(
+        `${new Date(Math.round((date - 25569) * 864e5))
+          .toISOString()
+          .slice(0, 10)}T${hours}${timezone}`
+      );
+    } else {
+      if (!isDateValid(date)) {
+        return {dato: {date, hours, timezone}, error: "La Fecha no es valida."};
+      }
+      return new Date(`${date}T${hours}${timezone}`);
+    }
   } catch (error) {
     return {dato: {date, hours, timezone}, error};
   }

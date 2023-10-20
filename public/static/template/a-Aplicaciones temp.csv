@@ -1,0 +1,13 @@
+,IdPersona,TipoDNI,DNI,FechaAplica,Edad,UEdad,Embarazada,Puerpera,PersSalud,PersEsencial,GrpRiesgo,Dosis,Vacuna,IdUS,NoProvista,Estrategia,Completa,VtoVacuna,LoteVacuna
+ps_id,,tipo_doc,documento,fecha,edad_valor,edad_unidad,embarazada_semana / ps_embarazada,puerpera / ps_puerpera,personal_salud,personal_esencial,riesgo,dosis / ps_dosis,ps_vacuna,ps_us,no_provista,estrategia / ps_estrategia,completa / ps_completa,vencimiento,lote
+,121.1,54,30251101,14/10/2016,33,a,1 / '',1 / '',1 / '',1 / '',FALSO,DU,9,121,1 / '',1 / '',1 / '',,
+,121.1,54,28894619,14/10/2016,35,a,,,,,FALSO,D2,12,121,,,,,
+,121.1,54,50509355,05/04/2023,12,a,,,,,FALSO,D2,13,121,,,,,
+,121.1,54,50509355,23/02/2018,7,a,,,,,FALSO,DU,15,121,,,,,
+,121.1,54,50509355,26/10/2016,6,a,,,,,FALSO,R,3,121,,,,,
+,121.1,54,50509355,26/10/2016,6,a,,,,,FALSO,DU,8,121,,,,,
+,121.1,54,50509355,26/10/2016,6,a,,,,,FALSO,R,11,121,,,,,
+,121.1,54,8338676,04/05/2019,71,a,,,,,FALSO,DA,31,121,,,,,
+,121.1,54,8338676,28/04/2017,69,a,,,,,FALSO,D1,4,121,,,,,
+,121.1,54,8338676,28/04/2017,69,a,,,,,FALSO,DA,31,121,,,,,
+,121.1,54,8338676,20/04/2018,70,a,,,,,FALSO,DA,31,121,,,,,
