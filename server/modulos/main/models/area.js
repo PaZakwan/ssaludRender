@@ -35,12 +35,10 @@ let areaSchema = new Schema(
     },
     direccion: {
       type: String,
-      lowercase: true,
       trim: true,
     },
     responsable: {
       type: String,
-      lowercase: true,
       trim: true,
     },
     oficina_nro: {
@@ -56,6 +54,11 @@ let areaSchema = new Schema(
       type: String,
     },
     farmacia: {
+      type: String,
+      lowercase: true,
+      trim: true,
+    },
+    vacunatorio: {
       type: String,
       lowercase: true,
       trim: true,

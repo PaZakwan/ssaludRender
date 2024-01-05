@@ -1,6 +1,8 @@
 const {createReadStream, createWriteStream, unlinkSync} = require("fs");
 const path = require("path");
 
+const languageEncoding = require("detect-file-encoding-and-language");
+
 // # Herramienta para csv
 const csv = require("csvtojson");
 // # Herramienta para excels
@@ -13,13 +15,14 @@ const csv = require("csvtojson");
 // ###############################
 const crearContentCSV = ({content = ""} = {}) => {
   try {
-    // revisar que no tenga "," si tiene meter contenido entre ""
-    if (content?.includes?.(",")) {
+    content = content.toString();
+    // revisar si el contenido tiene "," o '"' => y meterlo entre ""
+    if (content.includes(",") || content.includes('"')) {
       // si tiene " remplazarlo por ""
       content = content.trim().replaceAll(/["]/g, '""');
       return `"${content}"`;
     } else {
-      return content?.trim?.() ?? "";
+      return content.trim();
     }
   } catch (error) {
     console.error(`crearContentCSV Catch error: ${error}`);
@@ -120,24 +123,40 @@ const fileToJson = ({file, asyncOperation, target_sheet, output}) => {
     //     output,
     //   });
   } else {
-    return false;
+    return {
+      error: `fileToJson: Formato de Archivo no valida (${extension}).`,
+    };
   }
 };
 
 // ###############################
 // Transforma archivo formato csv a Json
 // ###############################
-const csvToJson = ({input, asyncOperation, output}) => {
+const csvToJson = async ({input, asyncOperation, output}) => {
   try {
     // https://stackoverflow.com/questions/16831250/how-to-convert-csv-to-json-in-node-js
     // https://www.npmjs.com/package/csvtojson#api
     // https://nodesource.com/blog/understanding-streams-in-nodejs/
+
+    let resultEncode = await languageEncoding(input);
+    // Possible result: { language: japanese, encoding: Shift-JIS, confidence: { encoding: 0.94, language: 0.94 } }
+    if (!(resultEncode?.encoding === "UTF-8")) {
+      return {
+        error: `csvToJson - languageEncoding: ${resultEncode?.encoding ?? "not found"} (UTF-8).`,
+      };
+    }
 
     let readableStream = createReadStream(input, {encoding: "utf8"});
 
     readableStream.on("error", (error) => {
       console.log(`csvToJson Stream Read error: ${error.message}`);
     });
+    // .on("end", () => {
+    //   console.log("csvToJson Stream Read Ended");
+    // })
+    // .on("close", (err) => {
+    //   console.log("csvToJson Stream Read Closed");
+    // });
 
     let line = 1;
     return csv({
@@ -167,6 +186,9 @@ const csvToJson = ({input, asyncOperation, output}) => {
       );
   } catch (err) {
     console.error(`csvToJson Catch error: ${err}`);
+    return {
+      error: `csvToJson - Catch: ${err}`,
+    };
   }
 };
 

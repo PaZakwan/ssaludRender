@@ -45,8 +45,9 @@ app.put(
   ],
   async (req, res) => {
     try {
-      // false (no borra, los vacios)
-      let body = isVacio(_pick(req.body, ["sumar", "restar"]), false);
+      let body = isVacio({
+        dato: _pick(req.body, ["sumar", "restar"]),
+      });
       if (body.vacio === true) {
         return errorMessage(res, {message: "No se envió ningún dato."}, 412);
       }
@@ -115,8 +116,10 @@ app.post(
   ],
   async (req, res) => {
     try {
-      // true (borra, los vacios)
-      let body = isVacio(_pick(req.body, listaPatrimonioStock), true);
+      let body = isVacio({
+        dato: _pick(req.body, listaPatrimonioStock),
+        borrar: true,
+      });
       if (body.vacio === true) {
         return errorMessage(res, {message: "No se envió ningún dato."}, 412);
       }

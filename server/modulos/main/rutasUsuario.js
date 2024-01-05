@@ -132,9 +132,10 @@ app.post("/usuario", async (req, res) => {
     listaCrear.splice(8);
 
     // Segundo parametro que propiedades tomar _pick(req.body, ['usuario', 'nombre', 'email', 'password', 'role', 'telefono', 'especialidad', 'estado']).
-    let body = _pick(req.body, listaCrear);
-
-    body = isVacio(body, true);
+    let body = isVacio({
+      dato: _pick(req.body, listaCrear),
+      borrar: true,
+    });
     if (body.vacio === true) {
       return errorMessage(res, {message: "No se envió ningún dato."}, 412);
     }
@@ -162,9 +163,10 @@ app.post("/usuario", async (req, res) => {
 // ============================
 app.post("/usuario/admin", [verificaToken, verificaAdmin_Role], async (req, res) => {
   try {
-    let body = _pick(req.body, listaUsuario);
-
-    body = isVacio(body, true);
+    let body = isVacio({
+      dato: _pick(req.body, listaUsuario),
+      borrar: true,
+    });
     if (body.vacio === true) {
       return errorMessage(res, {message: "No se envió ningún dato."}, 412);
     }
@@ -200,9 +202,9 @@ app.put("/usuario/:id", [verificaToken, verificaAdmin_Role], async (req, res) =>
     // Se quitan de la lista los valores que no serán modificables. Por cuestión de seguridad.
     listaUsuarioUpdate.splice(0, 1);
 
-    let body = _pick(req.body, listaUsuarioUpdate);
-
-    body = isVacio(body, false);
+    let body = isVacio({
+      dato: _pick(req.body, listaUsuarioUpdate),
+    });
     if (body.vacio === true) {
       return errorMessage(res, {message: "No se envió ningún dato."}, 412);
     }
@@ -270,10 +272,9 @@ app.put("/usuario/perfil/:id", [verificaToken], async (req, res) => {
     }
 
     // Se selecciona de la lista los valores que serán modificables. Por cuestión de seguridad.
-    let body = _pick(req.body, ["password_anterior", "password", "actividad", "email", "telefono"]);
-
-    // Verifica que haya datos para editar.
-    body = isVacio(body, false);
+    let body = isVacio({
+      dato: _pick(req.body, ["password_anterior", "password", "actividad", "email", "telefono"]),
+    });
     if (body.vacio === true) {
       return errorMessage(res, {message: "No se envió ningún dato."}, 412);
     }

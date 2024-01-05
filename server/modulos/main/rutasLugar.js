@@ -17,6 +17,7 @@ const listaLugar = [
   "nombre",
   "direccion",
   "descripcion",
+  "conectividad",
   "ip",
 
   "estado",
@@ -27,8 +28,9 @@ const listaLugar = [
 // ============================
 app.post("/lugar/:nombre", [verificaToken, verificaAdmin_Role], async (req, res) => {
   try {
-    // false (no borra, los vacios)
-    let body = isVacio(_pick(req.body, listaLugar), false);
+    let body = isVacio({
+      dato: _pick(req.body, listaLugar),
+    });
     if (body.vacio === true) {
       return errorMessage(res, {message: "No se envió ningún dato."}, 412);
     }
@@ -37,8 +39,8 @@ app.post("/lugar/:nombre", [verificaToken, verificaAdmin_Role], async (req, res)
     body["usuario_modifico"] = req.usuario._id;
 
     let lugarDB = null;
-    let _id = body._id || null;
-    if (_id) {
+    if (body._id) {
+      let _id = body._id;
       // Existe entonces la edita
       // Delete del campo si esta como null / "" / undefined /array vacio
       body = objectSetUnset({dato: body}).dato;
@@ -70,10 +72,6 @@ app.post("/lugar/:nombre", [verificaToken, verificaAdmin_Role], async (req, res)
         new: true,
         runValidators: true,
       }).exec();
-
-      if (!lugarDB) {
-        return errorMessage(res, {message: "Lugar no encontrado."}, 404);
-      }
 
       return res.json({
         ok: true,
@@ -110,8 +108,10 @@ app.get("/lugar/buscar", [verificaToken], async (req, res) => {
         if (typeof filtro !== "object") {
           return errorMessage(res, {message: "El tipo de dato de Filtro no es valido."}, 400);
         }
-        // true (borra, los vacios)
-        filtro = isVacio(filtro, true);
+        filtro = isVacio({
+          dato: filtro,
+          borrar: true,
+        });
         if (filtro.vacio === true) {
           return errorMessage(res, {message: "No se envió ningún dato."}, 412);
         }

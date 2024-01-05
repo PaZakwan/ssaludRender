@@ -40,8 +40,9 @@ app.get("/config/:opc", async (req, res) => {
 // ============================
 app.put("/config/:opc", [verificaToken, verificaAdmin_Role], async (req, res) => {
   try {
-    // false (no borra, los vacios)
-    let body = isVacio(_pick(req.body, listaConfig), false);
+    let body = isVacio({
+      dato: _pick(req.body, listaConfig),
+    });
     if (body.vacio === true) {
       return errorMessage(res, {message: "No se envió ningún dato."}, 412);
     }
@@ -52,8 +53,10 @@ app.put("/config/:opc", [verificaToken, verificaAdmin_Role], async (req, res) =>
     let configDB = await Config.findOne({opcion: req.params.opc}).exec();
     // Si no existe lo crea.
     if (!configDB) {
-      // true (borra, los vacios)
-      body = isVacio(body, true).dato;
+      body = isVacio({
+        dato: body,
+        borrar: true,
+      }).dato;
 
       configDB = await new Config(body).save();
       return res.status(201).json({

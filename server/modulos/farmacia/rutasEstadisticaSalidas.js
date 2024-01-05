@@ -242,20 +242,29 @@ app.get(
             foreignField: "_id",
             as: "pacienteDB",
           })
-          .unwind({path: "$pacienteDB"})
+          .unwind({
+            path: "$pacienteDB",
+            // SI paciente no existe, return null en vez de no existir
+            preserveNullAndEmptyArrays: true,
+          })
           .addFields({
             pacienteOSocDB: "$pacienteDB.oSocial",
             pacienteDocDB: {
               $concat: ["$pacienteDB.tipo_doc", " ", "$pacienteDB.documento"],
             },
             pacienteDB: {
-              $concat: ["$pacienteDB.apellido", ", ", "$pacienteDB.nombre"],
+              $ifNull: [
+                {
+                  $concat: ["$pacienteDB.apellido", ", ", "$pacienteDB.nombre"],
+                },
+                "$ps_paciente",
+              ],
             },
           })
           .group({
             ...{
-              _id: {area: "$origen", insumo: "$insumo"},
-              total: {$sum: "$cantidad"},
+              _id: {area: "$origen", insumo: {$ifNull: ["$insumo", "$vacunaName"]}},
+              total: {$sum: 1},
             },
             ...detallado,
           })
@@ -282,10 +291,10 @@ app.get(
             foreignField: "_id",
             as: "insumoDB",
           })
-          .unwind({path: "$insumoDB"})
+          .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
           .addFields({
             categoriaDB: "$insumoDB.categoria",
-            insumoDB: "$insumoDB.nombre",
+            insumoDB: {$ifNull: ["$insumoDB.nombre", "$insumo"]},
           })
           .addFields({
             _id: {$concat: ["$areaDB", "-", "$insumoDB"]},

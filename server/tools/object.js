@@ -131,54 +131,187 @@ const getDiferenciaDias = ({date, dateHasta = new Date().toISOString().slice(0, 
   }
 };
 
-const isVacio = (dato, borrar) => {
+const isVacio = (payload) => {
   try {
-    if (!!dato && dato !== null && dato !== undefined) {
-      let todovacio = true;
-      for (const key in dato) {
-        if (dato.hasOwnProperty(key)) {
-          if (
-            (typeof dato[key] === "string" && dato[key].trim() === "") ||
-            dato[key] === null ||
-            dato[key] === undefined
-          ) {
-            if (!!borrar) {
-              delete dato[key];
-            }
-          } else if (
-            typeof dato[key] === "string" ||
-            typeof dato[key] === "number" ||
-            typeof dato[key] === "boolean"
-          ) {
-            if (!borrar) {
-              return {dato: dato, vacio: false};
-            }
-            todovacio = false;
-          } else {
-            // Es un objeto o un array
-            let vacioTemp = isVacio(dato[key], borrar);
-            if (vacioTemp.vacio === false) {
-              if (!borrar) {
-                return {dato: dato, vacio: false};
+    let {
+      dato,
+      mainValue = true,
+      vacioUndefined = true,
+      vacioNull = true,
+      vacioCero = false,
+      vacioBoolean = false,
+      vacioEmptyStr = true,
+      vacioEmptyArr = true,
+      vacioEmptyObj = true,
+      inArr = false,
+      inObj = false,
+      borrar = false,
+    } = payload;
+    // if (!mainValue) {
+    //   console.log("dato", dato);
+    // }
+
+    switch (typeof dato) {
+      case "undefined":
+        if (vacioUndefined) {
+          return {dato: dato, vacio: true};
+        }
+        return {dato: dato, vacio: false};
+
+      case "string":
+        if (vacioEmptyStr && dato.trim() === "") {
+          return {dato: dato, vacio: true};
+        }
+        if (vacioCero && dato === "0") {
+          return {dato: dato, vacio: true};
+        }
+        if (vacioBoolean && dato === "false") {
+          return {dato: dato, vacio: true};
+        }
+        return {dato: dato, vacio: false};
+
+      case "number":
+        if (vacioCero && dato === 0) {
+          return {dato: dato, vacio: true};
+        }
+        return {dato: dato, vacio: false};
+
+      case "boolean":
+        if (vacioBoolean && dato === false) {
+          return {dato: dato, vacio: true};
+        }
+        return {dato: dato, vacio: false};
+
+      case "object":
+        if (dato === null) {
+          if (vacioNull) {
+            return {dato: dato, vacio: true};
+          }
+          return {dato: dato, vacio: false};
+        }
+
+        let todovacio = true;
+        if (mainValue || (inArr && Array.isArray(dato)) || (inObj && !Array.isArray(dato))) {
+          // Recorrer Objeto para borrar dentro
+          for (const key in dato) {
+            if (dato.hasOwnProperty(key)) {
+              let vacioTemp = isVacio({...payload, dato: dato[key], mainValue: false});
+              // console.log("vacioTemp", vacioTemp);
+              if (vacioTemp.error) {
+                return {
+                  dato: dato,
+                  vacio: "errorInside",
+                  error: `problemas dentro (${key} : ${dato[key]}): ${vacioTemp.error}`,
+                };
+              } else if (vacioTemp.vacio === true) {
+                if (borrar) {
+                  if (Array.isArray(dato) && !vacioUndefined) {
+                    dato[key] = Symbol("borrarIn");
+                  } else {
+                    delete dato[key];
+                  }
+                }
+              } else {
+                // faster without borrar
+                if (!borrar) {
+                  return {dato: dato, vacio: false};
+                }
+                todovacio = false;
+                dato[key] = vacioTemp.dato;
               }
-              todovacio = false;
-            } else if (!!borrar) {
-              delete dato[key];
             }
           }
         }
-      }
-      if (todovacio === true) {
-        return {dato: dato, vacio: true};
-      }
-      return {dato: dato, vacio: false};
-    } else {
-      return {dato: dato, vacio: true};
+
+        if (Array.isArray(dato)) {
+          // es un array
+          if (borrar && (mainValue || inArr)) {
+            if (vacioUndefined) {
+              dato = dato.filter((v) => v !== undefined);
+            } else {
+              dato = dato.filter((v) => !(typeof v === "symbol" && v.description === "borrarIn"));
+            }
+          }
+
+          if (vacioEmptyArr && dato.length === 0) {
+            return {
+              dato: dato,
+              vacio: true,
+            };
+          } else {
+            return {dato: dato, vacio: mainValue || inArr ? todovacio : false};
+          }
+        } else {
+          // es un objeto
+          if (vacioEmptyObj && Object.keys(dato).length === 0) {
+            return {dato: dato, vacio: true};
+          } else {
+            return {dato: dato, vacio: mainValue || inObj ? todovacio : false};
+          }
+        }
+
+      case "function":
+        return {dato: dato, vacio: false};
+
+      default:
+        return {dato: dato, vacio: "errorType", error: "tipo de valor desconocido"};
     }
   } catch (error) {
     return {dato: dato, vacio: "error", error};
   }
 };
+
+// let temp = {
+//   // func: () => {
+//   //   console.log("hola temp");
+//   // },
+//   und: undefined,
+//   null: null,
+//   // bool1: true,
+//   // bool0: false,
+//   // str: "hola",
+//   stre: "",
+//   stre2: "   ",
+//   // number0: 0,
+//   // number: 6,
+//   arrayEmpty: [],
+//   // array: ["256", "  ", 0, 35, undefined, null, true, false, [], [0, 3], {}, {hola: "chau"}],
+//   obje: {},
+//   // obj: {
+//   //   und: undefined,
+//   //   null: null,
+//   //   bool1: true,
+//   //   bool0: false,
+//   //   str: "hola",
+//   //   stre: "",
+//   //   stre2: "   ",
+//   //   number0: 0,
+//   //   number: 6,
+//   //   arrayEmpty: [],
+//   //   array: ["256", "  ", 0, 35, undefined, null, true, false, [], [0, 3], {}, {hola: "chau"}],
+//   //   obje: {},
+//   // },
+// };
+
+// TESTEAR VACIOS
+// console.log(
+//   "isVacio: ",
+//   isVacio({
+//     dato: temp,
+//     // dato: [undefined, ,],
+//     // opciones: new value // default value
+//     vacioUndefined: false, // true,
+//     vacioNull: false, // true,
+//     vacioCero: true, // false,
+//     vacioBoolean: true, // false,
+//     vacioEmptyStr: false, // true,
+//     vacioEmptyArr: false, // true,
+//     vacioEmptyObj: false, // true,
+//     inArr: true, // false,
+//     inObj: true, // false,
+//     borrar: true, // false,
+//   })
+// );
 
 const objectSetUnset = ({dato, unsetCero = false, unsetBoolean = false}) => {
   try {
@@ -207,7 +340,10 @@ const objectSetUnset = ({dato, unsetCero = false, unsetBoolean = false}) => {
           todovacio = false;
         } else {
           // Es un objeto o un array
-          let vacioTemp = isVacio(dato[key], true);
+          let vacioTemp = isVacio({
+            dato: dato[key],
+            borrar: true, // false,
+          });
           if (vacioTemp.vacio === false) {
             $set[key] = vacioTemp.dato;
             todovacio = false;

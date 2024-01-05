@@ -165,8 +165,9 @@ app.put(
   ],
   async (req, res) => {
     try {
-      // false (no borra, los vacios)
-      let body = isVacio(_pick(req.body, listaDescartes), false);
+      let body = isVacio({
+        dato: _pick(req.body, listaDescartes),
+      });
       if (body.vacio === true) {
         return errorMessage(res, {message: "No se envió ningún dato."}, 412);
       }
@@ -193,40 +194,46 @@ app.put(
       }
 
       let errors = [];
-      let descarteDB = null;
       body.retirado = new Date();
       body.usuario_creador = req.usuario.id;
 
       // recorrer array de insumos
       for (const insumo of body.insumos) {
-        descarteDB = null;
-        let stockDB = null;
-
-        stockDB = await modificarStockInc(body.origen, insumo.insumo, insumo.cantidad, "resta");
-
-        if (!stockDB || (stockDB && stockDB.err)) {
-          // o si tira error..
+        if (body.motivo === "Utilizado" && insumo?.insumo?.insumoCategoriaDB === "Vacuna") {
           errors.push({
-            message: `${insumo.insumo.insumoDB} - Modificar Stock - ${
-              stockDB?.err ?? "No contemplado"
-            }.`,
-            type: "Modificar Stock",
+            message: `${insumo.insumo.insumoDB} - Vacuna no se puede egresar como Utilizado.`,
+            type: "Guardar Descarte",
           });
         } else {
-          // modifico stock sin error (guarda descarte)
-          descarteDB = await new FarmaciaDescarte({
-            ...body,
-            insumo: insumo.insumo.insumo,
-            procedencia: insumo.insumo.procedencia,
-            lote: insumo.insumo.lote,
-            vencimiento: insumo.insumo.vencimiento,
-            cantidad: insumo.cantidad,
-          }).save();
-          if (descarteDB === null) {
+          let descarteDB = null;
+          let stockDB = null;
+
+          stockDB = await modificarStockInc(body.origen, insumo.insumo, insumo.cantidad, "resta");
+
+          if (!stockDB || (stockDB && stockDB.err)) {
+            // o si tira error..
             errors.push({
-              message: `${insumo.insumo.insumoDB} - Guardar Descarte Error`,
-              type: "Guardar Descarte",
+              message: `${insumo.insumo.insumoDB} - Modificar Stock - ${
+                stockDB?.err ?? "No contemplado"
+              }.`,
+              type: "Modificar Stock",
             });
+          } else {
+            // modifico stock sin error (guarda descarte)
+            descarteDB = await new FarmaciaDescarte({
+              ...body,
+              insumo: insumo.insumo.insumo,
+              procedencia: insumo.insumo.procedencia,
+              lote: insumo.insumo.lote,
+              vencimiento: insumo.insumo.vencimiento,
+              cantidad: insumo.cantidad,
+            }).save();
+            if (descarteDB === null) {
+              errors.push({
+                message: `${insumo.insumo.insumoDB} - Guardar Descarte Error`,
+                type: "Guardar Descarte",
+              });
+            }
           }
         }
       }

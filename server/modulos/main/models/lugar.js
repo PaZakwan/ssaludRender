@@ -35,6 +35,9 @@ let lugarSchema = new Schema(
       trim: true,
     },
 
+    conectividad: {
+      type: String,
+    },
     ip: {
       type: String,
       lowercase: true,

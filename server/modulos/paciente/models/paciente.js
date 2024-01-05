@@ -68,9 +68,11 @@ let pacienteSchema = new mongoose.Schema(
     },
     sexo: {
       type: String,
+      required: [true, "El Sexo del Paciente es necesario."],
     },
     fec_nac: {
       type: String,
+      required: [true, "La Fecha de Nacimiento del Paciente es necesaria."],
     },
     telefono: {
       type: String,
@@ -102,6 +104,7 @@ let pacienteSchema = new mongoose.Schema(
     },
     dir_localidad: {
       type: String,
+      required: [true, "La Localidad del Paciente es necesaria."],
     },
     dir_descripcion: {
       type: String,
@@ -145,9 +148,7 @@ let pacienteSchema = new mongoose.Schema(
     },
 
     // PSVacunas
-    ps_id: {
-      type: String,
-    },
+    ps_id: {type: Array, default: void 0},
     doc_responsable: {
       type: String,
     },
@@ -262,14 +263,14 @@ pacienteSchema.pre("findOneAndUpdate", async function (next) {
   } else {
     this.getUpdate().updatedAt = new Date();
   }
-  if (this.getUpdate().$set.hist_tuberculosis) {
+  if (this.getUpdate().$set?.hist_tuberculosis) {
     this.getUpdate().$set.hist_tuberculosis.updatedAt = new Date();
   } else if (this.getUpdate().hist_tuberculosis) {
     this.getUpdate().hist_tuberculosis.updatedAt = new Date();
   }
 
   // NUMERO DE HISTORIAL DE SALITAS NO REPETIBLE...
-  if (this.getUpdate().$set.hist_salitas) {
+  if (this.getUpdate().$set?.hist_salitas) {
     for (const element of this.getUpdate().$set.hist_salitas) {
       if (element.area) {
         let DB = await this.model

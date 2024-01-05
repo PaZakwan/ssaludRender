@@ -31,12 +31,27 @@ let VacunaAplicacionSchema = new Schema(
     paciente: {
       type: Schema.Types.ObjectId,
       ref: "Paciente",
-      required: [true, "El Paciente que recibe es necesario."],
+      required: [
+        function () {
+          return !this.ps_paciente;
+        },
+        // "El Paciente es necesario si ps_paciente no existe.",
+        "El Paciente que recibe es necesario.",
+      ],
     },
     vacunador: {
       type: Schema.Types.ObjectId,
       ref: "Usuario",
-      required: true,
+      required: [
+        function () {
+          return !this.vacunadorName;
+        },
+        // "El Vacunador es necesario si vacunadorName no existe.",
+        "El Vacunador es necesario.",
+      ],
+    },
+    vacunadorName: {
+      type: String,
     },
     fecha_futura_cita: {
       type: Date,
@@ -85,11 +100,14 @@ let VacunaAplicacionSchema = new Schema(
     fuma: {
       type: Boolean,
     },
-    antecedentes_patologicos: [
-      {
-        type: String,
-      },
-    ],
+    antecedentes_patologicos: {
+      type: [
+        {
+          type: String,
+        },
+      ],
+      default: void 0,
+    },
     oSocial: {
       type: String,
     },
@@ -107,11 +125,16 @@ let VacunaAplicacionSchema = new Schema(
     insumo: {
       type: Schema.Types.ObjectId,
       ref: "Insumo",
-      required: [true, "La Vacuna a aplicar es necesaria."],
+      required: [
+        function () {
+          return !this.vacunaName;
+        },
+        // "La Vacuna a aplicar es necesaria si vacunaName no existe.",
+        "La Vacuna a aplicar es necesaria.",
+      ],
     },
-    cantidad: {
-      type: Number,
-      default: 1,
+    vacunaName: {
+      type: String,
     },
     procedencia: {
       type: String,
@@ -119,23 +142,51 @@ let VacunaAplicacionSchema = new Schema(
     },
     lote: {
       type: String,
-      required: [true, "El Lote de la Vacuna a aplicar es necesario."],
+      required: [
+        function () {
+          return this.vacunador;
+        },
+        // "El Lote de la Vacuna a aplicar es necesario si vacunador existe.",
+        "El Lote de la Vacuna a aplicar es necesario.",
+      ],
     },
     vencimiento: {
       type: Date,
-      required: [true, "El Vencimiento de la Vacuna a aplicar es necesario."],
+      required: [
+        function () {
+          return this.vacunador;
+        },
+        // "El Vencimiento de la Vacuna a aplicar es necesario si vacunador existe.",
+        "El Vencimiento de la Vacuna a aplicar es necesario.",
+      ],
     },
     dosis: {
       type: String,
       required: [true, "La Dosis de la Vacuna a aplicar es necesaria."],
+    },
+    completa: {
+      type: Boolean,
     },
     estrategia: {
       type: String,
       default: "Calendario",
     },
 
+    // PSVacunas
+    ps_id: {
+      type: String,
+    },
+    ps_paciente: {
+      type: String,
+    },
+
     retirado: {
       type: Date,
+    },
+
+    createdAt: {
+      type: Date,
+      default: Date.now,
     },
   },
   schemaOptions

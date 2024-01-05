@@ -105,8 +105,10 @@ async function crearConsulta(body) {
           }).exec();
         } else {
           // nuevo
-          // true (borra, los vacios)
-          body = isVacio(body, true).dato;
+          body = isVacio({
+            dato: body,
+            borrar: true, // false,
+          }).dato;
           consultaTemp = await new Nutricion(body).save();
         }
 
@@ -192,8 +194,9 @@ app.put(
   ],
   async (req, res) => {
     try {
-      // false (no borra, los vacios)
-      let body = isVacio(_pick(req.body, listaHistorial), false);
+      let body = isVacio({
+        dato: _pick(req.body, listaHistorial),
+      });
       if (body.vacio === true) {
         return errorMessage(res, {message: "No se envió ningún dato."}, 412);
       }
@@ -217,8 +220,10 @@ app.put(
         }).exec();
       } else {
         // nuevo
-        // true (borra, los vacios)
-        body = isVacio(body, true).dato;
+        body = isVacio({
+          dato: body,
+          borrar: true, // false,
+        }).dato;
         historialDB = await new HistorialClinico(body).save();
       }
 
@@ -288,8 +293,12 @@ app.put(
   ],
   async (req, res) => {
     try {
-      // false (no borra, los vacios)
-      let body = isVacio(_pick(req.body, listaMotivo), false);
+      // #############################
+      // DESARROLLAR DE ACA
+      // #############################
+      let body = isVacio({
+        dato: _pick(req.body, listaMotivo),
+      });
       if (body.vacio === true) {
         return errorMessage(res, {message: "No se envió ningún dato."}, 412);
       }
@@ -313,8 +322,10 @@ app.put(
         }).exec();
       } else {
         // nuevo
-        // true (borra, los vacios)
-        body = isVacio(body, true).dato;
+        body = isVacio({
+          dato: body,
+          borrar: true, // false,
+        }).dato;
         motivoDB = await new HistorialMotivo(body).save();
       }
 
@@ -393,8 +404,9 @@ app.put(
   ],
   async (req, res) => {
     try {
-      // false (no borra, los vacios)
-      let body = isVacio(req.body, false);
+      let body = isVacio({
+        dato: req.body,
+      });
       if (body.vacio === true) {
         return errorMessage(res, {message: "No se envió ningún dato."}, 412);
       }
@@ -486,8 +498,9 @@ app.put(
   ],
   async (req, res) => {
     try {
-      // false (no borra, los vacios)
-      let body = isVacio(_pick(req.body, listaMedicacion), false);
+      let body = isVacio({
+        dato: _pick(req.body, listaMedicacion),
+      });
       if (body.vacio === true) {
         return errorMessage(res, {message: "No se envió ningún dato."}, 412);
       }
@@ -511,8 +524,10 @@ app.put(
         }).exec();
       } else {
         // nuevo
-        // true (borra, los vacios)
-        body = isVacio(body, true).dato;
+        body = isVacio({
+          dato: body,
+          borrar: true, // false,
+        }).dato;
         medicacionDB = await new HistorialMedicacion(body).save();
       }
 

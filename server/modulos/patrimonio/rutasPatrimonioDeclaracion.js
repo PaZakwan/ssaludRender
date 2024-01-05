@@ -43,8 +43,10 @@ app.post(
   ],
   async (req, res) => {
     try {
-      // true (borra, los vacios)
-      let body = isVacio(_pick(req.body, listaPatrimonioDeclaracion), true);
+      let body = isVacio({
+        dato: _pick(req.body, listaPatrimonioDeclaracion),
+        borrar: true,
+      });
       if (body.vacio === true) {
         return errorMessage(res, {message: "No se envió ningún dato."}, 412);
       }
@@ -114,8 +116,10 @@ app.get(
           if (typeof filtro !== "object") {
             return errorMessage(res, {message: "El dato de Filtro no es valido."}, 400);
           }
-          // true (borra, los vacios)
-          filtro = isVacio(filtro, true);
+          filtro = isVacio({
+            dato: filtro,
+            borrar: true,
+          });
           if (filtro.vacio === true) {
             return errorMessage(res, {message: "No se envió ningún dato."}, 412);
           }

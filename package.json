@@ -26,11 +26,12 @@
   "author": "Paz Juan",
   "license": "AGPL-3.0-only",
   "dependencies": {
-    "axios": "^1.3.4",
+    "axios": "^1.6.4",
     "bcrypt": "^5.1.0",
     "connect-history-api-fallback": "^2.0.0",
     "cors": "^2.8.5",
     "csvtojson": "^2.0.10",
+    "detect-file-encoding-and-language": "^2.4.0",
     "express": "^4.18.2",
     "helmet": "^6.0.1",
     "ip": "^2.0.0",

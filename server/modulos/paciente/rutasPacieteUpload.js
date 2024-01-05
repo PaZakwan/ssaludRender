@@ -193,19 +193,17 @@ const PacienteFormat = ({json, totales, line, logFile, csvErrors, csvFix}) => {
     } else {
       json.tipo_doc = "DNI";
     }
-    // fec_nac
+
+    // fec_nac REQUERIDO BD
     if (json.fec_nac) {
       if (!isDateValid(json.fec_nac)) {
         errores += ` fec_nac (${json.fec_nac}) [YYYY-MM-DD].`;
       }
     } else {
-      advertencia += " fec_nac Sin Dato.";
+      errores += " fec_nac Sin Dato.";
     }
-    // email
-    if (json.email && !/^([\w-\.]+@([\w-]+\.)+[\w-]{2,12})?$/.test(json.email)) {
-      advertencia += ` email Validation (${json.email}).`;
-    }
-    // sexo
+
+    // sexo REQUERIDO BD
     if (json.sexo) {
       switch (json.sexo.toLowerCase()) {
         case "f":
@@ -221,10 +219,10 @@ const PacienteFormat = ({json, totales, line, logFile, csvErrors, csvFix}) => {
           errores += ` sexo (${json.sexo}).`;
       }
     } else {
-      advertencia += " sexo Sin Dato.";
+      errores += " sexo Sin Dato.";
     }
 
-    // dir_localidad
+    // dir_localidad REQUERIDO BD
     if (json.dir_localidad) {
       switch (json.dir_localidad) {
         case "Cuartel V":
@@ -262,24 +260,33 @@ const PacienteFormat = ({json, totales, line, logFile, csvErrors, csvFix}) => {
           break;
 
         default:
-          errores += ` ZonaReside (${json.ZonaReside}).`;
+          errores += ` ZonaReside / dir_localidad (${json.ZonaReside}).`;
       }
     } else {
-      advertencia += " dir_localidad Sin Dato.";
+      errores += " dir_localidad Sin Dato.";
+    }
+
+    // email
+    if (json.email && !/^([\w-\.]+@([\w-]+\.)+[\w-]{2,12})?$/.test(json.email)) {
+      advertencia += ` email Validation (${json.email}).`;
     }
     // dir_calle
     if (json.dir_calle) {
       json.dir_calle = capitalize(json.dir_calle.trim());
     }
+    // dir_numero // si no es un numero lo pasa a dir_descripcion
+    if (json.dir_numero && isNaN(json.dir_numero)) {
+      if (json.dir_descripcion) {
+        json.dir_descripcion = `Numero: ${json.dir_numero}. ${json.dir_descripcion}`;
+      } else {
+        json.dir_descripcion = `Numero: ${json.dir_numero}.`;
+      }
+      advertencia += ` dir_numero No es un Numero (${json.dir_numero}) y fue guardado en dir_descripcion.`;
+      delete json.dir_numero;
+    }
     // dir_descripcion
     if (json.dir_descripcion) {
       json.dir_descripcion = trim_between(json.dir_descripcion);
-    }
-    // dir_numero // si no es un numero lo pasa a dir_descripcion
-    if (json.dir_numero && isNaN(json.dir_numero)) {
-      json.dir_descripcion = json.dir_numero;
-      advertencia += ` dir_numero No es un Numero (${json.dir_numero}) y fue guardado en dir_descripcion.`;
-      delete json.dir_numero;
     }
 
     if (json.IdPS) {
@@ -300,9 +307,12 @@ const PacienteFormat = ({json, totales, line, logFile, csvErrors, csvFix}) => {
     }
     if (errores) {
       // errores-fixable => documento-apellido-nombre.. o apellido/nombre con numero.
+      // fec_nac, dir_localidad o dir_calle/dir_numero
       if (
-        (json.documento && json.documento != 0 && json.apellido && json.nombre) ||
-        (!json.documento && (/\d/.test(json.apellido) || /\d/.test(json.nombre)))
+        json.fec_nac &&
+        (json.dir_localidad || (json.dir_calle && json.dir_numero)) &&
+        ((json.documento && json.documento != 0 && json.apellido && json.nombre) ||
+          (!json.documento && (/\d/.test(json.apellido) || /\d/.test(json.nombre))))
       ) {
         guardarCSV({
           streamFile: csvFix,
@@ -335,7 +345,7 @@ const PacienteFormat = ({json, totales, line, logFile, csvErrors, csvFix}) => {
 };
 
 // ============================
-// Verificando/Validando formato de Pacientes
+// Guardando Pacientes y errores
 // ============================
 const savePacientesUnHilo = async ({documentos, totales, line, logFile, csvErrors, csvFix}) => {
   try {
@@ -399,6 +409,13 @@ const savePacientesUnHilo = async ({documentos, totales, line, logFile, csvError
           // parts[1] -> index name (I use this one to further parse out the field name)
           // parts[2] -> value that violates the constraint
           errorMessage = `${parts[1]} ya existente en el sistema, debe ser unico (${parts[2]}).`;
+          mongoose.connections[1].models.Paciente.findOneAndUpdate(
+            {
+              tipo_doc: element.err.op.tipo_doc,
+              documento: element.err.op.documento,
+            },
+            {$addToSet: {ps_id: {$each: element.err.op.ps_id}}}
+          ).exec();
           totales["errores-exist"] += 1;
         } else {
           errorMessage = `${element.err.errmsg}`;
@@ -452,17 +469,17 @@ app.post(
     // Archivo ya subido, uploadSingleRoute -> req.file
     // req.file.fecha_Name; // fecha + _ + name
     let logFile = crearStreamFile({
-      fileName: `${req.file.fecha_Name}-log`,
+      fileName: `paciente-${req.file.fecha_Name}-log`,
       fileExtension: "txt",
       route: "../file_server/logs",
     });
     let csvErrors = crearStreamFile({
-      fileName: `${req.file.fecha_Name}-Errores`,
+      fileName: `paciente-${req.file.fecha_Name}-Errores`,
       fileExtension: "csv",
       route: "../file_server/uploads",
     });
     let csvFix = crearStreamFile({
-      fileName: `${req.file.fecha_Name}-Fix`,
+      fileName: `paciente-${req.file.fecha_Name}-Fix`,
       fileExtension: "csv",
       route: "../file_server/uploads",
     });
@@ -527,8 +544,10 @@ app.post(
             totales.errores += 1;
             return;
           }
-          // true (borra los vacios)
-          json = isVacio(json, true);
+          json = isVacio({
+            dato: json,
+            borrar: true,
+          });
           if (json.vacio === true) {
             guardarCSV({
               streamFile: csvErrors,
@@ -570,12 +589,8 @@ app.post(
           }
         },
       });
-      if (!fileJson) {
-        return errorMessage(
-          res,
-          {message: "Actividad no autorizada, Formato de Archivo no valida."},
-          403
-        );
+      if (fileJson?.error) {
+        return errorMessage(res, {message: fileJson.error}, 412);
       }
       // Si termino y quedaron documentos en el acumulador, Guardarlos
       if (documentos.length > 0) {
@@ -610,7 +625,7 @@ app.post(
       // Borrar si no hay errores
       if (totales.errores === 0) {
         deleteFile({
-          fileName: `${req.file.fecha_Name}-Errores`,
+          fileName: `paciente-${req.file.fecha_Name}-Errores`,
           fileExtension: "csv",
           route: "../file_server/uploads",
         });
@@ -618,7 +633,7 @@ app.post(
       // Borrar si no hay errores-fix
       if (totales["errores-fix"] === 0) {
         deleteFile({
-          fileName: `${req.file.fecha_Name}-Fix`,
+          fileName: `paciente-${req.file.fecha_Name}-Fix`,
           fileExtension: "csv",
           route: "../file_server/uploads",
         });

@@ -394,9 +394,10 @@ app.post("/paciente", [verificaToken, verificaPacienteLectura], async (req, res)
 
     let listaPacienteCrear = listaPaciente.slice();
 
-    let body = _pick(req.body, listaPacienteCrear);
-
-    body = isVacio(body, true);
+    let body = isVacio({
+      dato: _pick(req.body, listaPacienteCrear),
+      borrar: true,
+    });
     if (body.vacio === true) {
       return errorMessage(res, {message: "No se envió ningún dato."}, 412);
     }
@@ -432,9 +433,9 @@ app.put("/paciente/:id", [verificaToken, verificaPacienteLectura], async (req, r
 
     let listaPacienteUpdate = listaPaciente.slice();
 
-    let body = _pick(req.body, listaPacienteUpdate);
-
-    body = isVacio(body, false);
+    let body = isVacio({
+      dato: _pick(req.body, listaPacienteUpdate),
+    });
     if (body.vacio === true) {
       return errorMessage(res, {message: "No se envió ningún dato."}, 412);
     }

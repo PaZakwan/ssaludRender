@@ -5,16 +5,33 @@
 - Chromium:
   - Descargar PDFs - (Error: Error de red) Usando el boton proporcionado por el navegador cuando previsualiza el PDF.
     Solucion Temporaria: https://youtu.be/kRvcB-4OXak o navegadores con otro motor como Firefox/Safari.
-    Infe Tech: https://support.google.com/chrome/thread/47987652/failed-network-error-when-click-download-a-pdf-file-in-blob-url?hl=en
+    Info Tech: https://support.google.com/chrome/thread/47987652/failed-network-error-when-click-download-a-pdf-file-in-blob-url?hl=en
     https://bugs.chromium.org/p/chromium/issues/detail?id=892133
     https://bugs.chromium.org/p/chromium/issues/detail?id=1224027
 
 ##### Unreleased
 
+##### [1.7.20240105] - 2024-01-05
+
+- Added a Sistema - File => crearContentCSV() Funcion para crear contenido de una celda de CSV sin problemas de compatibilidad.
+- Improve a Sistema - File => Crear y Leer archivos grandes que ocasionaban problemas con la memoria del sistema (memoria insuficiente) ahora lo hacen por medio de la tecnologia Stream evitando tal problema.
+- Improve a Sistema - Object => Funcion global isVacio() mejora el control y la manipulacion de tipos de datos.
+- Improve a Sistema - Uploads => Middleware para manejar la subida de archivos.
+
+- Added a Sistema - Areas => Funcionalidad de Vacunatorio.
+- Added a Sistema - Lugares => Tipo de conectividad.
+- Added a Sistema - Pacientes => Posibilidad de dar de Alta por medio de importar Planillas en formato CSV.
+- Added a Sistema - Vacunaciones => Posibilidad de dar de Alta por medio de importar Planillas en formato CSV.
+
+- Added a Patrimonio - Consulta Movimientos => Se agrego la posibilidad de Exportar a Excel.
+
+- Improve a Farmacia - Vacunaciones => Permite aplicaciones de insumos traidos por paciente y previas en otras instituciones.
+- Changed a Farmacia - Descartes => No se pueden egresar Insumos de Categoria "Vacuna" con motivo de "Utilizado".
+
 ##### [1.7.20231020] - 2023-10-20
 
 - Added a Sistema - Fechas => +object.dateUTC -> excelValue to UTC.
-- Added a Sistema - Pacientes => Tipos de Documento -> +Paises.
+- Added a Sistema - Pacientes => Tipos de Documento -> +Paises. Documento -> alphanumerico.
 - Fix a Sistema - Navegacion => Se abria el menu de navegacion cuando se hacia cualquier consulta.
 
 - Added a Bromatologia - Analaisis => Bacteriologico/Fisico-Quimico -> Nuevas opciones en "Fuente de Analisis" "Dispenser" y "Otros".

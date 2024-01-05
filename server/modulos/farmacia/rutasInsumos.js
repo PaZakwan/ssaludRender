@@ -132,8 +132,9 @@ app.put(
   ],
   async (req, res) => {
     try {
-      // false (no borra, los vacios)
-      let body = isVacio(_pick(req.body, listaInsumo), false);
+      let body = isVacio({
+        dato: _pick(req.body, listaInsumo),
+      });
       if (body.vacio === true) {
         return errorMessage(res, {message: "No se envió ningún dato."}, 412);
       }

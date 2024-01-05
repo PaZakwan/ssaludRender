@@ -17,7 +17,8 @@ let listaVacunaciones = [
   "fecha",
   "origen",
   "paciente",
-  "vacunador",
+  // "vacunador",
+  "vacunadorName",
   "fecha_futura_cita",
 
   "sexo",
@@ -37,14 +38,17 @@ let listaVacunaciones = [
   "personal_salud",
   "personal_esencial",
 
+  "No_Provista",
   "insumos",
   // "insumo",
-  // "cantidad",
+  // "vacunaName",
   // "procedencia",
   // "lote",
   // "vencimiento",
   // "dosis",
-  // "estrategia"
+  // "completa",
+  // "estrategia",
+  // "No_Provista",
   // "retirado",
 
   "retirado",
@@ -136,13 +140,22 @@ app.get(
           foreignField: "_id",
           as: "pacienteDB",
         })
-        .unwind({path: "$pacienteDB"})
+        .unwind({
+          path: "$pacienteDB",
+          // SI paciente no existe, return null en vez de no existir
+          preserveNullAndEmptyArrays: true,
+        })
         .addFields({
           pacienteDocDB: {
             $concat: ["$pacienteDB.tipo_doc", " ", "$pacienteDB.documento"],
           },
           pacienteDB: {
-            $concat: ["$pacienteDB.apellido", ", ", "$pacienteDB.nombre"],
+            $ifNull: [
+              {
+                $concat: ["$pacienteDB.apellido", ", ", "$pacienteDB.nombre"],
+              },
+              "$ps_paciente",
+            ],
           },
         })
         .lookup({
@@ -153,12 +166,16 @@ app.get(
         })
         .unwind({
           path: "$vacunadorDB",
-          // SI vacunador no existe, return null en vez de no return el documento
           preserveNullAndEmptyArrays: true,
         })
         .addFields({
           vacunadorDB: {
-            $concat: ["$vacunadorDB.apellido", ", ", "$vacunadorDB.nombre"],
+            $ifNull: [
+              {
+                $concat: ["$vacunadorDB.apellido", ", ", "$vacunadorDB.nombre"],
+              },
+              "$vacunadorName",
+            ],
           },
         })
         .lookup({
@@ -167,10 +184,9 @@ app.get(
           foreignField: "_id",
           as: "insumoDB",
         })
-        .unwind({path: "$insumoDB"})
+        .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
         .addFields({
-          categoriaDB: "$insumoDB.categoria",
-          insumoDB: "$insumoDB.nombre",
+          insumoDB: {$ifNull: ["$insumoDB.nombre", "$vacunaName"]},
         });
 
       if (req.query.select === "lite") {
@@ -184,14 +200,15 @@ app.get(
           pacienteDocDB: 1,
           oSocial: 1,
           insumoDB: 1,
-          cantidad: 1,
           procedencia: 1,
           lote: 1,
           vencimiento: 1,
           dosis: 1,
+          completa: 1,
           estrategia: 1,
           fecha_futura_cita: 1,
           retirado: 1,
+          createdAt: 1,
         });
       }
 
@@ -225,8 +242,14 @@ app.put(
   ],
   async (req, res) => {
     try {
-      // false (no borra, los vacios)
-      let body = isVacio(_pick(req.body, listaVacunaciones), false);
+      let body = isVacio({
+        dato: _pick(req.body, listaVacunaciones),
+        //     vacioCero: true, // false,
+        vacioBoolean: true, // false,
+        inArr: true, // false,
+        inObj: true, // false,
+        borrar: true, // false,
+      });
       if (body.vacio === true) {
         return errorMessage(res, {message: "No se envió ningún dato."}, 412);
       }
@@ -243,19 +266,24 @@ app.put(
       }
 
       let errors = [];
-      let vacunacionesDB = null;
-      body.retirado = new Date();
+      let retiradoDate = new Date();
       body.usuario_creador = req.usuario.id;
-      body.vacunador = req.usuario.id;
+      if (!body.vacunadorName) {
+        body.vacunador = req.usuario.id;
+      }
 
       // recorrer array de insumos
       for (const insumo of body.insumos) {
-        vacunacionesDB = null;
+        let vacunacionesDB = null;
         let stockDB = null;
 
-        stockDB = await modificarStockInc(body.origen, insumo.insumo, insumo.cantidad, "resta");
+        if (body.No_Provista || insumo.No_Provista) {
+          stockDB = true;
+        } else {
+          stockDB = await modificarStockInc(body.origen, insumo.insumo, 1, "resta");
+        }
 
-        if (!stockDB || (stockDB && stockDB.err)) {
+        if (!stockDB || stockDB?.err) {
           // o si tira error..
           errors.push({
             message: `${insumo.insumo.insumoDB} - Modificar Stock - ${
@@ -267,17 +295,19 @@ app.put(
           // modifico stock sin error (guarda vacunacion)
           vacunacionesDB = await new VacunaAplicacion({
             ...body,
-            insumo: insumo.insumo.insumo,
-            procedencia: insumo.insumo.procedencia,
-            lote: insumo.insumo.lote,
-            vencimiento: insumo.insumo.vencimiento,
-            cantidad: insumo.cantidad,
+            vacunaName: insumo.vacunaName,
+            procedencia: insumo.insumo?.procedencia ?? body.No_Provista,
+            insumo: insumo.insumo?.insumo ?? insumo.insumo?.id,
+            lote: insumo.insumo?.lote ?? insumo.lote,
+            vencimiento: insumo.insumo?.vencimiento ?? insumo.vencimiento,
             dosis: insumo.dosis,
+            completa: insumo.completa ? true : undefined,
             estrategia: insumo.estrategia,
+            retirado: body.No_Provista || insumo.No_Provista ? undefined : retiradoDate,
           }).save();
           if (vacunacionesDB === null) {
             errors.push({
-              message: `${insumo.insumo.insumoDB} - Guardar Vacunacion Error`,
+              message: `${insumo.insumo?.insumoDB ?? insumo.vacunaName} - Guardar Vacunacion Error`,
               type: "Guardar Vacunacion",
             });
           }
@@ -286,7 +316,7 @@ app.put(
 
       return res.status(errors.length > 0 ? 500 : 201).json({
         ok: errors.length > 0 ? false : true,
-        vacunaciones: body.retirado,
+        vacunaciones: retiradoDate,
         err: {
           errors,
         },
@@ -337,7 +367,7 @@ app.delete(
       if (
         !(
           req.usuario.farmacia.general?.admin === 1 ||
-          new Date(vacunacionesDB.retirado).toISOString().slice(0, 10) === hoy
+          new Date(vacunacionesDB.createdAt).toISOString().slice(0, 10) === hoy
         )
       ) {
         return errorMessage(
@@ -360,10 +390,10 @@ app.delete(
             lote: vacunacionesDB.lote,
             vencimiento: vacunacionesDB.vencimiento,
           },
-          vacunacionesDB.cantidad
+          1
         );
         // si hay un error Salir
-        if (!stockDB || (stockDB && stockDB.err)) {
+        if (!stockDB || stockDB?.err) {
           return errorMessage(
             res,
             {message: "Problemas con la Base de Datos (recuperar el Stock)."},

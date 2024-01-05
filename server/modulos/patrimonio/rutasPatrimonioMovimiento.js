@@ -53,8 +53,9 @@ app.post(
   ],
   async (req, res) => {
     try {
-      // false (no borra, los vacios)
-      let body = isVacio(_pick(req.body, listaPatrimonioMovimiento), false);
+      let body = isVacio({
+        dato: _pick(req.body, listaPatrimonioMovimiento),
+      });
       if (body.vacio === true) {
         return errorMessage(res, {message: "No se envió ningún dato."}, 412);
       }

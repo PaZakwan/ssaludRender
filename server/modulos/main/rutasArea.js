@@ -23,6 +23,7 @@ let listaArea = [
   "unidad_atencion",
   "zona_us",
   "farmacia",
+  "vacunatorio",
   "estado",
 ];
 
@@ -73,6 +74,11 @@ app.get("/area", async (req, res) => {
         if (!!filtro.farmacia) {
           filtro.farmacia = {
             $regex: `(?i)${filtro.farmacia}`,
+          };
+        }
+        if (!!filtro.vacunatorio) {
+          filtro.vacunatorio = {
+            $regex: `(?i)${filtro.vacunatorio}`,
           };
         }
       } catch (error) {
