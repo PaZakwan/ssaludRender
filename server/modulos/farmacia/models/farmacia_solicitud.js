@@ -79,6 +79,14 @@ let FarmaciaSolicitudSchema = new Schema(
   schemaOptions
 );
 
+FarmaciaSolicitudSchema.virtual("id_time").get(function () {
+  try {
+    return this._id.toString().toUpperCase.substring(2, 8);
+  } catch (error) {
+    return "ERROR id_time";
+  }
+});
+
 FarmaciaSolicitudSchema.pre("findOneAndUpdate", function (next) {
   if (this.getUpdate().$set) {
     this.getUpdate().$set.updatedAt = new Date();

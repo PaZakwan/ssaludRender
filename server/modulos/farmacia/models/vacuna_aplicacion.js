@@ -179,6 +179,12 @@ let VacunaAplicacionSchema = new Schema(
     ps_paciente: {
       type: String,
     },
+    ps_nombreC: {
+      type: String,
+    },
+    ps_doc_responsable: {
+      type: String,
+    },
 
     retirado: {
       type: Date,

@@ -36,6 +36,7 @@ let patrimonioSchema = new Schema(
     },
     serie: {
       type: String,
+      trim: true,
       unique: true,
       sparse: true,
     },
@@ -44,6 +45,7 @@ let patrimonioSchema = new Schema(
     },
     modelo: {
       type: String,
+      trim: true,
     },
     dependencia: {
       type: String,
@@ -81,17 +83,14 @@ let patrimonioSchema = new Schema(
     usuario_verifico: {
       type: Schema.Types.ObjectId,
       ref: "Usuario",
-      default: null,
     },
     fec_verifico: {
       type: Date,
-      default: null,
     },
 
     // percance
     fec_percance: {
       type: Date,
-      default: null,
     },
     resumen_percance: {
       type: String,
@@ -103,7 +102,6 @@ let patrimonioSchema = new Schema(
     },
     fec_baja: {
       type: Date,
-      default: null,
     },
 
     motivo_eliminacion: {
@@ -112,11 +110,9 @@ let patrimonioSchema = new Schema(
     usuario_eliminacion: {
       type: Schema.Types.ObjectId,
       ref: "Usuario",
-      default: null,
     },
     fec_eliminacion: {
       type: Date,
-      default: null,
     },
 
     // PCs
@@ -197,16 +193,61 @@ let patrimonioSchema = new Schema(
   schemaOptions
 );
 
-patrimonioSchema.pre("findOneAndUpdate", function (next) {
+// antes del save()
+patrimonioSchema.pre("save", async function (next) {
+  // Modelo NO REPETIBLE en Insumos...
+  if (this.categoria === "Insumos") {
+    let DB = await Patrimonio.find({
+      categoria: "Insumos",
+      modelo: this.modelo?.trim(),
+    })
+      .select("_id id")
+      .exec();
+    if (DB.length >= 1) {
+      // ya existe
+      throw (err = {
+        message: `El Modelo (${this.modelo?.trim()}) de Insumo ya se encuentra cargado en el Sistema.`,
+      });
+    }
+  }
+
+  next();
+});
+
+// antes del update()
+patrimonioSchema.pre("findOneAndUpdate", async function (next) {
+  // Actualiza horario de edicion
   if (this.getUpdate().$set) {
     this.getUpdate().$set.updatedAt = new Date();
   } else {
     this.getUpdate().updatedAt = new Date();
   }
+
+  // Modelo NO REPETIBLE en Insumos...
+  if (this.getUpdate().$set?.categoria === "Insumos" || this.getUpdate().categoria === "Insumos") {
+    let DB = await Patrimonio.find({
+      categoria: "Insumos",
+      modelo: this.getUpdate().$set?.modelo?.trim() ?? this.getUpdate().modelo?.trim(),
+    })
+      .select("_id id")
+      .exec();
+    if (!(DB.length === 0 || DB.findIndex((obj) => obj?.id === this.getFilter()._id) >= 0)) {
+      // Esta Repetido y No es el mismo
+      throw (err = {
+        message: `El Modelo (${
+          this.getUpdate().$set?.modelo?.trim() ?? this.getUpdate().modelo?.trim()
+        }) de Insumo ya se encuentra cargado en el Sistema.`,
+      });
+    }
+  }
+
   next();
 });
 
 patrimonioSchema.plugin(uniqueValidator, {message: "{PATH} valor repetido, debe de ser único."});
 
+// para usarlo en el Schema.pre("save")
+const Patrimonio = mongoose.model("Patrimonio", patrimonioSchema);
+
 module.exports = mongoose.connections[1].model("Patrimonio", patrimonioSchema);
-module.exports = mongoose.model("Patrimonio", patrimonioSchema);
+module.exports = Patrimonio;

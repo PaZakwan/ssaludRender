@@ -198,111 +198,39 @@ const ps_dosis_name = {
 };
 
 const ps_vacuna_name = {
-  2: "BCG",
-  3: "Hepatitis B Pediatrica 10mcg",
-  4: "Hepatitis B Pediatrica 10mcg",
-  5: "Hepatitis B Pediatrica 10mcg",
-  6: "Hepatitis B Pediatrica 10mcg",
-  7: "Sabin OPV",
-  8: "Sabin OPV",
-  9: "Sabin OPV",
-  10: "Sabin OPV",
-  11: "Sabin OPV",
-  12: "Neumococo Conjugada (13)",
-  13: "Neumococo Conjugada (13)",
-  14: "Neumococo Conjugada (13)",
-  15: "Neumococo Conjugada (13)",
-  16: "Pentavalente DPT HB Hib",
-  17: "Pentavalente DPT HB Hib",
-  18: "Pentavalente DPT HB Hib",
-  19: "Pentavalente DPT HB Hib",
-  21: "Cuadruple Bacteriana DPT Hib",
-  22: "Cuadruple Bacteriana Acelular DPTa Hib",
-  23: "DPT Triple Bacteriana",
-  24: "DPTa Triple Bacteriana Acelular",
-  25: "Hepatitis A Pediatrica",
-  26: "SRP Triple Viral",
-  27: "SRP Triple Viral",
-  28: "DT Doble Bacteriana",
-  29: "DT Doble Bacteriana",
-  30: "DT Doble Bacteriana",
-  31: "VPH Cuadrivalente",
-  32: "VPH Cuadrivalente",
-  33: "VPH Cuadrivalente",
-  34: "SR Doble Viral",
-  35: "Neumococo Polisacarida (23)",
-  36: "Varicela",
-  37: "Antigripal Pediatrica",
-  38: "Salk IPV",
-  39: "Salk IPV",
-  40: "Salk IPV",
-  41: "Salk IPV",
-  42: "Salk IPV",
-  43: "Varicela",
-  49: "Hepatitis A Pediatrica",
-  50: "Hepatitis A Pediatrica",
-  51: "Cuadruple Bacteriana Acelular DPTa Hib",
-  52: "Cuadruple Bacteriana Acelular DPTa Hib",
-  53: "Cuadruple Bacteriana Acelular DPTa Hib",
-  56: "Rotavirus",
-  57: "Rotavirus",
-  58: "Rotavirus",
-  59: "PPD", //name tuberculosis examen
-  60: "Antigripal Pediatrica",
-  61: "Antigripal Pediatrica",
-  69: "Sextuple DTPa Hib HB Salk",
-  70: "Sextuple DTPa Hib HB Salk",
-  71: "Sextuple DTPa Hib HB Salk",
-  72: "Meningococo ACYW",
-  73: "Meningococo ACYW",
-  74: "Meningococo ACYW",
-  75: "Meningococo ACYW",
-  76: "Antigripal Adultos",
-  77: "Gripe Mayores", //name
-  78: "Hepatitis B Adultos 20mcg",
-  79: "Hepatitis B Adultos 20mcg",
-  80: "Hepatitis B Adultos 20mcg",
-  81: "Antigripal Adultos",
-  82: "Antigripal Adultos",
-  83: "Meningococo ACYW",
-  84: "Antirrábica Humana CRL", //name
-  85: "Antirrábica Humana CRL",
-  86: "Antirrábica Humana CRL",
-  87: "Antirrábica Humana CRL",
-  88: "Antirrábica Humana CRL",
-  89: "Antirrábica Humana CRL",
-  90: "Antirrábica Humana CRL",
-  91: "Antirrábica Humana CRL",
-  92: "Antirrábica Humana CRL",
-  93: "Antirrábica Humana CRL",
-  94: "Antirrábica Humana cultivo en líneas celulares", //name
-  95: "Antirrábica Humana cultivo en líneas celulares",
-  96: "Antirrábica Humana cultivo en líneas celulares",
-  97: "Antirrábica Humana cultivo en líneas celulares",
-  98: "Antirrábica Humana cultivo en líneas celulares",
-  99: "Antirrábica Humana cultivo en líneas celulares",
-  100: "Antirrábica Humana cultivo en líneas celulares",
-  101: "Antirrábica Humana cultivo en líneas celulares",
-  102: "Antirrábica Humana cultivo en líneas celulares",
-  103: "Antirrábica Humana cultivo en líneas celulares",
-  104: "Meningococo menactra", //name
-  105: "Meningococo bexsero", //name
-  106: "Meningococo bexsero",
-  107: "Meningococo bexsero",
-  108: "Meningococo bexsero",
-  109: "DPT Triple Bacteriana",
-  110: "DPT Triple Bacteriana",
-  111: "DPT Triple Bacteriana",
-  112: "Haemophilus", //name
-  113: "Gamaglobulina Hepatitis B", //name
-  114: "Hepatitis A adultos", //name
-  115: "Hepatitis A adultos",
-  116: "Hepatitis A adultos",
-  117: "Covid 19", //name
-  118: "Covid 19",
-  119: "Covid 19",
-  120: "Covid 19",
-  121: "Covid 19",
+  1: "BCG",
+  2: "Hepatitis B Pediatrica 10mcg",
+  3: "Sabin OPV",
+  4: "Neumococo Conjugada (13)",
+  5: "Pentavalente DPT HB Hib",
+  6: "Cuadruple Bacteriana DPT Hib",
+  7: "Cuadruple Bacteriana Acelular DPTa Hib",
+  8: "DPT Triple Bacteriana",
+  9: "DPTa Triple Bacteriana Acelular",
+  10: "Hepatitis A Pediatrica",
+  11: "SRP Triple Viral",
+  12: "DT Doble Bacteriana",
+  13: "VPH Cuadrivalente",
+  14: "SR Doble Viral",
+  15: "Neumococo Polisacarida (23)",
+  16: "Varicela",
+  17: "Antigripal Pediatrica",
+  18: "Salk IPV",
+  26: "Rotavirus",
+  27: "Meningococo ACYW",
+  28: "PPD", //name tuberculosis examen
+  30: "Antigripal Adultos",
+  31: "Antigripal Mayores", //name
+  32: "Hepatitis B Adultos 20mcg",
+  33: "Sextuple DTPa Hib HB Salk",
+  34: "Antirrábica Humana CRL", //name
+  35: "Antirrábica Humana cultivo en líneas celulares", //name
+  36: "Meningococo menactra", //name
+  37: "Meningococo bexsero", //name
+  39: "Haemophilus", //name
+  40: "Gamaglobulina Hepatitis B", //name
+  41: "Hepatitis A adultos", //name
+  43: "Covid 19", //name
 };
 
 const getVacunaID = (json, vacunasDB) => {
@@ -406,6 +334,8 @@ const VacunacionProperties = [
 
   // PS
   "ps_id",
+  "ps_nombreC",
+  "ps_doc_responsable",
 
   "error",
   "advertencia",
@@ -535,29 +465,56 @@ const VacunacionFormat = async ({
       }
     }
 
-    // paciente / tipo_doc / documento (buscar "paciente")
-    let pacienteTemp = false;
-    if (json.IdPersona || json.ps_paciente) {
+    // ############### VER ###############
+    // buscar "paciente" con -> paciente / (tipo_doc - documento) / ps_paciente (IdPersona)
+
+    // primero reviso que tengo y que no de la persona Paciente
+    if (json.IdPersona) {
       json.ps_paciente = json.ps_paciente ?? json.IdPersona;
+      delete json.IdPersona;
     }
+    // crear select en base a los datos que podrian faltar.
+    let selectPaciente = false;
+    if (json.sexo || json.Sexo) {
+      json.sexo = json.sexo ?? json.Sexo;
+      delete json.Sexo;
+      switch (json.sexo.toLowerCase()) {
+        case "f":
+        case "femenino":
+          json.sexo = "Femenino";
+          break;
+        case "m":
+        case "masculino":
+          json.sexo = "Masculino";
+          break;
+
+        default:
+          errores += ` sexo (${json.sexo}).`;
+      }
+    } else {
+      selectPaciente = "sexo";
+    }
+
+    let filtroPaciente = false;
+    // primero json.paciente
     if (json.paciente) {
       if (isObjectIdValid(json.paciente)) {
+        // si es id guardarlo
         json.paciente = isObjectIdValid(json.paciente);
-        pacienteTemp = await mongoose.connections[0].models.Paciente.findOne(
-          {
-            _id: json.paciente,
-          },
-          "_id sexo dir_localidad"
-        ).exec();
+        // falta alguna prop -> filtro para busqueda
+        if (selectPaciente) {
+          filtroPaciente = {_id: json.paciente};
+        }
       } else {
+        // error si es id incorrecto
         errores += ` paciente ID no Valido (${json.paciente}).`;
       }
-    } else if (json.documento) {
-      json.documento = json.documento.trim().toUpperCase();
-      if (!json.ps_paciente && (json.documento == 0 || !/^[A-Z0-9]+$/.test(json.documento))) {
-        errores += ` documento Validation (${json.documento}).`;
-      }
-      // tipo_doc (default "DNI")
+    }
+    // segundo ver json.documento(tipo_doc) o json.ps_paciente
+    else {
+      selectPaciente = "_id " + selectPaciente;
+      // tipo_doc (default "DNI" o seguir)
+      let tipo_doc_bien = true;
       if (json.tipo_doc) {
         switch (json.tipo_doc) {
           case "DNI":
@@ -603,41 +560,96 @@ const VacunacionFormat = async ({
             break;
 
           default:
-            if (!json.ps_paciente) {
-              errores += ` tipo_doc (${json.tipo_doc}).`;
-            }
+            tipo_doc_bien = false;
         }
       } else {
         json.tipo_doc = "DNI";
       }
-      pacienteTemp = await mongoose.connections[0].models.Paciente.findOne(
-        {
+      // revisando json.documento (si esta mal ni siquiera chequear y seguir con la otra opcion)
+      if (
+        tipo_doc_bien &&
+        json.documento &&
+        json.documento != 0 &&
+        /^[A-Z0-9]+$/.test(json.documento.trim().toUpperCase())
+      ) {
+        json.documento = json.documento.trim().toUpperCase();
+        // filtro para busqueda
+        filtroPaciente = {
           tipo_doc: json.tipo_doc,
           documento: json.documento,
-        },
-        "_id sexo dir_localidad"
-      ).exec();
-    } else if (!json.ps_paciente) {
-      errores += ` paciente Sin Dato.`;
-    }
-    // del paciente traer -> _id, sexo, dir_localidad => zona_sanitaria.
-    if (pacienteTemp) {
-      json.paciente = pacienteTemp._id;
-      json.sexo = pacienteTemp.sexo;
-      json.zona_sanitaria = pacienteTemp.dir_localidad ?? origenTemp?.zona_us;
-    } else if (json.ps_paciente) {
-      // json.sexo = "No Informado";
-      // json.zona_sanitaria = origenTemp?.zona_us ?? "No Informado";
-      if (origenTemp?.zona_us) {
-        json.zona_sanitaria = origenTemp.zona_us;
+        };
       }
-    } else if (pacienteTemp !== false) {
-      errores += ` paciente No Encontrado con tipo_doc/documento (${
-        json.paciente ?? `${json.tipo_doc} / ${json.documento}`
-      }).`;
+      // por ultimo json.ps_paciente
+      else if (json.ps_paciente) {
+        // ############### VER ###############
+        // SI tarda mucho la carga quitar esto.
+        // filtro para busqueda
+        // filtroPaciente = {
+        //   ps_id: json.ps_paciente,
+        // };
+        // apellido nombre doc_responsable
+      }
+      // sino error
+      else {
+        errores += ` paciente Sin Datos (${
+          !tipo_doc_bien ? `${json.tipo_doc} / ${json.documento}` : "sin datos"
+        }).`;
+      }
     }
-    delete json.documento;
     delete json.tipo_doc;
+    delete json.documento;
+    // realizar busqueda con filtroPaciente y completar los selectPaciente)?
+    if (filtroPaciente && selectPaciente) {
+      selectPaciente = selectPaciente.trim();
+      let pacienteTemp = await mongoose.connections[0].models.Paciente.findOne(
+        filtroPaciente,
+        selectPaciente
+      ).exec();
+
+      if (pacienteTemp) {
+        selectPaciente.split(" ").forEach((element) => {
+          if (element) {
+            if (!pacienteTemp[element]) {
+              advertencia += ` valor de paciente.${element} Sin Dato.`;
+            } else if (element === "_id") {
+              json.paciente = pacienteTemp[element];
+            } else {
+              json[element] = pacienteTemp[element];
+            }
+          }
+        });
+      } else {
+        advertencia += ` paciente No Encontrado con ${JSON.stringify(
+          filtroPaciente
+        )}, quedaron datos sin completar (${selectPaciente}).`;
+      }
+    }
+
+    // verificar si estan los datos sino -> error
+    if (!json.ps_paciente && !json.paciente) {
+      // no existe ps_paciente y no existe paciente id.
+      errores += ` paciente No Encontrado (no existe ps_paciente ni existe paciente[id]).`;
+    }
+
+    // PS
+    if (json.Apellidos || json.Nombres) {
+      json.ps_nombreC = `${json.Apellidos}, ${json.Nombres}`;
+      if (!json.Apellidos || !json.Nombres) {
+        json.ps_nombreC.replace(", ", "");
+      }
+      json.ps_nombreC.trim();
+      delete json.Apellidos;
+      delete json.Nombres;
+    }
+
+    json.ps_doc_responsable = json.ps_doc_responsable ?? json.doc_responsable;
+    delete json.doc_responsable;
+    // ############### terminar de VER ###############
+
+    json.zona_sanitaria = json.zona_sanitaria ?? origenTemp?.zona_us;
+    if (!json.zona_sanitaria) {
+      delete json.zona_sanitaria;
+    }
 
     // edad_valor
     if (!json.edad_valor) {

@@ -32,8 +32,8 @@ let pacienteSchema = new mongoose.Schema(
       required: [true, "El apellido es necesario."],
       validate: {
         validator: function (v) {
-          // \u00f1 y \u00d1 son el equivalente para "ñ" y "Ñ", \s es el espacio y '
-          return /^[A-Za-z\sÀ-ÿ\u00f1\u00d1']+$/.test(v);
+          // \u00f1 y \u00d1 son el equivalente para "ñ" y "Ñ", \s es el espacio y algunos especiales -> '`´¨-
+          return /^[A-Za-z\sÀ-ÿ\u00f1\u00d1'`´¨-]+$/.test(v);
         },
         message: "No se admiten caracteres especiales ni numeros.",
       },
@@ -45,8 +45,8 @@ let pacienteSchema = new mongoose.Schema(
       required: [true, "El nombre es necesario."],
       validate: {
         validator: function (v) {
-          // \u00f1 y \u00d1 son el equivalente para "ñ" y "Ñ", \s es el espacio y '
-          return /^[A-Za-z\sÀ-ÿ\u00f1\u00d1']+$/.test(v);
+          // \u00f1 y \u00d1 son el equivalente para "ñ" y "Ñ", \s es el espacio y algunos especiales -> '`´¨-
+          return /^[A-Za-z\sÀ-ÿ\u00f1\u00d1'`´¨-]+$/.test(v);
         },
         message: "No se admiten caracteres especiales ni numeros.",
       },
@@ -106,6 +106,9 @@ let pacienteSchema = new mongoose.Schema(
       type: String,
       required: [true, "La Localidad del Paciente es necesaria."],
     },
+    dir_municipio: {
+      type: String,
+    },
     dir_descripcion: {
       type: String,
       trim: true,
@@ -151,6 +154,8 @@ let pacienteSchema = new mongoose.Schema(
     ps_id: {type: Array, default: void 0},
     doc_responsable: {
       type: String,
+      trim: true,
+      uppercase: true,
     },
 
     estado: {
@@ -190,6 +195,8 @@ pacienteSchema.virtual("documentoC").get(function () {
   try {
     if (!!this.documento) {
       return `${this.tipo_doc ? `${this.tipo_doc} ` : ""}${this.documento}`;
+    } else if (!!this.doc_responsable) {
+      return `Resp ${this.doc_responsable}`;
     }
     return undefined;
   } catch (error) {
@@ -244,9 +251,12 @@ pacienteSchema.pre("save", async function (next) {
         })
           .select("_id id")
           .exec();
-        if (DB.length > 1 || (DB.length === 1 && DB[0]._id != this._id)) {
+        if (DB.length >= 1) {
+          // ya existe
           throw (err = {
-            message: `El N° de Historial (${element.historial}) ya se encuentra utilizado en esa Sala por otro paciente.`,
+            message: `El N° de Historial (${element.historial
+              ?.trim()
+              .toUpperCase()}) ya se encuentra utilizado en esa Sala por otro paciente.`,
           });
         }
       }
@@ -273,13 +283,17 @@ pacienteSchema.pre("findOneAndUpdate", async function (next) {
   if (this.getUpdate().$set?.hist_salitas) {
     for (const element of this.getUpdate().$set.hist_salitas) {
       if (element.area) {
-        let DB = await this.model
-          .find({hist_salitas: {$elemMatch: {area: element.area, historial: element.historial}}})
+        let DB = await Paciente.find({
+          hist_salitas: {$elemMatch: {area: element.area, historial: element.historial}},
+        })
           .select("_id id")
           .exec();
-        if (DB.length > 1 || (DB.length === 1 && DB[0]._id != this.getFilter()._id)) {
+        if (!(DB.length === 0 || DB.findIndex((obj) => obj?.id === this.getFilter()._id) >= 0)) {
+          // Esta Repetido y No es el mismo
           throw (err = {
-            message: `El N° de Historial (${element.historial}) ya se encuentra utilizado en esa Sala por otro paciente.`,
+            message: `El N° de Historial (${element.historial
+              ?.trim()
+              .toUpperCase()}) ya se encuentra utilizado en esa Sala por otro paciente.`,
           });
         }
       }

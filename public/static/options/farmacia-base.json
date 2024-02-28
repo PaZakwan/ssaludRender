@@ -48,6 +48,19 @@
       "Internacion",
       "Pre Exposicion",
       "Post Exposicion"
+    ],
+    "vacunas_reportes": [
+      "Masculinos",
+      "Femeninos",
+      "Embarazadas",
+      "Puerperas",
+      "Grupo de Riesgo",
+      "Estrategia - Campaña",
+      "Estrategia - Contactos",
+      "Municipio - Moreno",
+      "Personal de Salud",
+      "Personal Esencial",
+      "Menores de 15"
     ]
   },
   "ok": true

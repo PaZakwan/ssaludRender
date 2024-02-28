@@ -373,6 +373,17 @@ app.get(
         .unwind({path: "$destinoDB", preserveNullAndEmptyArrays: true})
         .addFields({
           destinoDB: "$destinoDB.area",
+          id_time: {
+            $substr: [
+              {
+                $toUpper: {
+                  $toString: "$_id",
+                },
+              },
+              2,
+              6,
+            ],
+          },
         });
 
       return res.status(200).json({

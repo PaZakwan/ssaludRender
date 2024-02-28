@@ -43,6 +43,7 @@ const PacienteProperties = [
   "dir_depto",
   "dir_barrio",
   "dir_localidad",
+  "dir_municipio",
   "dir_descripcion",
   "oSocial",
   "oSocialNumero",
@@ -112,20 +113,32 @@ const PacienteFormat = ({json, totales, line, logFile, csvErrors, csvFix}) => {
   try {
     let errores = "";
     let advertencia = "";
-    // documento REQUERIDO
+    // documento o doc_responsable REQUERIDO
     if (json.documento) {
       json.documento = json.documento.trim().toUpperCase();
-      if (json.documento == 0 || !/^[A-Z0-9]+$/.test(json.documento)) {
+      if (json.documento == 0) {
+        delete json.documento;
+      } else if (!/^[A-Z0-9]+$/.test(json.documento)) {
         errores += ` documento Validation (${json.documento}).`;
       }
-    } else {
-      errores += ` documento Sin Dato.`;
     }
+    if (json.DNIResponsable) {
+      json.doc_responsable = json.doc_responsable ?? json.DNIResponsable;
+      delete json.DNIResponsable;
+    }
+    if (json.doc_responsable == 0) {
+      delete json.doc_responsable;
+    }
+
+    if (!json.documento && !json.doc_responsable) {
+      errores += ` documento / doc_responsable Sin Dato.`;
+    }
+
     // apellido REQUERIDO BD
     if (json.apellido) {
       json.apellido = json.apellido.trim().replaceAll(/[_\-]/g, " ").replaceAll(/[.]/g, "");
       json.apellido = capitalize(json.apellido);
-      if (!/^[A-Za-z\sÀ-ÿ\u00f1\u00d1']+$/.test(json.apellido)) {
+      if (!/^[A-Za-z\sÀ-ÿ\u00f1\u00d1'`´¨-]+$/.test(json.apellido)) {
         errores += ` apellido Validation (${json.apellido}).`;
       }
     } else {
@@ -135,7 +148,7 @@ const PacienteFormat = ({json, totales, line, logFile, csvErrors, csvFix}) => {
     if (json.nombre) {
       json.nombre = json.nombre.trim().replaceAll(/[_\-]/gi, " ").replaceAll(/[.]/g, "");
       json.nombre = capitalize(json.nombre);
-      if (!/^[A-Za-z\sÀ-ÿ\u00f1\u00d1']+$/.test(json.nombre)) {
+      if (!/^[A-Za-z\sÀ-ÿ\u00f1\u00d1'`´¨-]+$/.test(json.nombre)) {
         errores += ` nombre Validation (${json.nombre}).`;
       }
     } else {
@@ -143,55 +156,59 @@ const PacienteFormat = ({json, totales, line, logFile, csvErrors, csvFix}) => {
     }
 
     // tipo_doc (default "DNI")
-    if (json.tipo_doc) {
-      switch (json.tipo_doc) {
-        case "DNI":
-        case "Cédula Mercosur":
-        case "Documento Bolivia":
-        case "Documento Brasil":
-        case "Documento Chile":
-        case "Documento Colombia":
-        case "Documento Paraguay":
-        case "Documento Uruguay":
-        case "Pasaporte extranjero":
-        case "Otro documento extranjero":
-        case "Pasaporte":
-        case "CI":
-        case "LE":
-        case "LC":
-          break;
-        // PSVacunas
-        case "1":
-        case "54":
-          json.tipo_doc = "DNI";
-          break;
-        case "55":
-          json.tipo_doc = "Documento Brasil";
-          break;
-        case "56":
-          json.tipo_doc = "Documento Chile";
-          break;
-        case "57":
-          json.tipo_doc = "Documento Colombia";
-          break;
-        case "591":
-          json.tipo_doc = "Documento Bolivia";
-          break;
-        case "595":
-          json.tipo_doc = "Documento Paraguay";
-          break;
-        case "598":
-          json.tipo_doc = "Documento Uruguay";
-          break;
-        case "999":
-          json.tipo_doc = "Otro documento extranjero";
-          break;
-
-        default:
-          errores += ` tipo_doc (${json.tipo_doc}).`;
-      }
+    if (!json.documento) {
+      delete json.tipo_doc;
     } else {
-      json.tipo_doc = "DNI";
+      if (json.tipo_doc) {
+        switch (json.tipo_doc) {
+          case "DNI":
+          case "Cédula Mercosur":
+          case "Documento Bolivia":
+          case "Documento Brasil":
+          case "Documento Chile":
+          case "Documento Colombia":
+          case "Documento Paraguay":
+          case "Documento Uruguay":
+          case "Pasaporte extranjero":
+          case "Otro documento extranjero":
+          case "Pasaporte":
+          case "CI":
+          case "LE":
+          case "LC":
+            break;
+          // PSVacunas
+          case "1":
+          case "54":
+            json.tipo_doc = "DNI";
+            break;
+          case "55":
+            json.tipo_doc = "Documento Brasil";
+            break;
+          case "56":
+            json.tipo_doc = "Documento Chile";
+            break;
+          case "57":
+            json.tipo_doc = "Documento Colombia";
+            break;
+          case "591":
+            json.tipo_doc = "Documento Bolivia";
+            break;
+          case "595":
+            json.tipo_doc = "Documento Paraguay";
+            break;
+          case "598":
+            json.tipo_doc = "Documento Uruguay";
+            break;
+          case "999":
+            json.tipo_doc = "Otro documento extranjero";
+            break;
+
+          default:
+            errores += ` tipo_doc (${json.tipo_doc}).`;
+        }
+      } else {
+        json.tipo_doc = "DNI";
+      }
     }
 
     // fec_nac REQUERIDO BD
@@ -290,12 +307,8 @@ const PacienteFormat = ({json, totales, line, logFile, csvErrors, csvFix}) => {
     }
 
     if (json.IdPS) {
-      json.ps_id = json.IdPS;
+      json.ps_id = json.ps_id ?? json.IdPS;
       delete json.IdPS;
-    }
-    if (json.DNIResponsable && json.DNIResponsable != 0) {
-      json.doc_responsable = json.DNIResponsable;
-      delete json.DNIResponsable;
     }
 
     if (advertencia) {

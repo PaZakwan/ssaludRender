@@ -38,6 +38,7 @@ app.get(
           _id: {area: "$area"},
           opciones: {
             $push: {
+              _id: "$_id",
               insumo: "$insumo",
               cant_min: "$cant_min",
             },
@@ -51,7 +52,66 @@ app.get(
 
       res.json({
         ok: true,
-        opciones: opciones[0],
+        opciones: opciones[0] ?? {area: req.query.area, opciones: []},
+      });
+    } catch (err) {
+      return errorMessage(res, err, err.code);
+    }
+  }
+);
+
+// ============================
+// Mostrar cant_min en el area de los [insumos] solicitados.
+// ============================
+app.get(
+  "/farmacia/opciones/solicitud",
+  [
+    verificaToken,
+    (req, res, next) => {
+      req.verificacionArray = [
+        {prop: "farmacia.gestion"},
+        {prop: "farmacia.general.reportes", value: 1},
+        {prop: "farmacia.general.admin", value: 1},
+      ];
+      next();
+    },
+    verificaArrayPropValue,
+  ],
+  async (req, res) => {
+    try {
+      let filtro = {
+        // regresa mongoose.Types.ObjectId(area);
+        area: isObjectIdValid(req.query.area),
+        insumo: {
+          $in: JSON.parse(req.query.insumos),
+        },
+      };
+
+      filtro.insumo.$in.forEach((insumo, index) => {
+        // regresa mongoose.Types.ObjectId(area);
+        filtro.insumo.$in[index] = isObjectIdValid(insumo);
+      });
+
+      if (
+        filtro.area === false ||
+        // todos false
+        !filtro.insumo.$in.some((insumo) => insumo !== false)
+      ) {
+        return errorMessage(res, {message: "No se enviaron datos necesarios para proceder."}, 412);
+      }
+
+      let opcionesDB = await FarmaciaOpcion.aggregate()
+        .match(filtro)
+        .project({
+          _id: 0,
+          insumo: 1,
+          cant_min: 1,
+        })
+        .sort({insumo: -1});
+
+      return res.status(200).json({
+        ok: true,
+        opciones: opcionesDB,
       });
     } catch (err) {
       return errorMessage(res, err, err.code);
@@ -94,27 +154,31 @@ app.put(
       let respuesta = {error: [], ok: []};
 
       for (let index = 0; index < body.destinos.length; index++) {
-        // borrar opciones en cada destino
-        let opcionesBorradas = await FarmaciaOpcion.deleteMany({area: body.destinos[index]}).exec();
-
-        if (!opcionesBorradas) {
-          respuesta.error.push(body.destinos[index]);
-          break;
-        }
-
-        let saveTemp = body.opciones.map(({insumo, cant_min}) => ({
-          insumo,
-          cant_min,
-          area: body.destinos[index],
-        }));
-
-        // y guardar las nuevas opciones
-        let opcionesGuardadas = await FarmaciaOpcion.insertMany(saveTemp);
-
-        if (opcionesGuardadas.length > 0) {
-          respuesta.ok.push(body.destinos[index]);
-        } else {
-          respuesta.error.push(body.destinos[index]);
+        // destino body.destinos[index]
+        for (let opc of body.opciones) {
+          // opc.insumo opc.cant_min
+          let opcionesGuardadas = await FarmaciaOpcion.findOneAndUpdate(
+            {area: body.destinos[index], insumo: opc.insumo},
+            {
+              area: body.destinos[index],
+              insumo: opc.insumo,
+              cant_min: opc.cant_min,
+            },
+            {
+              new: true,
+              upsert: true,
+              setDefaultsOnInsert: true,
+            }
+          ).exec();
+          if (!opcionesGuardadas) {
+            respuesta.error.push({area: body.destinos[index], insumo: opc.insumo});
+          } else {
+            respuesta.ok.push({
+              area: body.destinos[index],
+              insumo: opc.insumo,
+              cant_min: opc.cant_min,
+            });
+          }
         }
       }
 
@@ -133,10 +197,10 @@ app.put(
 );
 
 // ============================
-// Borrar las opciones del area
+// Borrar la opcion del insumo en el area
 // ============================
 app.delete(
-  "/farmacia/opciones/:area",
+  "/farmacia/opciones/:id",
   [
     verificaToken,
     (req, res, next) => {
@@ -150,22 +214,56 @@ app.delete(
   ],
   async (req, res) => {
     try {
-      let opcionesBorradas = await FarmaciaOpcion.deleteMany({area: req.params.area}).exec();
+      let opcionBorrada = await FarmaciaOpcion.deleteOne({_id: req.params.id}).exec();
 
-      if (opcionesBorradas.deletedCount == 0) {
-        return errorMessage(res, {message: "Opciones no encontradas."}, 404);
+      if (opcionBorrada?.deletedCount == 0) {
+        return errorMessage(res, {message: "Opcion no encontrada."}, 404);
       }
-      // return errorMessage(res, {message: "En Desarrollo."}, 404);
 
       return res.json({
         ok: true,
-        opcionesBorradas,
+        opcionBorrada,
       });
     } catch (err) {
       return errorMessage(res, err, err.code);
     }
   }
 );
+
+// ============================
+// Borrar las opciones del area
+// ============================
+// app.delete(
+//   "/farmacia/opciones/:area",
+//   [
+//     verificaToken,
+//     (req, res, next) => {
+//       req.verificacionArray = [
+//         {prop: "farmacia.general.opciones", value: 1},
+//         {prop: "farmacia.general.admin", value: 1},
+//       ];
+//       next();
+//     },
+//     verificaArrayPropValue,
+//   ],
+//   async (req, res) => {
+//     try {
+//       let opcionesBorradas = await FarmaciaOpcion.deleteMany({area: req.params.area}).exec();
+
+//       if (opcionesBorradas.deletedCount == 0) {
+//         return errorMessage(res, {message: "Opciones no encontradas."}, 404);
+//       }
+//       // return errorMessage(res, {message: "En Desarrollo."}, 404);
+
+//       return res.json({
+//         ok: true,
+//         opcionesBorradas,
+//       });
+//     } catch (err) {
+//       return errorMessage(res, err, err.code);
+//     }
+//   }
+// );
 
 // ============================
 // TITULO ¿?¿?¿?¿?

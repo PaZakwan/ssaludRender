@@ -342,6 +342,10 @@ const objectSetUnset = ({dato, unsetCero = false, unsetBoolean = false}) => {
           // Es un objeto o un array
           let vacioTemp = isVacio({
             dato: dato[key],
+            vacioCero: unsetCero, // false,
+            vacioBoolean: unsetBoolean, // false,
+            inArr: true, // false,
+            inObj: true, // false,
             borrar: true, // false,
           });
           if (vacioTemp.vacio === false) {
@@ -353,11 +357,7 @@ const objectSetUnset = ({dato, unsetCero = false, unsetBoolean = false}) => {
         }
       }
     }
-    if (todovacio === true) {
-      return {dato: {$set, $unset}, vacio: true};
-    } else {
-      return {dato: {$set, $unset}, vacio: false};
-    }
+    return {dato: {$set, $unset}, vacio: todovacio};
   } catch (error) {
     return {dato: dato, error};
   }
@@ -378,7 +378,7 @@ const objectToFind = (dato) => {
       ) {
         temp = new RegExp(dato, "i");
       } else if (Array.isArray(dato) && dato.length !== 0) {
-        // si es un array no vacio => buscar que contenta alguno de los valores $in
+        // si es un array no vacio => buscar que contenga alguno de los valores $in
         temp = {$in: []};
         for (let index = 0; index < dato.length; index++) {
           temp.$in.push(objectToFind(dato[index]));
@@ -454,6 +454,54 @@ const groupBy = ({array, keys}) => {
   }, {});
 };
 
+const arrayFromSumarPropsInArrays = ({
+  arrays,
+  compare = (a, b) => {
+    a === b;
+  },
+}) => {
+  try {
+    if (Array.isArray(arrays)) {
+      let respuesta = [];
+      // recorrer arrays para ir integrando y sumando.
+      arrays.forEach((elementArray, index) => {
+        if (Array.isArray(elementArray)) {
+          // recorrer contenido del array
+          elementArray.forEach((elementItem) => {
+            // buscar si ya existe en la respuesta
+            let respuestaIndex = respuesta.findIndex((respuestaItem) =>
+              compare(elementItem, respuestaItem)
+            );
+            // sumar props de los items que existen
+            if (respuestaIndex !== -1) {
+              tempObj = sumarProps(elementItem, respuesta[respuestaIndex]);
+              if (!tempObj.error) {
+                respuesta[respuestaIndex] = tempObj;
+              } else {
+                return {dato: {arrays, compare, respuesta}, error: tempObj};
+              }
+            }
+            // agregar items del array a la respuesta si no existe
+            else {
+              respuesta.push(elementItem);
+            }
+          });
+        } else {
+          return {
+            dato: {arrays, compare, respuesta},
+            error: `uno de los arrays no es un array, index ${index}`,
+          };
+        }
+      });
+      return respuesta;
+    } else {
+      return {dato: {arrays, compare}, error: "arrays no es un array"};
+    }
+  } catch (error) {
+    return {dato: {arrays, compare}, error};
+  }
+};
+
 // exports
 exports.isObjectIdValid = isObjectIdValid;
 
@@ -474,3 +522,5 @@ exports.objectToFind = objectToFind;
 exports.sumarProps = sumarProps;
 
 exports.groupBy = groupBy;
+
+exports.arrayFromSumarPropsInArrays = arrayFromSumarPropsInArrays;

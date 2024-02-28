@@ -5,8 +5,9 @@ const _pick = require("lodash/pick");
 
 const {verificaToken} = require(process.env.MAIN_FOLDER + "/middlewares/autenticacion");
 const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
-const {isVacio, objectSetUnset} = require(process.env.MAIN_FOLDER + "/tools/object");
-
+const {isVacio, objectSetUnset, isObjectIdValid} = require(process.env.MAIN_FOLDER +
+  "/tools/object");
+const {capitalize} = require(process.env.MAIN_FOLDER + "/tools/string");
 const Paciente = require("./models/paciente");
 
 const app = express();
@@ -23,6 +24,7 @@ let listaPaciente = [
   "dir_depto",
   "dir_barrio",
   "dir_localidad",
+  "dir_municipio",
   "dir_descripcion",
   "telefono",
   "telefono_alt",
@@ -137,23 +139,24 @@ function tuberculosisBusqueda(filtro, todovacio) {
 
 function historialSalitasBusqueda(filtro, todovacio) {
   if (filtro["hist_salitas"]) {
-    if (/^[a-fA-F\d]{24}$/.test(filtro["hist_salitas"]["area"])) {
+    if (isObjectIdValid(filtro["hist_salitas"]["area"])) {
       // ID de Mongo
       todovacio = false;
     } else {
       // delete filtro['propiedad']
       delete filtro["hist_salitas"]["area"];
     }
-    if (!!filtro["hist_salitas"]["historial"]) {
+    if (
+      !!filtro["hist_salitas"]["historial"] &&
+      filtro["hist_salitas"]["historial"].trim() !== ""
+    ) {
       todovacio = false;
     } else {
       // delete filtro['propiedad']
       delete filtro["hist_salitas"]["historial"];
     }
 
-    if (Object.keys(filtro["hist_salitas"]).length === 0) {
-      delete filtro["hist_salitas"];
-    } else if (Object.keys(filtro["hist_salitas"]).length >= 1) {
+    if (Object.keys(filtro["hist_salitas"]).length >= 1) {
       filtro["hist_salitas"]["$elemMatch"] = {};
       if (!!filtro["hist_salitas"]["area"]) {
         filtro["hist_salitas"]["$elemMatch"]["area"] = filtro["hist_salitas"]["area"];
@@ -166,13 +169,15 @@ function historialSalitasBusqueda(filtro, todovacio) {
         );
         delete filtro["hist_salitas"]["historial"];
       }
+    } else {
+      delete filtro["hist_salitas"];
     }
   }
 
-  return (respuesta = {
+  return {
     filtro,
     todovacio,
-  });
+  };
 }
 
 // ============================
@@ -237,7 +242,7 @@ app.get("/paciente/buscar/:id", [verificaToken, verificaPacienteLectura], async 
     if (!req.params.id) {
       return errorMessage(res, {message: "Falta información para proceder."}, 412);
     }
-    if (!/^[a-fA-F\d]{24}$/.test(req.params.id)) {
+    if (!isObjectIdValid(req.params.id)) {
       return errorMessage(res, {message: "El ID de Busqueda no es valido."}, 400);
     }
 
@@ -325,16 +330,21 @@ app.get("/paciente/buscar", [verificaToken, verificaPacienteLectura], async (req
             let hist = historialSalitasBusqueda(filtro, todovacio);
             filtro = hist.filtro;
             todovacio = hist.todovacio;
-          } else if (typeof filtro[key] !== "string") {
+          } else if (
+            typeof filtro[key] !== "string" &&
+            filtro[key] !== null &&
+            filtro[key] !== undefined
+          ) {
+            // number - boolean - object
             todovacio = false;
             filtro[key] = filtro[key];
-          } else if (/^[a-fA-F\d]{24}$/.test(filtro[key])) {
+          } else if (isObjectIdValid(filtro[key])) {
             // ID de Mongo
             todovacio = false;
             filtro[key] = filtro[key];
-          } else if (filtro[key] !== "" && filtro[key] !== null) {
-            todovacio = false;
+          } else if (typeof filtro[key] === "string" && filtro[key].trim() !== "") {
             // name: { $regex: '(?i)+palabra' } (?i) es para buscar minusculas y mayusculas
+            todovacio = false;
             filtro[key] = {
               $regex: `(?i)${filtro[key].toString()}`,
             };
@@ -389,7 +399,7 @@ app.get("/paciente/buscar", [verificaToken, verificaPacienteLectura], async (req
 app.post("/paciente", [verificaToken, verificaPacienteLectura], async (req, res) => {
   try {
     if (!verificaPacienteEdit(req.usuario)) {
-      return errorMessage(res, {message: "Acceso Denegado."}, 401);
+      return errorMessage(res, {message: "Actividad no autorizada."}, 403);
     }
 
     let listaPacienteCrear = listaPaciente.slice();
@@ -424,11 +434,14 @@ app.post("/paciente", [verificaToken, verificaPacienteLectura], async (req, res)
 app.put("/paciente/:id", [verificaToken, verificaPacienteLectura], async (req, res) => {
   try {
     if (!verificaPacienteEdit(req.usuario)) {
-      return errorMessage(res, {message: "Acceso Denegado."}, 401);
+      return errorMessage(res, {message: "Actividad no autorizada."}, 403);
     }
 
-    if (!req.params.id || req.params.id == "undefined") {
-      return errorMessage(res, {message: "Falta información para proceder (ID)."}, 412);
+    if (!req.params.id) {
+      return errorMessage(res, {message: "Falta información para proceder."}, 412);
+    }
+    if (!isObjectIdValid(req.params.id)) {
+      return errorMessage(res, {message: "El ID del Paciente no es valido."}, 400);
     }
 
     let listaPacienteUpdate = listaPaciente.slice();
@@ -474,11 +487,14 @@ app.put(
   async (req, res) => {
     try {
       if (req.usuario.tuberculosis < 2) {
-        return errorMessage(res, {message: "Acceso Denegado."}, 401);
+        return errorMessage(res, {message: "Actividad no autorizada."}, 403);
       }
 
-      if (!req.params.id || req.params.id == "undefined") {
-        return errorMessage(res, {message: "Falta información para proceder (ID)."}, 412);
+      if (!req.params.id) {
+        return errorMessage(res, {message: "Falta información para proceder."}, 412);
+      }
+      if (!isObjectIdValid(req.params.id)) {
+        return errorMessage(res, {message: "El ID del Paciente no es valido."}, 400);
       }
 
       let listaPacienteTuberculosis = listaPaciente.slice();
@@ -487,42 +503,23 @@ app.put(
 
       let body = _pick(req.body, listaPacienteTuberculosis);
 
-      // Revisa que se haya enviado por lo menos una propiedad en hist_tuberculosis.
-      let todovacio = true;
-      let $set = {};
-      let $unset = {};
-      for (const key in body) {
-        if (body.hasOwnProperty(key)) {
-          const element = body[key];
-          if (key === "hist_tuberculosis") {
-            // Delete del campo si esta como "null" o "" en hist_tuberculosis
-            for (let key in body["hist_tuberculosis"]) {
-              if (body["hist_tuberculosis"].hasOwnProperty(key)) {
-                let element = body["hist_tuberculosis"][key];
-                if (element === null || element === "" || element.length === 0) {
-                  delete body["hist_tuberculosis"][key];
-                } else {
-                  todovacio = false;
-                }
-              }
-            }
-            $set["hist_tuberculosis"] = body["hist_tuberculosis"];
-          } else {
-            // Delete del campo si esta como "null" o "" en body
-            if (element === null || element === "" || element.length === 0) {
-              $unset[key] = 1;
-            } else {
-              $set[key] = element;
-            }
-          }
-        }
-      }
-      if (todovacio === true) {
+      // Revisa que se haya enviado por lo menos una propiedad en hist_tuberculosis y borra
+      body["hist_tuberculosis"] = isVacio({
+        dato: body["hist_tuberculosis"],
+        inArr: true, // false,
+        inObj: true, // false,
+        borrar: true, // false,
+      });
+      if (body["hist_tuberculosis"].vacio === true) {
         return errorMessage(res, {message: "No se envió ningún dato."}, 412);
       }
-      $set["usuario_modifico"] = req.usuario._id;
-      $set["hist_tuberculosis"]["usuario_modifico"] = req.usuario._id;
-      body = {$set, $unset};
+      body["hist_tuberculosis"] = body["hist_tuberculosis"].dato;
+
+      body["usuario_modifico"] = req.usuario._id;
+      body["hist_tuberculosis"]["usuario_modifico"] = req.usuario._id;
+
+      // Delete del campo si esta como null / "" / undefined /array vacio
+      body = objectSetUnset({dato: body}).dato;
 
       // Realiza la busqueda y el Update
       let pacienteDB = await Paciente.findOneAndUpdate({_id: req.params.id}, body, {
@@ -531,7 +528,7 @@ app.put(
       }).exec();
 
       if (!pacienteDB) {
-        return errorMessage(res, {message: "Error al guardar el Paciente."}, 400);
+        return errorMessage(res, {message: "Paciente no encontrado."}, 404);
       }
 
       return res.status(200).json({
@@ -559,7 +556,7 @@ app.get("/paciente/renaper/buscar", [verificaToken, verificaPacienteLectura], as
   try {
     // verificar que pueda modificar pacientes
     if (!verificaPacienteEdit(req.usuario)) {
-      return errorMessage(res, {message: "Acceso Denegado."}, 401);
+      return errorMessage(res, {message: "Actividad no autorizada."}, 403);
     }
     // return errorMessage(res, {message: "El sistema no tiene usuario de RENAPER."}, 444);
     // verificar que el sistema cuanta con la APIKEY del renaper
@@ -569,7 +566,7 @@ app.get("/paciente/renaper/buscar", [verificaToken, verificaPacienteLectura], as
       return errorMessage(
         res,
         {message: "El sistema no cuenta con acceso a RENAPER al momento."},
-        403
+        501
       );
     }
 
@@ -589,7 +586,7 @@ app.get("/paciente/renaper/buscar", [verificaToken, verificaPacienteLectura], as
     ) {
       return errorMessage(
         res,
-        {message: "Actividad no autorizada, persona se encuentra verificada."},
+        {message: "Actividad no autorizada, la persona ya se encuentra verificada."},
         403
       );
     }
@@ -674,6 +671,9 @@ app.get("/paciente/renaper/buscar", [verificaToken, verificaPacienteLectura], as
           respuesta.data.ciudad = "Otros";
           break;
       }
+      if (respuesta.data.municipio) {
+        respuesta.data.municipio = capitalize(respuesta.data.municipio);
+      }
       pacienteRENAPER = {
         tipo_doc: "DNI",
         documento: req.query.dni,
@@ -689,6 +689,7 @@ app.get("/paciente/renaper/buscar", [verificaToken, verificaPacienteLectura], as
         dir_depto: respuesta.data.departamento,
         dir_barrio: respuesta.data.barrio,
         dir_localidad: respuesta.data.ciudad,
+        dir_municipio: respuesta.data.municipio,
 
         fec_fallecimiento:
           respuesta.data.mensaje_fallecido === "SIN AVISO DE FALLECIMIENTO"

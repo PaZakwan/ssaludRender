@@ -147,14 +147,30 @@ app.get(
         })
         .addFields({
           pacienteDocDB: {
-            $concat: ["$pacienteDB.tipo_doc", " ", "$pacienteDB.documento"],
+            $ifNull: [
+              {
+                $concat: ["$pacienteDB.tipo_doc", " ", "$pacienteDB.documento"],
+              },
+              {
+                $ifNull: [
+                  {
+                    $concat: ["Resp ", "$pacienteDB.doc_responsable"],
+                  },
+                  {
+                    $concat: ["Resp ", "$ps_doc_responsable"],
+                  },
+                ],
+              },
+            ],
           },
           pacienteDB: {
             $ifNull: [
               {
                 $concat: ["$pacienteDB.apellido", ", ", "$pacienteDB.nombre"],
               },
-              "$ps_paciente",
+              {
+                $concat: [{$ifNull: ["$ps_nombreC", ""]}, " (", "$ps_paciente", ")"],
+              },
             ],
           },
         })

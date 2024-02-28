@@ -31,11 +31,6 @@ let FarmaciaOpcionesSchema = new Schema(
       required: [true, "La Cantidad Minima Alarmante es necesaria."],
       min: [1, "El valor de {VALUE}, debe ser mayor a 0."],
     },
-
-    // cant_solicitar: {
-    //   type: Number,
-    //   required: [true, "La Cantidad a Solicitar es necesaria."],
-    // },
   },
   schemaOptions
 );

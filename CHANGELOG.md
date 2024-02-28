@@ -11,6 +11,26 @@
 
 ##### Unreleased
 
+##### [1.7.20240228] - 2024-02-28
+
+- Added a Sistema - Object => Funcion global arrayFromSumarPropsInArrays() mejora global para fusionar datos para reportes.
+- Changed a Sistema - String => Funcion global capitalize() mejora el capitalizado de palabras del "medio" como articulos, conjunciones y Preposiciones.
+
+- Added a Sistema - Pacientes => Municipio y Responsable Documento -> +dir_municipio +doc_responsable.
+- Added a Sistema - Pacientes Busqueda => Responsable Documento y ID del PS -> +doc_responsable +ps_id.
+- Changed a Sistema - Pacientes => Apellido y Nombre acepta mas caracteres especiales "'`´¨-".
+
+- Changed a Bromatologia - PDFs => Telefono en pie de pagina 0237-4685643 -> 0237-4669234.
+
+- Changed a Patrimonio - Objetos => Categoria "Insumos" el modelo es unico, no se podra repetir.
+
+- Added a Farmacia - Ingresos => Se agrego al filtro "Mostrar" la opcion de "No Transferencias".
+- Added a Farmacia - Solicitudes => Se agrego codigo identificador individual y su PDF correspondiente.
+- Added a Farmacia - Solicitudes => Se agrego cantidad recomendada (opciones minimos).
+- Fix a Farmacia - Reporte => Reporte General, los insumos que no tenian stock/solicitud/minimos no reportaban ningun movimiento.
+
+- Added a Vacunatorio - Reportes => Permite la descarga de las aplicaciones nominal en formato excel (CIPRES).
+
 ##### [1.7.20240105] - 2024-01-05
 
 - Added a Sistema - File => crearContentCSV() Funcion para crear contenido de una celda de CSV sin problemas de compatibilidad.

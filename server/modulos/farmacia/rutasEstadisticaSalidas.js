@@ -160,13 +160,28 @@ app.get(
           })
           .unwind({path: "$pacienteDB"})
           .addFields({
-            pacienteOSocDB: "$pacienteDB.oSocial",
-            pacienteDocDB: {
-              $concat: ["$pacienteDB.tipo_doc", " ", "$pacienteDB.documento"],
-            },
             pacienteDB: {
-              $concat: ["$pacienteDB.apellido", ", ", "$pacienteDB.nombre"],
+              $ifNull: [
+                {$concat: ["$pacienteDB.apellido", ", ", "$pacienteDB.nombre"]},
+                "$pacienteDB.ps_id",
+              ],
             },
+            pacienteDocDB: {
+              $ifNull: [
+                {
+                  $concat: ["$pacienteDB.tipo_doc", " ", "$pacienteDB.documento"],
+                },
+                {
+                  $ifNull: [
+                    {
+                      $concat: ["Resp ", "$pacienteDB.doc_responsable"],
+                    },
+                    "$vacio",
+                  ],
+                },
+              ],
+            },
+            pacienteOSocDB: "$pacienteDB.oSocial",
           })
           .group({
             ...{
@@ -248,18 +263,39 @@ app.get(
             preserveNullAndEmptyArrays: true,
           })
           .addFields({
-            pacienteOSocDB: "$pacienteDB.oSocial",
-            pacienteDocDB: {
-              $concat: ["$pacienteDB.tipo_doc", " ", "$pacienteDB.documento"],
-            },
             pacienteDB: {
               $ifNull: [
                 {
                   $concat: ["$pacienteDB.apellido", ", ", "$pacienteDB.nombre"],
                 },
-                "$ps_paciente",
+                {
+                  $concat: [{$ifNull: ["$ps_nombreC", ""]}, " (", "$ps_paciente", ")"],
+                },
               ],
             },
+            pacienteDocDB: {
+              $ifNull: [
+                {
+                  $concat: ["$pacienteDB.tipo_doc", " ", "$pacienteDB.documento"],
+                },
+                {
+                  $ifNull: [
+                    {
+                      $concat: ["Resp ", "$pacienteDB.doc_responsable"],
+                    },
+                    {
+                      $ifNull: [
+                        {
+                          $concat: ["Resp ", "$ps_doc_responsable"],
+                        },
+                        "$vacio",
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+            pacienteOSocDB: "$pacienteDB.oSocial",
           })
           .group({
             ...{

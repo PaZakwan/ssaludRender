@@ -27,8 +27,9 @@ let listaInsumo = [
   "categoria",
   "descripcion",
   "unique_code",
-  "dosis_posibles",
   "condiciones",
+  "grupo_etario",
+  "dosis_posibles",
   "estado",
 ];
 
@@ -140,11 +141,6 @@ app.put(
       }
       body = body.dato;
 
-      if (body.categoria !== "Vacuna") {
-        delete body.condiciones;
-        delete body.dosis_posibles;
-      }
-
       let insumoDB = null;
       if (body._id) {
         body = objectSetUnset({dato: body, unsetCero: true}).dato;
@@ -154,9 +150,15 @@ app.put(
         insumoDB = await Insumo.findOneAndUpdate({_id}, body, {
           new: true,
           runValidators: true,
+          context: "query",
         }).exec();
       } else {
         // nuevo
+        if (body.categoria !== "Vacuna") {
+          delete body.condiciones;
+          delete body.grupo_etario;
+          delete body.dosis_posibles;
+        }
         insumoDB = await new Insumo(body).save();
       }
 
