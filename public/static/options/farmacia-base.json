@@ -13,54 +13,10 @@
     ],
     "insumo_categorias": [
       "Medicamento",
-      "Vacuna",
       "Higiene/Limpieza",
       "Enfermeria/Medico",
       "Alimento",
       "Varios"
-    ],
-    "vacunas_condiciones": [
-      "No Embarazada",
-      "No Puerpera",
-      "No Antecedentes Patologicos",
-      "No Inmunodeprimida"
-    ],
-    "vacunas_dosis_posibles": [
-      "Unica",
-      "Neonatal",
-      "1era",
-      "2da",
-      "3era",
-      "4ta",
-      "5ta",
-      "6ta",
-      "7ma",
-      "Anual",
-      "Refuerzo",
-      "Refuerzo 2do",
-      "Refuerzo 3ero"
-    ],
-    "vacunas_estrategia": [
-      "Calendario",
-      "Campaña",
-      "Contactos",
-      "Terreno",
-      "Internacion",
-      "Pre Exposicion",
-      "Post Exposicion"
-    ],
-    "vacunas_reportes": [
-      "Masculinos",
-      "Femeninos",
-      "Embarazadas",
-      "Puerperas",
-      "Grupo de Riesgo",
-      "Estrategia - Campaña",
-      "Estrategia - Contactos",
-      "Municipio - Moreno",
-      "Personal de Salud",
-      "Personal Esencial",
-      "Menores de 15"
     ]
   },
   "ok": true

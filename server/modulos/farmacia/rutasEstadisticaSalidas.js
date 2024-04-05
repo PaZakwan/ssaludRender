@@ -8,13 +8,12 @@ const {isObjectIdValid, sumarProps, dateUTC} = require(process.env.MAIN_FOLDER +
 const FarmaciaTransferencia = require("./models/farmacia_transferencia");
 const FarmaciaDescarte = require("./models/farmacia_descarte");
 const InsumoEntrega = require("./models/insumo_entrega");
-const VacunaAplicacion = require("./models/vacuna_aplicacion");
 
 const app = express();
 
 // ============================
 // Mostrar Insumos Estadistica, Salieron segun area filtros, entre fechas.
-// Descartes(Motivos) + Entregas + Aplicaciones + Transferencias(retirados)
+// Descartes(Motivos) + Entregas + Transferencias(retirados)
 // Posibilidad de seleccionar los modelos de la DB
 // ============================
 app.get(
@@ -24,7 +23,6 @@ app.get(
     (req, res, next) => {
       req.verificacionArray = [
         {prop: "farmacia.entregas"},
-        {prop: "farmacia.vacunas"},
         {prop: "farmacia.gestion"},
         {prop: "farmacia.general.reportes", value: 1},
         {prop: "farmacia.general.admin", value: 1},
@@ -49,7 +47,7 @@ app.get(
         for (const [index, area] of filtro.origen.$in.entries()) {
           // verificar Acceso a las areas.
           if (
-            // existe en general/reportes o en general/admin o en entregas o vacunas o en gestion
+            // existe en general/reportes o en general/admin o en entregas o en gestion
             // o modelo entregas para verlas todas.
             !(
               modelos.entr ||
@@ -57,8 +55,7 @@ app.get(
               req.usuario.farmacia.general?.reportes === 1 ||
               req.usuario.farmacia.general?.admin === 1 ||
               req.usuario.farmacia.gestion?.includes(area) ||
-              req.usuario.farmacia.entregas?.includes(area) ||
-              req.usuario.farmacia.vacunas?.includes(area)
+              req.usuario.farmacia.entregas?.includes(area)
             )
           ) {
             return errorMessage(res, {message: "Acceso Denegado."}, 401);
@@ -222,120 +219,6 @@ app.get(
             _id: {$concat: ["$areaDB", "-", "$insumoDB"]},
             total_nominal: "$total",
             total_entregas: "$total",
-          })
-          .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1});
-      }
-
-      // Vacuna Aplicaciones;
-      let vacunacionesDB = [];
-      if (modelos?.vac) {
-        let detallado = modelos.vac.nd
-          ? null
-          : {
-              detalle_vacunaciones: {
-                $push: {
-                  fecha: {$dateToString: {format: "%Y-%m-%d", date: "$fecha"}},
-                  pacienteDB: "$pacienteDB",
-                  pacienteDocDB: "$pacienteDocDB",
-                  pacienteOSocDB: "$pacienteOSocDB",
-                  oSocial: "$oSocial",
-                  procedencia: "$procedencia",
-                  cantidad: "$cantidad",
-                  lote: "$lote",
-                  vencimiento: {$dateToString: {format: "%Y-%m-%d", date: "$vencimiento"}},
-                  dosis: "$dosis",
-                },
-              },
-            };
-
-        vacunacionesDB = await VacunaAplicacion.aggregate()
-          .match(filtroIndividual)
-          .sort({fecha: 1, _id: 1})
-          .lookup({
-            from: "pacientes",
-            localField: "paciente",
-            foreignField: "_id",
-            as: "pacienteDB",
-          })
-          .unwind({
-            path: "$pacienteDB",
-            // SI paciente no existe, return null en vez de no existir
-            preserveNullAndEmptyArrays: true,
-          })
-          .addFields({
-            pacienteDB: {
-              $ifNull: [
-                {
-                  $concat: ["$pacienteDB.apellido", ", ", "$pacienteDB.nombre"],
-                },
-                {
-                  $concat: [{$ifNull: ["$ps_nombreC", ""]}, " (", "$ps_paciente", ")"],
-                },
-              ],
-            },
-            pacienteDocDB: {
-              $ifNull: [
-                {
-                  $concat: ["$pacienteDB.tipo_doc", " ", "$pacienteDB.documento"],
-                },
-                {
-                  $ifNull: [
-                    {
-                      $concat: ["Resp ", "$pacienteDB.doc_responsable"],
-                    },
-                    {
-                      $ifNull: [
-                        {
-                          $concat: ["Resp ", "$ps_doc_responsable"],
-                        },
-                        "$vacio",
-                      ],
-                    },
-                  ],
-                },
-              ],
-            },
-            pacienteOSocDB: "$pacienteDB.oSocial",
-          })
-          .group({
-            ...{
-              _id: {area: "$origen", insumo: {$ifNull: ["$insumo", "$vacunaName"]}},
-              total: {$sum: 1},
-            },
-            ...detallado,
-          })
-          .project({
-            _id: 0,
-            area: "$_id.area",
-            insumo: "$_id.insumo",
-            total: 1,
-            detalle_vacunaciones: 1,
-          })
-          .lookup({
-            from: "areas",
-            localField: "area",
-            foreignField: "_id",
-            as: "areaDB",
-          })
-          .unwind({path: "$areaDB"})
-          .addFields({
-            areaDB: "$areaDB.area",
-          })
-          .lookup({
-            from: "Insumos",
-            localField: "insumo",
-            foreignField: "_id",
-            as: "insumoDB",
-          })
-          .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
-          .addFields({
-            categoriaDB: "$insumoDB.categoria",
-            insumoDB: {$ifNull: ["$insumoDB.nombre", "$insumo"]},
-          })
-          .addFields({
-            _id: {$concat: ["$areaDB", "-", "$insumoDB"]},
-            total_nominal: "$total",
-            total_vacunaciones: "$total",
           })
           .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1});
       }
@@ -533,24 +416,6 @@ app.get(
       // INTEGRAR EGRESOS
       // ENTREGAS
       let egresosDB = [...entregasDB];
-      // VACUNACIONES
-      // si egresos sigue vacio agregar las vacunacionesDB.
-      if (egresosDB.length === 0) {
-        egresosDB = [...vacunacionesDB];
-      }
-      // sino recorrer vacunacionesDB y sumarProps
-      else {
-        for (let index = 0; index < vacunacionesDB.length; index++) {
-          let existe = egresosDB.findIndex((egreso) => egreso._id === vacunacionesDB[index]._id);
-          if (existe > -1) {
-            // sumarProps
-            egresosDB[existe] = sumarProps(egresosDB[existe], vacunacionesDB[index]);
-          } else {
-            // agregarlo
-            egresosDB.push(vacunacionesDB[index]);
-          }
-        }
-      }
       // DESCARTES
       // si egresos sigue vacio agregar los descartes.
       if (egresosDB.length === 0) {

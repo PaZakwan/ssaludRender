@@ -11,6 +11,19 @@
 
 ##### Unreleased
 
+##### [1.7.20240404] - 2024-04-04
+
+- Improve a Sistema - Scrollbar => Si el navegador soporta webkit-scrollbar se carga una version mejor de Scrollbar.
+
+- Added a Bromatologia - PDF Analisis Bacteriologico -> Cuando conclusion "no cumple" muestra QR con Protocolo de desinfeccion.
+
+- Added a Patrimonio - Excel Movimiento Insumos -> Exportar nueva columna "Objeto SubCategoria".
+
+- Changed a Farmacia - Stock => PDF de STOCK subtotales "por Vencer/Vencidos" -> "Vencidos/Buenos".
+- Removed a Farmacia - Insumos => Categoria Vacuna.
+
+- Added a Vacunatorio - Nuevos subsistema similar al de Farmacia (gestion de stock y aplicacion nominal).
+
 ##### [1.7.20240228] - 2024-02-28
 
 - Added a Sistema - Object => Funcion global arrayFromSumarPropsInArrays() mejora global para fusionar datos para reportes.

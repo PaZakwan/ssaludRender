@@ -52,12 +52,74 @@ const permisosFarmacia = new mongoose.Schema({
   },
   // entrega de insumos (No Vacunas) a pacientes
   entregas: {type: [{type: mongoose.Schema.Types.ObjectId, ref: "Area"}], default: void 0},
-  // Aplicacion de insumos (Vacunas) a pacientes
-  vacunas: {type: [{type: mongoose.Schema.Types.ObjectId, ref: "Area"}], default: void 0},
   // visualizacion de stock del area...
   stock: {type: [{type: mongoose.Schema.Types.ObjectId, ref: "Area"}], default: void 0},
   // gestion del area: opciones, solicitudes propias, entradas, clearing, descartes, reportes locales.
   gestion: {type: [{type: mongoose.Schema.Types.ObjectId, ref: "Area"}], default: void 0},
+});
+
+const permisosVacunas = new mongoose.Schema({
+  _id: false,
+  // Nuevas Vacunas / Minimos Recomendados
+  config: {
+    type: Number,
+    min: 0,
+    max: 1,
+  },
+  reportes: {
+    type: Number,
+    min: 0,
+    max: 1,
+  },
+
+  // Supervisor del area (Solo Lectura)
+  lectura: {type: [{type: mongoose.Schema.Types.ObjectId, ref: "Area"}], default: void 0},
+  // Gestion del area: solicitudes propias, ingresos, transferencias, egresos, egresos nominales.
+  gestion: {type: [{type: mongoose.Schema.Types.ObjectId, ref: "Area"}], default: void 0},
+
+  // Para todas las areas
+  general: {
+    lectura: {
+      type: Number,
+      min: 0,
+      max: 1,
+    },
+    gestion: {
+      type: Number,
+      min: 0,
+      max: 1,
+    },
+  },
+});
+
+const permisosSolicitudes = new mongoose.Schema({
+  _id: false,
+  // Nuevos Motivos (Destino por defecto/opcional)
+  config: {
+    type: Number,
+    min: 0,
+    max: 1,
+  },
+  motivos: {type: [{type: String}], default: void 0},
+
+  // Supervisor del area (Solo Lectura)
+  lectura: {type: [{type: mongoose.Schema.Types.ObjectId, ref: "Area"}], default: void 0},
+  // Gestion del area: [Crea(Origen)/Responde(Destinatario)] Solicitudes propias y destinadas a su area.
+  gestion: {type: [{type: mongoose.Schema.Types.ObjectId, ref: "Area"}], default: void 0},
+
+  // Para todas las areas
+  general: {
+    lectura: {
+      type: Number,
+      min: 0,
+      max: 1,
+    },
+    gestion: {
+      type: Number,
+      min: 0,
+      max: 1,
+    },
+  },
 });
 
 let usuarioSchema = new mongoose.Schema(
@@ -168,6 +230,14 @@ let usuarioSchema = new mongoose.Schema(
     },
     farmacia: {
       type: permisosFarmacia,
+      default: void 0,
+    },
+    vacunas: {
+      type: permisosVacunas,
+      default: void 0,
+    },
+    solicitudes: {
+      type: permisosSolicitudes,
       default: void 0,
     },
   },

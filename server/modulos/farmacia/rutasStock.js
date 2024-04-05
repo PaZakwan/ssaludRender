@@ -320,6 +320,7 @@ app.get(
         })
         .addFields({
           _id: {$concat: ["$areaDB", "-", "$insumoDB"]},
+          total_buenos: {$subtract: ["$total", "$total_expirado"]},
         })
         .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1});
 
@@ -344,7 +345,6 @@ app.get(
       req.verificacionArray = [
         {prop: "farmacia.gestion"},
         {prop: "farmacia.entregas"},
-        {prop: "farmacia.vacunas"},
         {prop: "farmacia.general.reportes", value: 1},
         {prop: "farmacia.general.admin", value: 1},
       ];
@@ -365,8 +365,7 @@ app.get(
           req.usuario.farmacia.general?.reportes === 1 ||
           req.usuario.farmacia.general?.admin === 1 ||
           req.usuario.farmacia.gestion?.includes(filtro.area) ||
-          req.usuario.farmacia.entregas?.includes(filtro.area) ||
-          req.usuario.farmacia.vacunas?.includes(filtro.area)
+          req.usuario.farmacia.entregas?.includes(filtro.area)
         )
       ) {
         return errorMessage(res, {message: "Acceso Denegado."}, 401);

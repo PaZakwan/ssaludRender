@@ -500,7 +500,7 @@ app.delete(
 
       // Verificar que todavia este pendiente...
       if (solicitudBorrada.estado !== "Pendiente") {
-        return errorMessage(res, {message: "Solicitud Respondida, no editable."}, 401);
+        return errorMessage(res, {message: "Solicitud Resuelta, no editable."}, 401);
       }
 
       solicitudBorrada = await FarmaciaSolicitud.findOneAndDelete({

@@ -33,6 +33,8 @@ let listaUsuario = [
   "turnero",
   "historial_clinico",
   "farmacia",
+  "vacunas",
+  "solicitudes",
 ];
 
 // ============================
@@ -51,9 +53,12 @@ app.get("/usuario", [verificaToken, verificaAdmin_Role], async (req, res) => {
       .limit(limite)
       .populate("area", "area")
       .populate("farmacia.entregas", "area")
-      .populate("farmacia.vacunas", "area")
       .populate("farmacia.stock", "area")
       .populate("farmacia.gestion", "area")
+      .populate("vacunas.lectura", "area")
+      .populate("vacunas.gestion", "area")
+      .populate("solicitudes.lectura", "area")
+      .populate("solicitudes.gestion", "area")
       .exec();
 
     return res.json({
@@ -73,9 +78,12 @@ app.get("/usuario/:id", [verificaToken, verificaAdmin_Role], async (req, res) =>
     let usuarioDB = await Usuario.findOne({_id: req.params.id})
       .populate("area", "area")
       .populate("farmacia.entregas", "area")
-      .populate("farmacia.vacunas", "area")
       .populate("farmacia.stock", "area")
       .populate("farmacia.gestion", "area")
+      .populate("vacunas.lectura", "area")
+      .populate("vacunas.gestion", "area")
+      .populate("solicitudes.lectura", "area")
+      .populate("solicitudes.gestion", "area")
       .exec();
 
     if (!usuarioDB) {
@@ -104,9 +112,12 @@ app.get("/usuario/perfil/:id", [verificaToken], async (req, res) => {
     let usuarioDB = await Usuario.findOne({_id: req.params.id})
       .populate("area", "area")
       .populate("farmacia.entregas", "area")
-      .populate("farmacia.vacunas", "area")
       .populate("farmacia.stock", "area")
       .populate("farmacia.gestion", "area")
+      .populate("vacunas.lectura", "area")
+      .populate("vacunas.gestion", "area")
+      .populate("solicitudes.lectura", "area")
+      .populate("solicitudes.gestion", "area")
       .exec();
 
     if (!usuarioDB) {

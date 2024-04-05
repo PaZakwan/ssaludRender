@@ -16,7 +16,6 @@ const FarmaciaSolicitud = require("./models/farmacia_solicitud");
 const FarmaciaStock = require("./models/farmacia_stock");
 const FarmaciaTransferencia = require("./models/farmacia_transferencia");
 const InsumoEntrega = require("./models/insumo_entrega");
-const VacunaAplicacion = require("./models/vacuna_aplicacion");
 const HistorialMedicacion = require("../historial_clinico/models/historial_medicacion");
 
 const app = express();
@@ -231,11 +230,6 @@ app.delete(
       }
       // InsumoEntrega;
       insumoBorrado = await InsumoEntrega.findOne({insumo: req.params.id}).exec();
-      if (insumoBorrado) {
-        return errorMessage(res, {message: "Insumo Utilizado, no borrable."}, 412);
-      }
-      // VacunaAplicacion; FALTA TESTEAR
-      insumoBorrado = await VacunaAplicacion.findOne({insumo: req.params.id}).exec();
       if (insumoBorrado) {
         return errorMessage(res, {message: "Insumo Utilizado, no borrable."}, 412);
       }

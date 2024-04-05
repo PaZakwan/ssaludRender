@@ -320,7 +320,7 @@ app.get(
       let movimientosDB = await PatrimonioStock.find(filtro)
         .collation({locale: "es", numericOrdering: true})
         .sort({fec_solicitud: -1, id_objeto: 1, area_solicita: 1, _id: -1})
-        .populate("id_objeto", "modelo")
+        .populate("id_objeto", "modelo subcategoria")
         .populate("area_solicita", "area")
         .exec();
 
