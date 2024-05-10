@@ -137,10 +137,13 @@ app.get(
     (req, res, next) => {
       req.verificacionArray = [
         {prop: "historial_clinico", value: 1},
-        // {prop: "farmacia.entregas"},
-        {prop: "farmacia.vacunas"},
+        {prop: "farmacia.entregas"},
         {prop: "farmacia.general.reportes", value: 1},
         {prop: "farmacia.general.admin", value: 1},
+        {prop: "vacunas.gestion"},
+        {prop: "vacunas.lectura"},
+        {prop: "vacunas.general.gestion", value: 1},
+        {prop: "vacunas.general.lectura", value: 1},
       ];
       next();
     },
@@ -184,9 +187,10 @@ app.put(
     (req, res, next) => {
       req.verificacionArray = [
         {prop: "historial_clinico", value: 2},
-        // {prop: "farmacia.entregas"},
-        {prop: "farmacia.vacunas"},
+        {prop: "farmacia.entregas"},
         {prop: "farmacia.general.admin", value: 1},
+        {prop: "vacunas.gestion"},
+        {prop: "vacunas.general.gestion", value: 1},
       ];
       next();
     },

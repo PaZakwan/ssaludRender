@@ -175,6 +175,8 @@ let VacunaAplicacionSchema = new Schema(
     // PSVacunas
     ps_id: {
       type: String,
+      unique: true,
+      sparse: true,
     },
     ps_paciente: {
       type: String,

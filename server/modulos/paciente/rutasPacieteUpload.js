@@ -8,7 +8,7 @@ const {uploadSingleRoute} = require(process.env.MAIN_FOLDER + "/middlewares/uplo
 // tools
 const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
 const {capitalize, trim_between} = require(process.env.MAIN_FOLDER + "/tools/string");
-const {isVacio, isDateValid} = require(process.env.MAIN_FOLDER + "/tools/object");
+const {isVacio, isDateValid, isObjectIdValid} = require(process.env.MAIN_FOLDER + "/tools/object");
 const {
   crearContentCSV,
   fileToJson,
@@ -259,21 +259,26 @@ const PacienteFormat = ({json, totales, line, logFile, csvErrors, csvFix}) => {
       switch (json.ZonaReside) {
         case "1":
           json.dir_localidad = "Francisco Alvarez";
+          delete json.ZonaReside;
           break;
         case "2":
           json.dir_localidad = "Cuartel V";
+          delete json.ZonaReside;
           break;
         case "3":
         case "4":
         case "8":
           json.dir_localidad = "Moreno";
+          delete json.ZonaReside;
           break;
         case "5":
           json.dir_localidad = "Paso Del Rey";
+          delete json.ZonaReside;
           break;
         case "6":
         case "7":
           json.dir_localidad = "Trujui";
+          delete json.ZonaReside;
           break;
 
         default:
@@ -309,6 +314,9 @@ const PacienteFormat = ({json, totales, line, logFile, csvErrors, csvFix}) => {
     if (json.IdPS) {
       json.ps_id = json.ps_id ?? json.IdPS;
       delete json.IdPS;
+    }
+    if (json.ps_id) {
+      json.ps_id = [json.ps_id];
     }
 
     if (advertencia) {
@@ -576,7 +584,9 @@ app.post(
             return;
           }
           json = json.dato;
-          json.usuario_modifico = req.usuario._id;
+          json.usuario_modifico = isObjectIdValid(req.usuario._id);
+          json.createdAt = new Date();
+          json.estado = true;
 
           // Validar datos (Manipulando json para luego actualizar la BD)
           let pacienteTemp = PacienteFormat({json, totales, line, logFile, csvErrors, csvFix});

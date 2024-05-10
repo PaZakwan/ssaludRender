@@ -5,11 +5,10 @@ const path = require("path");
 process.env.MAIN_FOLDER = path.resolve(__dirname);
 
 // MONGO CONEXIONES DB
-require("./db_connection");
+const db_connection = require("./db_connection");
 
 // Tareas Cronologicas.
 const schedule_task = require("./schedule_task");
-schedule_task.scheduleRun().catch((error) => console.error("schedule_task.scheduleRun", error));
 
 // WebServer + API Routes
 const express = require("express");
@@ -86,82 +85,139 @@ app.use(
   })
 );
 
-// Habilita la carpeta public
-app.use(express.static(path.resolve(__dirname, "../public")));
+// FUNCION PARA CARGAR LAS RUTAS DE LA API (MODELOS DE MONGOOSE)
+const loadRutasApi = () => {
+  try {
+    // Habilita GETs de la carpeta public
+    app.use(express.static(path.resolve(__dirname, "../public")));
 
-// Configuración global de rutas de la API
-const rutas = require("./rutas_index");
-app.use("/api", rutas);
+    // Configuración global de rutas de la API
+    app.use("/api", require("./rutas_api_index"));
 
-// Si no encuentra la ruta responde con lo siguiente 404
-app.use(function (req, res, next) {
-  res.status(404).send({
-    ok: false,
-    err: {
-      message: "Ruta Inexistente",
-      data: `${req.protocol}-${req.method}: ${req.originalUrl}`,
-    },
-  });
-});
-
-// Si ocurre algun error en la app 500
-app.use(function (error, req, res, next) {
-  res.status(500).send({
-    ok: false,
-    err: {
-      message: "Error Interno en el Servidor",
-      data: `${error.name}: ${error.message}`,
-    },
-  });
-  console.error(error.stack);
-});
-
-//Revisando si esta en Heroku
-if (process.env.HEROKU) {
-  // Heroku Server
-  app.listen(process.env.PORT, () => {
-    mensajeBackend(process.env.BASE_URL, process.env.PORT);
-  });
-} else {
-  // Levantando servidor HTTP
-  if (process.env.NODE_ENV === "dev") {
-    // Servidor para desarrollo local del FrontEnd
-    app.listen(80, () => {
-      mensajeBackend(process.env.BASE_URL, 80);
-    });
-  } else {
-    // Redirect from http port 80 to https 443
-    http
-      .createServer(function (req, res) {
-        res.writeHead(301, {Location: `https://${req.headers["host"]}${req.url}`});
-        res.end();
-        // res.redirect(301, `https://${req.headers['host']}${req.url}`);
-      })
-      .listen(80, () => {
-        console.log(
-          `===== Servidor funcionando en: ${process.env.BASE_URL}:80 redirecciona al HTTPS 443 =====`
-        );
+    // Si no encuentra la ruta responde con lo siguiente 404
+    app.use((req, res, next) => {
+      return res.status(404).send({
+        ok: false,
+        err: {
+          message: "Ruta Inexistente",
+          data: `${req.protocol}-${req.method}: ${req.originalUrl}`,
+        },
       });
-  }
-
-  // Levantando servidor HTTPS
-  https
-    .createServer(
-      {
-        key: fs.readFileSync(process.env.KEY),
-        cert: fs.readFileSync(process.env.CERT),
-        dhparam: fs.readFileSync(process.env.DH),
-      },
-      app
-    )
-    .listen(process.env.PORT, () => {
-      mensajeBackend(process.env.BASE_URL, process.env.PORT);
     });
-}
+
+    // Si ocurre algun error en la app 500
+    // app.get("/", (req, res) => {
+    //   let err = new Error("Testing - not found");
+    //   err.status = 404;
+    //   return next(err);
+    // });
+    app.use((err, req, res, next) => {
+      console.error(err.stack);
+      return res.status(500).send({
+        ok: false,
+        err: {
+          message: "Error Interno en el Servidor",
+          data: `${err.name}: ${err.message}`,
+        },
+      });
+    });
+  } catch (error) {
+    console.error(`loadRutasApi CATCH => ${error.name}: ${error.message}.`);
+  }
+};
+
+// FUNCION PARA INICIAR SERVIDOR WEB (folder public) Y SERVICIOS DE RUTAS API
+const webApiServerRun = async () => {
+  try {
+    //Revisando si esta en Heroku
+    if (process.env.HEROKU) {
+      // Heroku Server
+      app.listen(process.env.PORT, () => {
+        mensajeBackend(process.env.BASE_URL, process.env.PORT);
+      });
+    } else {
+      // Levantando servidor HTTP
+      if (process.env.NODE_ENV === "dev") {
+        // Servidor para desarrollo local del FrontEnd
+        app.listen(80, () => {
+          mensajeBackend(process.env.BASE_URL, 80);
+        });
+      } else {
+        // Redirect from http port 80 to https 443
+        http
+          .createServer(function (req, res) {
+            res.writeHead(301, {Location: `https://${req.headers["host"]}${req.url}`});
+            res.end();
+            // res.redirect(301, `https://${req.headers['host']}${req.url}`);
+          })
+          .listen(80, () => {
+            console.log(
+              `===== Servidor funcionando en: ${process.env.BASE_URL}:80 redirecciona al HTTPS 443 =====`
+            );
+          });
+      }
+
+      // Levantando servidor HTTPS
+      https
+        .createServer(
+          {
+            key: fs.readFileSync(process.env.KEY),
+            cert: fs.readFileSync(process.env.CERT),
+            dhparam: fs.readFileSync(process.env.DH),
+          },
+          app
+        )
+        .listen(process.env.PORT, () => {
+          mensajeBackend(process.env.BASE_URL, process.env.PORT);
+        });
+    }
+    return true;
+  } catch (error) {
+    console.error(`webApiServerRun CATCH => ${error.name}: ${error.message}.`);
+    return false;
+  }
+};
+
+// FUNCION PARA INICIAR SERVIDOR
+const startServer = async () => {
+  try {
+    // Conecta a la DB.
+    let DB = await db_connection.startConnectionDB();
+    // Carga las Rutas de la API.
+    loadRutasApi();
+    // Espera que se creen los modelos en las RUTAS
+    console.log(`===== ${timeNow()} <=> Creando Modelos de la BD =====`);
+    if (process.env.NODE_ENV === "dev") {
+      await new Promise((resolve) => setTimeout(resolve, 1 * 1000));
+    } else {
+      await new Promise((resolve) => setTimeout(resolve, 2 * 1000));
+    }
+    // Crea los INDEX de la BD.
+    console.log(`===== ${timeNow()} <=> Creando Indices de la BD =====`);
+    let index = await DB.syncIndexes({continueOnError: true});
+    // {key : value} => {Modelo : Error}
+    // console.log("index", index);
+    // Espera que se Terminen de crear los index de la DB
+    console.log(`===== ${timeNow()} <=> Terminando de Crear los Indices de la BD =====`);
+    if (process.env.NODE_ENV === "dev") {
+      await new Promise((resolve) => setTimeout(resolve, 1 * 1000));
+    } else {
+      await new Promise((resolve) => setTimeout(resolve, 5 * 1000));
+    }
+    // Carga las Tareas Cronologicas.
+    schedule_task.scheduleRun();
+    // Levanta el Servidor.
+    await webApiServerRun();
+  } catch (error) {
+    console.error(`startServer CATCH => ${error.name}: ${error.message}.`);
+  }
+};
+
+startServer();
 
 // funciones de msjs
 const mensajeBackend = function (BASE_URL, PORT) {
-  console.error(`${timeNow()} <=> Ejecutando Backend en: ${BASE_URL}:${PORT}`);
+  console.log(`${timeNow()} <=> Ejecutando Backend en: ${BASE_URL}:${PORT}`);
 };
 const timeNow = function () {
   let ahora = new Date();

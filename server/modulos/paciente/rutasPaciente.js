@@ -53,8 +53,11 @@ const verificaPacienteLectura = (req, res, next) => {
     usuario.historial_clinico > 0 ||
     usuario.farmacia?.general?.reportes ||
     usuario.farmacia?.general?.admin ||
-    usuario.farmacia?.entregas?.length >= 1 ||
-    usuario.farmacia?.vacunas?.length >= 1
+    usuario.farmacia?.entregas?.length > 0 ||
+    usuario.vacunas?.gestion?.length > 0 ||
+    usuario.vacunas?.lectura?.length > 0 ||
+    usuario.vacunas?.general?.gestion ||
+    usuario.vacunas?.general?.lectura
   ) {
     return next();
   } else {
@@ -87,7 +90,8 @@ const verificaPacienteEdit = (usuario) => {
       usuario.historial_clinico > 1 ||
       usuario.farmacia?.general?.admin ||
       usuario.farmacia?.entregas?.length >= 1 ||
-      usuario.farmacia?.vacunas?.length >= 1
+      usuario.vacunas?.gestion?.length > 0 ||
+      usuario.vacunas?.general?.gestion
     ) {
       return true;
     } else {

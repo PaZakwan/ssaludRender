@@ -51,48 +51,17 @@ let VacunaInsumoSchema = new Schema(
       type: [
         {
           // para group etario estadistica
-          // https://stackoverflow.com/questions/44481283/how-to-implement-bucket-to-group-by-multiple-fields
-          // min incluye, max excluye.
-          // unidad -> mayor - menor
-          min: {
-            valor: {
-              type: Number,
-            },
-            unidad: {
-              type: String,
-            },
+          // unidad -> ""
+          // boundaries -> [number]
+          unidad: {
+            type: String,
+            required: [true, "La Unidad de Edad del Grupo Etario es necesaria."],
           },
-          max: {
-            valor: {
-              type: Number,
-            },
-            unidad: {
-              type: String,
-            },
-          },
+          boundaries: [Number],
         },
       ],
       _id: false,
       default: void 0,
-      required: [
-        // si esto es true regresa mensaje y no deja guardar
-        function () {
-          if (this.categoria === "Vacuna" || this.getUpdate?.().$set?.categoria === "Vacuna") {
-            if (
-              this.grupo_etario?.length > 0 ||
-              this.getUpdate?.().$set?.grupo_etario?.length > 0
-            ) {
-              return false;
-            } else {
-              return true;
-            }
-          } else {
-            return false;
-          }
-        },
-        // "El Grupo Etario es necesario si es Vacuna.",
-        "El Grupo Etario es necesario.",
-      ],
     },
 
     dosis_posibles: {

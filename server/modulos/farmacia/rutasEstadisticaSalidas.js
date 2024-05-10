@@ -33,6 +33,14 @@ app.get(
   ],
   async (req, res) => {
     try {
+      // ###########
+      // filtrar por fecha...
+      // entregas/descartes segun fecha(no timezone) y existe retirado.
+      // transferenciaIn segun insumo.retirado (timezone) y haya sido recibido.
+      // transferenciaOut segun insumo.retirado (timezone).
+      // ###########
+      // VER EL TEMA DEL $elemMatch Y UNIFICAR FILTROS CON ESTADISTICA GENERAL...
+      // ###########
       // para seleccionar los modelos || entregas; descartes; transferencias;
       let modelos = JSON.parse(req.query.mod);
 
@@ -51,7 +59,6 @@ app.get(
             // o modelo entregas para verlas todas.
             !(
               modelos.entr ||
-              modelos.vac ||
               req.usuario.farmacia.general?.reportes === 1 ||
               req.usuario.farmacia.general?.admin === 1 ||
               req.usuario.farmacia.gestion?.includes(area) ||
@@ -103,7 +110,7 @@ app.get(
         if (temp.error) {
           return errorMessage(res, {message: temp.error}, 400);
         }
-        (filtro.fecha ??= {}).$gte = temp;
+        (filtro["insumos.retirado"] ??= {}).$gte = temp;
         (filtroIndividual.fecha ??= {}).$gte = dateUTC({
           date: req.query.desde,
           hours: "00:00:00.000",
@@ -118,12 +125,15 @@ app.get(
         if (temp.error) {
           return errorMessage(res, {message: temp.error}, 400);
         }
-        (filtro.fecha ??= {}).$lte = temp;
+        (filtro["insumos.retirado"] ??= {}).$lte = temp;
         (filtroIndividual.fecha ??= {}).$lte = dateUTC({
           date: req.query.hasta,
           hours: "23:59:59.999",
         });
       }
+      filtroIndividual.retirado = {
+        $exists: true,
+      };
 
       // Entregas
       let entregasDB = [];
@@ -366,7 +376,7 @@ app.get(
           .unwind({path: "$insumos"})
           // encontrar retirados
           .match({
-            "insumos.retirado": {$ne: null},
+            "insumos.retirado": filtro["insumos.retirado"],
             "insumos.insumo": filtro.insumos?.$elemMatch.insumo || {$exists: true},
             "insumos.procedencia": filtro.insumos?.$elemMatch.procedencia || {$exists: true},
           })

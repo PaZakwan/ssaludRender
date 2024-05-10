@@ -267,24 +267,31 @@ const saveFarmaciaEstadistica = function () {
   }
 };
 
-const scheduleRun = async function () {
-  // saveFarmaciaEstadistica();
-  //  gracefully shutdown jobs when a system interrupt occurs.
-  process.on("SIGINT", async () => {
-    console.log("gracefulShutdown");
-    await schedule.gracefulShutdown();
-    process.exit(0);
-  });
-  process.on("SIGTERM", async () => {
-    console.log("gracefulShutdown");
-    await schedule.gracefulShutdown();
-    process.exit(0);
-  });
-  process.on("SIGQUIT", async () => {
-    console.log("gracefulShutdown");
-    await schedule.gracefulShutdown();
-    process.exit(0);
-  });
+// FUNCION PARA INICIAR Todas las tareas cronologicas
+const scheduleRun = async () => {
+  try {
+    // saveFarmaciaEstadistica();
+    //  gracefully shutdown jobs when a system interrupt occurs.
+    process.on("SIGINT", async () => {
+      console.log("gracefulShutdown");
+      await schedule.gracefulShutdown();
+      process.exit(0);
+    });
+    process.on("SIGTERM", async () => {
+      console.log("gracefulShutdown");
+      await schedule.gracefulShutdown();
+      process.exit(0);
+    });
+    process.on("SIGQUIT", async () => {
+      console.log("gracefulShutdown");
+      await schedule.gracefulShutdown();
+      process.exit(0);
+    });
+    return true;
+  } catch (error) {
+    console.error(`scheduleRun CATCH => ${error.name}: ${error.message}.`);
+    return false;
+  }
 };
 
 // exports

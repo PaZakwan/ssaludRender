@@ -1,26 +1,9 @@
 const mongoose = require("mongoose");
 
-// mongoose.set("debug", true);
-
-// Creando y Conectanco to mongodb
-mongoose.connect(process.env.URLDB, JSON.parse(process.env.DBoptions)).catch((err) => {});
-
-(async () => {
-  try {
-    // mongoose.base = crearNuevaConexion(process.env.URLDB, JSON.parse(process.env.DBoptions), "Base");
-    mongoose.upload = await crearNuevaConexion(
-      process.env.URLDB,
-      {
-        ...JSON.parse(process.env.DBoptions),
-        ...{maxPoolSize: 1},
-      },
-      "Upload"
-    );
-    // console.log("!!!mongoose.upload", mongoose.upload);
-  } catch (err) {
-    // console.error(`conectarBDs Custom CATCH , ${err.name}: ${err.message}.`);
-  }
-})();
+if (process.env.NODE_ENV === "dev") {
+  mongoose.set("debug", true);
+}
+mongoose.set("allowDiskUse", true);
 
 // config default connection
 mongoose.connection
@@ -43,8 +26,30 @@ mongoose.connection
     mensajeOFFLINE("Default");
   });
 
+// FUNCION PARA INICIAR CONEXION A LA BD MONGO
+const startConnectionDB = async () => {
+  try {
+    // BASE
+    mongoose.connect(process.env.URLDB, JSON.parse(process.env.DBoptions)).catch((err) => {});
+
+    // UPLOAD
+    mongoose.upload = await crearNuevaConexion(
+      process.env.URLDB,
+      {
+        ...JSON.parse(process.env.DBoptions),
+        ...{maxPoolSize: 1},
+      },
+      "Upload"
+    );
+    return mongoose;
+  } catch (error) {
+    console.error(`startConnectionDB CATCH => ${error.name}: ${error.message}.`);
+    return false;
+  }
+};
+
 // FUNCION PARA CREAR OTRAS CONEXIONES A LA BD MONGO
-async function crearNuevaConexion(dbURL, options, baseName) {
+const crearNuevaConexion = async function (dbURL, options, baseName) {
   let db = await mongoose
     .createConnection(dbURL, options)
     .on("error", function (err) {
@@ -72,7 +77,7 @@ async function crearNuevaConexion(dbURL, options, baseName) {
     });
 
   return db;
-}
+};
 
 // funciones de msjs
 const mensajeReintentando = function (db) {
@@ -80,9 +85,9 @@ const mensajeReintentando = function (db) {
   // console.log(`mongoose.connections *Reintentando ${db}*`, mongoose.connections.length);
 };
 const mensajeONLINE = function (db) {
-  if (db === "Default") {
-    console.log(`===== Servidor funcionando en: ${process.env.BASE_URL}:${process.env.PORT} =====`);
-  }
+  // if (db === "Default") {
+  //   console.log(`===== Servidor funcionando en: ${process.env.BASE_URL}:${process.env.PORT} =====`);
+  // }
   console.log(`===== ${timeNow()} <=> Base de Datos ONLINE (${db}) =====`);
   // console.log(`mongoose.connections *ONLINE ${db}*`, mongoose.connections.length);
 };
@@ -103,4 +108,4 @@ const timeNow = function () {
 };
 
 // exports
-// exports.starConnection = starConnection;
+exports.startConnectionDB = startConnectionDB;

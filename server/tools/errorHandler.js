@@ -7,15 +7,18 @@ const errorMessage = function (res, error, statusTemp) {
     status = 444;
   }
 
-  // console.log(error.code);
-  // console.log(error.responseCode);
-  // console.log(statusTemp);
-  // console.log(error.name);
-  // console.log(error.message);
-  // console.log(error.type);
-  // console.log(error.arguments);
-  // console.log(error.errors);
-
+  if (process.env.NODE_ENV === "dev") {
+    console.log("##### errorMessage INI #####");
+    console.error("code: ", error.code);
+    console.error("responseCode: ", error.responseCode);
+    console.error("statusTemp: ", statusTemp);
+    console.error("name: ", error.name);
+    console.error("message: ", error.message);
+    console.error("type: ", error.type);
+    console.error("arguments: ", error.arguments);
+    console.error("errors: ", error.errors);
+    console.log("##### errorMessage END #####");
+  }
   // Mongoose Errors
   if (error.name === "ValidationError") {
     // pasar object de errors a array de string.. key: message
@@ -30,15 +33,19 @@ const errorMessage = function (res, error, statusTemp) {
   // MongoDB Errors
   if (error.name === "MongoServerError") {
     status = 500;
-    msjtemp = `Problema con la Consulta a la Base de Datos
-    Comuniquese con soporte para mas informacion.`;
+    if (error.code === 292 || error.code === 146) {
+      msjtemp = `Problema con la Consulta a la Base de Datos,
+      El rango de busqueda de la Consulta Excede el Limite de Memoria del Servidor.`;
+    } else {
+      msjtemp = `Problema con la Consulta a la Base de Datos
+      Comuniquese con soporte para mas informacion.`;
+    }
   }
 
   // "timed out" o "MongooseServerSelectionError" mensaje de BD no funcionando
   if (
-    error.name &&
-    error.message &&
-    (error.message.includes("timed out") || error.name.includes("MongooseServerSelectionError"))
+    error.message?.includes("timed out") ||
+    error.name?.includes("MongooseServerSelectionError")
   ) {
     status = 503;
     msjtemp = `Problema con la Conexion a la Base de Datos

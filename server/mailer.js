@@ -2,7 +2,8 @@ const nodemailer = require("nodemailer");
 const path = require("path");
 
 // IMPORTAR DATOS DEL MAIL DE PRODUCCION Y DEVELOPMENT..DE CONFIG.JS
-async function crearTransporter() {
+// FUNCION PARA INICIAR MAIL SERVER
+const crearTransporter = async () => {
   try {
     // ethereal
     // let testAccount = await nodemailer.createTestAccount();
@@ -16,7 +17,7 @@ async function crearTransporter() {
     //   temp.debug = true;
     // }
     if (process.env.MAIL_SERVICE) {
-      temp.service = process.env.MAIL_SERVICE ?? undefined; // 'Hotmail', 'Gmail'/'gmail' miinuscula )?
+      temp.service = process.env.MAIL_SERVICE; // 'Hotmail', 'Gmail'/'gmail' miinuscula )?
     } else {
       temp.host = process.env.MAIL_HOST ?? "smtp.ethereal.email"; // 'smtp.live.com', 'smtp.gmail.com'
       temp.port = process.env.MAIL_PORT ?? 587; // '587', '465'
@@ -72,11 +73,11 @@ async function crearTransporter() {
     console.error(`XXXXX Mails Server OFFLINE. ${error} XXXXX`);
     return {};
   }
-}
+};
 
-const mailerTransporter = crearTransporter();
+// const mailerTransporter = crearTransporter();
 
 // https://www.youtube.com/watch?v=M1E-bU5snA8
 
 // export transporter
-module.exports.mailTransporter = mailerTransporter;
+// module.exports.mailTransporter = mailerTransporter;

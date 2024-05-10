@@ -238,11 +238,10 @@ const getVacunaID = (json, vacunasDB) => {
   if (insumo) {
     // use insumo -> valid ID?
     if (isObjectIdValid(insumo)) {
-      insumo = isObjectIdValid(insumo);
+      return {id: isObjectIdValid(insumo)};
     } else {
       return {id: null, error: ` vacuna ID no Valido (${insumo}).`};
     }
-    return {id: insumo};
   } else if (ps_vacuna) {
     // use ps_vacuna_name to get name -> search vacunaID in vacunasDB
     if (!ps_vacuna_name[ps_vacuna]) {
@@ -250,13 +249,13 @@ const getVacunaID = (json, vacunasDB) => {
     }
     // buscar en vacunasDB el _id con el ps_vacuna_name
     let vacunaTemp = vacunasDB.find((vacuna) => {
-      if (vacuna.name === ps_vacuna_name[ps_vacuna]) {
+      if (vacuna.nombre === ps_vacuna_name[ps_vacuna]) {
         return true;
       }
       return false;
     });
     if (vacunaTemp) {
-      return {id: vacunaTemp._id};
+      return {id: vacunaTemp._id, name: ps_vacuna_name[ps_vacuna]};
     } else {
       // sera guardado como vacunaName
       return {
@@ -268,13 +267,13 @@ const getVacunaID = (json, vacunasDB) => {
   } else {
     // buscar en vacunasDB el _id con el vacunaName
     let vacunaTemp = vacunasDB.find((vacuna) => {
-      if (vacuna.name === vacunaName) {
+      if (vacuna.nombre === vacunaName) {
         return true;
       }
       return false;
     });
     if (vacunaTemp) {
-      return {id: vacunaTemp._id};
+      return {id: vacunaTemp._id, name: vacunaName};
     } else {
       // sera guardado como vacunaName
       return {
@@ -397,6 +396,8 @@ const VacunacionFormat = async ({
     if (json.fecha) {
       if (!isDateValid(json.fecha)) {
         errores += ` fecha (${json.fecha}) [YYYY-MM-DD].`;
+      } else {
+        json.fecha = new Date(json.fecha);
       }
     } else {
       errores += " fecha Sin Dato.";
@@ -453,15 +454,16 @@ const VacunacionFormat = async ({
       } else {
         errores += ` vacunador ID no Valido (${json.vacunador}).`;
       }
+    } else {
+      json.vacunadorName = json.vacunadorName ?? "No Informado";
     }
-    // else {
-    //   json.vacunadorName = json.vacunadorName ?? "No Informado";
-    // }
 
     // fecha_futura_cita
     if (json.fecha_futura_cita) {
       if (!isDateValid(json.fecha_futura_cita)) {
         errores += ` fecha futura cita (${json.fecha_futura_cita}) [YYYY-MM-DD].`;
+      } else {
+        json.fecha_futura_cita = new Date(json.fecha_futura_cita);
       }
     }
 
@@ -644,6 +646,9 @@ const VacunacionFormat = async ({
 
     json.ps_doc_responsable = json.ps_doc_responsable ?? json.doc_responsable;
     delete json.doc_responsable;
+    if (!json.ps_doc_responsable) {
+      delete json.ps_doc_responsable;
+    }
     // ############### terminar de VER ###############
 
     json.zona_sanitaria = json.zona_sanitaria ?? origenTemp?.zona_us;
@@ -654,6 +659,10 @@ const VacunacionFormat = async ({
     // edad_valor
     if (!json.edad_valor) {
       advertencia += " valor de edad Sin Dato.";
+    } else if (isNaN(json.edad_valor)) {
+      advertencia += " valor de edad No es un numero.";
+    } else {
+      json.edad_valor = Number(json.edad_valor);
     }
     // edad_unidad
     if (json.edad_unidad) {
@@ -766,15 +775,17 @@ const VacunacionFormat = async ({
     if (json.vencimiento) {
       if (!isDateValid(json.vencimiento)) {
         errores += ` vencimiento (${json.vencimiento}) [YYYY-MM-DD].`;
+      } else {
+        json.vencimiento = new Date(json.vencimiento);
       }
     }
     // else {
     //   json.vencimiento = json.fecha;
     // }
-    // procedencia; No Informado
-    // if (!json.procedencia) {
-    //   json.procedencia = "No Informado";
-    // }
+    // procedencia; Historial
+    if (!json.procedencia) {
+      json.procedencia = "Historial";
+    }
     // lote; (PS sin dato primeras cargas)
     // if (!json.lote) {
     //   json.lote = "No Informado";
@@ -782,13 +793,20 @@ const VacunacionFormat = async ({
 
     // No_Provista, (retirado -> No_Provista ? undefined : fecha)
     if (json.No_Provista) {
-      json.retirado = undefined;
+      json.procedencia = "Paciente";
       delete json.No_Provista;
-    } else {
-      json.retirado = json.retirado ?? json.fecha;
+    }
+    // retirado
+    if (json.procedencia === "Historial" || json.procedencia === "Paciente") {
+      delete json.retirado;
+    } else if (json.retirado) {
       if (!isDateValid(json.retirado)) {
         errores += ` retirado (${json.retirado}) [YYYY-MM-DD].`;
+      } else {
+        json.retirado = new Date(json.retirado);
       }
+    } else {
+      errores += " retirado Sin Dato.";
     }
 
     // ps_estrategia, (estrategia)
@@ -963,12 +981,7 @@ app.post(
       },
       "_id area oficina_nro zona_us"
     ).exec();
-    let vacunasDB = await mongoose.connections[0].models.VacunaInsumo.find(
-      {
-        categoria: "Vacuna",
-      },
-      "_id nombre"
-    ).exec();
+    let vacunasDB = await mongoose.connections[0].models.VacunaInsumo.find({}, "_id nombre").exec();
 
     try {
       guardarContentStream({
@@ -1050,7 +1063,7 @@ app.post(
             return;
           }
           json = json.dato;
-          json.usuario_creador = req.usuario._id;
+          json.usuario_creador = isObjectIdValid(req.usuario._id);
           json.createdAt = new Date();
 
           // Validar datos (Manipulando json para luego actualizar la BD)

@@ -227,7 +227,7 @@ app.get(
       let hoy = new Date();
       let porExpirar = new Date(new Date().setDate(hoy.getDate() + 90));
 
-      let stockDB = await FarmaciaStock.aggregate()
+      let stockDB = FarmaciaStock.aggregate()
         .match(filtro)
         .sort({vencimiento: 1, _id: -1})
         .addFields({
@@ -323,6 +323,35 @@ app.get(
           total_buenos: {$subtract: ["$total", "$total_expirado"]},
         })
         .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1});
+
+      // Excel detallado
+      if (req.query.ex && !req.query.nd) {
+        stockDB
+          .unwind({path: "$detalle", preserveNullAndEmptyArrays: true})
+          .addFields({
+            procedencia: {$ifNull: ["$detalle.procedencia", "$noRetornaNada"]},
+            lote: {$ifNull: ["$detalle.lote", "$noRetornaNada"]},
+            vencimiento: {$ifNull: ["$detalle.vencimiento", "$noRetornaNada"]},
+            cantidad: {$ifNull: ["$detalle.cantidad", 0]},
+            porExpirar: {$ifNull: ["$detalle.porExpirar", "$noRetornaNada"]},
+            expirado: {$ifNull: ["$detalle.expirado", "$noRetornaNada"]},
+          })
+          .addFields({
+            cant_min: {$cond: [{$eq: ["$cantidad", 0]}, "$cant_min", "$noRetornaNada"]},
+          })
+          // borrar props
+          .project({
+            detalle: 0,
+            total: 0,
+            total_expirado: 0,
+            total_porExpirar: 0,
+            total_buenos: 0,
+            area: 0,
+            insumo: 0,
+          });
+      }
+
+      stockDB = await stockDB.exec();
 
       return res.status(200).json({
         ok: true,

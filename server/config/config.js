@@ -95,7 +95,7 @@ if (process.env.NODE_ENV === "dev") {
     serverSelectionTimeoutMS: 8 * 1000,
     bufferCommands: false,
     family: 4,
-    autoIndex: true,
+    autoIndex: false,
   });
 } else {
   process.env.DBoptions = JSON.stringify({
@@ -104,15 +104,7 @@ if (process.env.NODE_ENV === "dev") {
     family: 4,
     autoIndex: false,
   });
-  // autoIndex, ... VER EL TEMA DE CRAFTEO DE INDEXS....
-  //    https://es.stackoverflow.com/questions/327253/autoindex-en-false-o-true-mongoose
-  // AL CORRER EL SERVIDOR, ESPERAR QUE SE TERMINEN DE CREAR LOS INDEX ANTES DE PONER API ROUTES ONLINE.
-  // O CREAR UNA TAREA PARA QUE ACTUALICE LOS INDEX CUANDO EL SERVIDOR TIENE BAJA CARGA, FUERA DE HORARIO LABORAL.
-  // ***
-  // mejor ¡? https://mongoosejs.com/docs/api/model.html#Model.syncIndexes()
-  //            async.each(Object.keys(models), function (key, cb) { models[key].ensureIndexes(cb) }, cb)
-  //          https://mongoosejs.com/docs/7.x/docs/api/model.html#Model.init()
-  // ***
+  // VER EL TEMA DE CRAFTEO DE INDEXS....
   // CREAR indexes en los modelos segun consulta corresponda.
   //    https://www.mongodb.com/docs/v4.4/indexes/
   //    https://www.mongodb.com/docs/v4.4/tutorial/equality-sort-range-rule/#std-label-esr-indexing-rule

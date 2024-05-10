@@ -11,6 +11,17 @@
 
 ##### Unreleased
 
+##### [1.7.20240509] - 2024-05-09
+
+- Improve a Sistema - Backend => Servidor se ejecuta mejor, secuencialmente, la BD se prepara para indexar antes de levantar el server web/api.
+
+- Changed a Sistema - Pacientes => Tipo de Documento "DNI" solo acepta numeros como Documento.
+
+- Added a Vacunatorio - Insumos => Nuevos o Editados busca en aplicaciones previas por nombre de vacuna para vincularlo al nuevo.
+- Fix a Vacunatorio - Permisos => varios fix para crear/editar pacientes y sus historiales (diagnosticos).
+
+- Added a Farmacia - Stock => Se agrego posibilidad de exportar en formato xls.
+
 ##### [1.7.20240404] - 2024-04-04
 
 - Improve a Sistema - Scrollbar => Si el navegador soporta webkit-scrollbar se carga una version mejor de Scrollbar.

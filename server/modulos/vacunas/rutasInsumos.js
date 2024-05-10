@@ -137,7 +137,7 @@ app.put(
 
       let insumoDB = null;
       if (body._id) {
-        body = objectSetUnset({dato: body, unsetCero: true}).dato;
+        body = objectSetUnset({dato: body, unsetCero: false}).dato;
         let _id = body.$set._id;
         delete body.$set._id;
         // update
@@ -148,17 +148,23 @@ app.put(
         }).exec();
       } else {
         // nuevo
-        if (body.categoria !== "Vacuna") {
-          delete body.condiciones;
-          delete body.grupo_etario;
-          delete body.dosis_posibles;
-        }
         insumoDB = await new VacunaInsumo(body).save();
       }
 
       if (!insumoDB) {
         return errorMessage(res, {message: "Error al guardar el Insumo."}, 400);
       }
+
+      // Verificar si hay aplicaciones con nombre similar y si existe aplicacion vincularla con el nuevo Insumo Vacuna.
+      // VacunaAplicacion => insumo (objectID) / vacunaName (str) <=> VacunaInsumo => _id (objectID) / nombre (str)
+      await VacunaAplicacion.updateMany(
+        {vacunaName: insumoDB.nombre},
+        {$set: {insumo: insumoDB._id}, $unset: {vacunaName: 1}},
+        {
+          runValidators: true,
+          context: "query",
+        }
+      ).exec();
 
       return res.status(201).json({
         ok: true,
