@@ -75,11 +75,13 @@ app.get(
           filtroIndividual.insumo.$in[index] = isObjectIdValid(insumo);
         });
       }
-      if (req.query.procedencias && req.query.procedencias !== "[]") {
-        filtroIndividual.procedencia = {
-          $in: JSON.parse(req.query.procedencias),
-        };
-      }
+      // sacar la procedencia "Paciente" "Historial"  - solo dejar "Region" "Carga inicial"
+      // if (req.query.procedencias && req.query.procedencias !== "[]") {
+      filtroIndividual.procedencia = {
+        // $in: JSON.parse(req.query.procedencias),
+        $in: ["Carga inicial", "Region"],
+      };
+      // }
 
       let filtroStock = {...filtroIndividual};
       delete filtroStock.fecha;

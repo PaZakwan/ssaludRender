@@ -82,17 +82,20 @@ app.get(
         });
         filtroIndividual.insumo = filtro.insumos.$elemMatch.insumo;
       }
+      // sacar la procedencia "Paciente" "Historial"  - solo dejar "Region" "Carga inicial"
       if (req.query.procedencias && req.query.procedencias !== "[]") {
         filtro.insumos = {
           $elemMatch: {
             ...(filtro.insumos?.$elemMatch || {}),
             procedencia: {
               $in: JSON.parse(req.query.procedencias),
+              // $in: ["Carga inicial", "Region"],
             },
           },
         };
         filtroIndividual.procedencia = filtro.insumos.$elemMatch.procedencia;
       }
+
       if (req.query.desde) {
         let temp = dateUTC({
           date: req.query.desde,
@@ -127,24 +130,31 @@ app.get(
       // Vacuna Aplicaciones;
       let vacunacionesDB = [];
       if (modelos?.vac) {
-        let detallado = modelos.vac.nd
-          ? null
-          : {
-              detalle_vacunaciones: {
-                $push: {
-                  fecha: {$dateToString: {format: "%Y-%m-%d", date: "$fecha"}},
-                  pacienteDB: "$pacienteDB",
-                  pacienteDocDB: "$pacienteDocDB",
-                  pacienteOSocDB: "$pacienteOSocDB",
-                  oSocial: "$oSocial",
-                  procedencia: "$procedencia",
-                  cantidad: "$cantidad",
-                  lote: "$lote",
-                  vencimiento: {$dateToString: {format: "%Y-%m-%d", date: "$vencimiento"}},
-                  dosis: "$dosis",
-                },
-              },
-            };
+        let detallado = {
+          detalle_vacunaciones: {
+            $push: {
+              fecha: {$dateToString: {format: "%Y-%m-%d", date: "$fecha"}},
+              pacienteDB: "$pacienteDB",
+              pacienteDocDB: "$pacienteDocDB",
+              pacienteOSocDB: "$pacienteOSocDB",
+              oSocial: "$oSocial",
+              procedencia: "$procedencia",
+              cantidad: "$cantidad",
+              lote: "$lote",
+              vencimiento: {$dateToString: {format: "%Y-%m-%d", date: "$vencimiento"}},
+              dosis: "$dosis",
+            },
+          },
+        };
+        if (modelos.vac.nd) {
+          // sacar la procedencia "Paciente" "Historial"  - solo dejar "Region" "Carga inicial"
+          // $in: ["Carga inicial", "Region"],
+          detallado = null;
+          filtroIndividual.procedencia = {
+            // $in: JSON.parse(req.query.procedencias),
+            $in: ["Carga inicial", "Region"],
+          };
+        }
 
         vacunacionesDB = await VacunaAplicacion.aggregate()
           .match(filtroIndividual)

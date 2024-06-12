@@ -6,6 +6,8 @@ const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
 const {isObjectIdValid, dateUTC, arrayFromSumarPropsInArrays} = require(process.env.MAIN_FOLDER +
   "/tools/object");
 
+const Area = require(process.env.MAIN_FOLDER + "/modulos/main/models/area");
+const VacunaInsumo = require("./models/vacuna_insumo");
 const VacunaAplicacion = require("./models/vacuna_aplicacion");
 
 const app = express();
@@ -42,6 +44,8 @@ app.get(
     try {
       // filtro -> area - desde/hasta - insumos/procedencias - opciones.
       let filtro = {};
+      let insumosDB = null;
+      let areasDB = null;
       if (req.query.areas) {
         filtro.origen = {
           $in: JSON.parse(req.query.areas),
@@ -83,6 +87,11 @@ app.get(
         return errorMessage(res, {message: "Faltan las Fechas del Filtro para proceder."}, 412);
       }
 
+      // pre: payload.preCarga ?? false, // {areasDB, insumosDB, vacunasHeader, (raw) totales}
+      // raw: payload.raw ?? false, // [data]
+      // obj: payload.objAreas ?? false, // (raw) {area: [data]}
+      let modelos = JSON.parse(req.query.mod);
+
       if (req.query.insumos && req.query.insumos !== "[]") {
         filtro.insumo = {
           $in: JSON.parse(req.query.insumos),
@@ -91,18 +100,49 @@ app.get(
           // regresa mongoose.Types.ObjectId(area);
           filtro.insumo.$in[index] = isObjectIdValid(insumo);
         });
+        // Consulta a BD -> insumosDB "nombre"
+        if (modelos?.pre) {
+          insumosDB = VacunaInsumo.aggregate()
+            .collation({locale: "es", numericOrdering: true})
+            .match({_id: filtro.insumo})
+            .project({
+              _id: 0,
+              nombre: 1,
+            })
+            .sort({nombre: 1})
+            .exec();
+        }
       }
       if (req.query.procedencias && req.query.procedencias !== "[]") {
         filtro.procedencia = {
           $in: JSON.parse(req.query.procedencias),
         };
       }
-      // OPCIONALES
-      // generar reporte para mongoDB en mongoose en base las opciones seleccionadas :D
+
+      let reporte = [];
+      let vacunasHeader = null;
       let opcionalesProyect = {};
       let opcionalesGroup = {};
       let opcionalesTotales = {};
       let opcionalesPopulatePaciente = {};
+      let totales = {};
+
+      // Consulta a BD -> areasDB "nombres"
+      if (modelos?.pre) {
+        areasDB = Area.aggregate()
+          .collation({locale: "es", numericOrdering: true})
+          .match({_id: filtro.origen})
+          .project({
+            _id: 0,
+            area: 1,
+          })
+          .sort({area: 1})
+          .exec();
+      }
+
+      // Generar Reporte
+      // OPCIONALES
+      // generar consulta para mongoDB en mongoose en base las opciones seleccionadas :D
       if (req.query.opciones && req.query.opciones !== "[]") {
         let opcionesTemp = JSON.parse(req.query.opciones);
         opcionesTemp.forEach((opcion) => {
@@ -170,185 +210,178 @@ app.get(
         });
       }
 
-      // para seleccionar las consultas || rep; vacHeader;
-      let modelos = JSON.parse(req.query.mod);
-
-      // Reporte
-      let reporte = [];
-      if (modelos?.rep) {
-        reporte = VacunaAplicacion.aggregate()
-          .match(filtro)
-          // fec_apl + Datos del Paciente (apynm,doc(tip,num),domicilio,telefono,municipio, fec.nac,edad(v,u),sexo)
-          //             vacuna/vucunaName-dosis(valor - estrategia), total dosis por paciente.
-          .project({
-            _id: 0,
-            origen: 1,
-            fecha: 1,
-            paciente: 1,
-            ps_paciente: 1,
-            ps_nombreC: 1,
-            ps_doc_responsable: 1,
-            edad_valor: 1,
-            edad_unidad: 1,
-            sexo: 1,
-            insumo: 1,
-            vacunaName: 1,
-            procedencia: 1,
-            lote: 1,
-            vencimiento: 1,
-            dosis: 1,
-            estrategia: 1,
-            ...opcionalesProyect,
-          })
-          // populate insumo (VACUNA).
-          .lookup({
-            from: "VacunaInsumos",
-            localField: "insumo",
-            foreignField: "_id",
-            as: "insumoDB",
-          })
-          .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
-          .addFields({
-            insumoDB: {$ifNull: ["$insumoDB.nombre", "$vacunaName"]},
-          })
-          // agrupar para reporte
-          .group({
-            _id: {
-              fecha: "$fecha",
-              area: "$origen",
-              paciente: {
+      // REPORTE
+      reporte = VacunaAplicacion.aggregate()
+        .match(filtro)
+        // fec_apl + Datos del Paciente (apynm,doc(tip,num),domicilio,telefono,municipio, fec.nac,edad(v,u),sexo)
+        //             vacuna/vucunaName-dosis(valor - estrategia), total dosis por paciente.
+        .project({
+          _id: 0,
+          origen: 1,
+          fecha: 1,
+          paciente: 1,
+          ps_paciente: 1,
+          ps_nombreC: 1,
+          ps_doc_responsable: 1,
+          edad_valor: 1,
+          edad_unidad: 1,
+          sexo: 1,
+          insumo: 1,
+          vacunaName: 1,
+          procedencia: 1,
+          lote: 1,
+          vencimiento: 1,
+          dosis: 1,
+          estrategia: 1,
+          ...opcionalesProyect,
+        })
+        // populate insumo (VACUNA).
+        .lookup({
+          from: "VacunaInsumos",
+          localField: "insumo",
+          foreignField: "_id",
+          as: "insumoDB",
+        })
+        .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
+        .addFields({
+          insumoDB: {$ifNull: ["$insumoDB.nombre", "$vacunaName"]},
+        })
+        // agrupar para reporte
+        .group({
+          _id: {
+            fecha: "$fecha",
+            area: "$origen",
+            paciente: {
+              $ifNull: [
+                "$paciente",
+                {
+                  $concat: [{$ifNull: ["$ps_nombreC", ""]}, " (", "$ps_paciente", ")"],
+                },
+              ],
+            },
+          },
+          //            "Menores de 15",
+          edad_valor: {$first: "$edad_valor"},
+          edad_unidad: {$first: "$edad_unidad"},
+          //            "Masculinos",
+          //            "Femeninos",
+          sexo: {$first: "$sexo"},
+          ps_doc_responsable: {$first: "$ps_doc_responsable"},
+          vacunacionesDB: {
+            $push: {
+              vacuna: {$concat: [{$ifNull: ["$insumoDB", "Sin Dato"]}, " - ", "$dosis"]},
+              procedencia: "$procedencia",
+              lote: "$lote",
+              vencimiento: {$dateToString: {format: "%Y-%m-%d", date: "$vencimiento"}},
+              estrategia: "$estrategia",
+              //            "Estrategia - Campaña",
+              //            "Estrategia - Contactos",
+            },
+          },
+          vacunacionesTemp: {
+            $push: {
+              k: {$concat: [{$ifNull: ["$insumoDB", "Sin Dato"]}, " - ", "$dosis"]},
+              v: "$estrategia",
+            },
+          },
+          total_dosis: {$sum: 1},
+          //            "Embarazadas",
+          //            "Puerperas",
+          //            "Grupo de Riesgo",
+          //            "Personal de Salud",
+          //            "Personal Esencial"
+          ...opcionalesGroup,
+        })
+        // format + vacunacionesObject
+        .addFields({
+          _id: {
+            $concat: [
+              {
+                $toString: "$_id.area",
+              },
+              "-",
+              {
+                $toString: "$_id.paciente",
+              },
+            ],
+          },
+          fecha: {$dateToString: {format: "%Y-%m-%d", date: "$_id.fecha"}},
+          area: "$_id.area",
+          paciente: "$_id.paciente",
+          // ...{"vacuna-dosis":"estrategia"}...
+          vacunacionesObject: {$arrayToObject: "$vacunacionesTemp"},
+        })
+        .project({vacunacionesTemp: 0})
+        // Buscar AREA y PERSONA
+        // populate area - paciente.
+        .lookup({
+          from: "areas",
+          localField: "area",
+          foreignField: "_id",
+          as: "areaDB",
+        })
+        .unwind({path: "$areaDB"})
+        .addFields({
+          areaDB: "$areaDB.area",
+        })
+        // paciente;
+        .lookup({
+          from: "pacientes",
+          localField: "paciente",
+          foreignField: "_id",
+          as: "pacienteDB",
+        })
+        .unwind({path: "$pacienteDB", preserveNullAndEmptyArrays: true})
+        .addFields({
+          // Datos del Paciente ( apynm, doc(tip,num), domicilio, telefono, municipio, fec.nac, sexo sino existe)
+          pacienteDB: {
+            $ifNull: [
+              {
+                $concat: ["$pacienteDB.apellido", ", ", "$pacienteDB.nombre"],
+              },
+              "$paciente",
+            ],
+          },
+          pacienteDocDB: {
+            $ifNull: [
+              {
+                $concat: ["$pacienteDB.tipo_doc", " ", "$pacienteDB.documento"],
+              },
+              {
                 $ifNull: [
-                  "$paciente",
                   {
-                    $concat: [{$ifNull: ["$ps_nombreC", ""]}, " (", "$ps_paciente", ")"],
+                    $concat: ["Resp ", "$pacienteDB.doc_responsable"],
+                  },
+                  {
+                    $ifNull: [
+                      {
+                        $concat: ["Resp ", "$ps_doc_responsable"],
+                      },
+                      "$vacio",
+                    ],
                   },
                 ],
               },
-            },
-            //            "Menores de 15",
-            edad_valor: {$first: "$edad_valor"},
-            edad_unidad: {$first: "$edad_unidad"},
-            //            "Masculinos",
-            //            "Femeninos",
-            sexo: {$first: "$sexo"},
-            ps_doc_responsable: {$first: "$ps_doc_responsable"},
-            vacunacionesDB: {
-              $push: {
-                vacuna: {$concat: [{$ifNull: ["$insumoDB", "Sin Dato"]}, " - ", "$dosis"]},
-                procedencia: "$procedencia",
-                lote: "$lote",
-                vencimiento: {$dateToString: {format: "%Y-%m-%d", date: "$vencimiento"}},
-                estrategia: "$estrategia",
-                //            "Estrategia - Campaña",
-                //            "Estrategia - Contactos",
+            ],
+          },
+          pacienteDireccionDB: {
+            $ifNull: [
+              {
+                $concat: ["$pacienteDB.dir_calle", " ", {$toString: "$pacienteDB.dir_numero"}],
               },
-            },
-            vacunacionesTemp: {
-              $push: {
-                k: {$concat: [{$ifNull: ["$insumoDB", "Sin Dato"]}, " - ", "$dosis"]},
-                v: "$estrategia",
-              },
-            },
-            total_dosis: {$sum: 1},
-            //            "Embarazadas",
-            //            "Puerperas",
-            //            "Grupo de Riesgo",
-            //            "Personal de Salud",
-            //            "Personal Esencial"
-            ...opcionalesGroup,
-          })
-          // format + vacunacionesObject
-          .addFields({
-            _id: {
-              $concat: [
-                {
-                  $toString: "$_id.area",
-                },
-                "-",
-                {
-                  $toString: "$_id.paciente",
-                },
-              ],
-            },
-            fecha: {$dateToString: {format: "%Y-%m-%d", date: "$_id.fecha"}},
-            area: "$_id.area",
-            paciente: "$_id.paciente",
-            // ...{"vacuna-dosis":"estrategia"}...
-            vacunacionesObject: {$arrayToObject: "$vacunacionesTemp"},
-          })
-          .project({vacunacionesTemp: 0})
-          // Buscar AREA y PERSONA
-          // populate area - paciente.
-          .lookup({
-            from: "areas",
-            localField: "area",
-            foreignField: "_id",
-            as: "areaDB",
-          })
-          .unwind({path: "$areaDB"})
-          .addFields({
-            areaDB: "$areaDB.area",
-          })
-          // paciente;
-          .lookup({
-            from: "pacientes",
-            localField: "paciente",
-            foreignField: "_id",
-            as: "pacienteDB",
-          })
-          .unwind({path: "$pacienteDB", preserveNullAndEmptyArrays: true})
-          .addFields({
-            // Datos del Paciente ( apynm, doc(tip,num), domicilio, telefono, municipio, fec.nac, sexo sino existe)
-            pacienteDB: {
-              $ifNull: [
-                {
-                  $concat: ["$pacienteDB.apellido", ", ", "$pacienteDB.nombre"],
-                },
-                "$paciente",
-              ],
-            },
-            pacienteDocDB: {
-              $ifNull: [
-                {
-                  $concat: ["$pacienteDB.tipo_doc", " ", "$pacienteDB.documento"],
-                },
-                {
-                  $ifNull: [
-                    {
-                      $concat: ["Resp ", "$pacienteDB.doc_responsable"],
-                    },
-                    {
-                      $ifNull: [
-                        {
-                          $concat: ["Resp ", "$ps_doc_responsable"],
-                        },
-                        "$vacio",
-                      ],
-                    },
-                  ],
-                },
-              ],
-            },
-            pacienteDireccionDB: {
-              $ifNull: [
-                {
-                  $concat: ["$pacienteDB.dir_calle", " ", {$toString: "$pacienteDB.dir_numero"}],
-                },
-                "$vacio",
-              ],
-            },
-            pacienteTelefonoDB: "$pacienteDB.telefono",
-            pacienteFec_nacDB: "$pacienteDB.fec_nac",
-            sexo: {$ifNull: ["$sexo", "$pacienteDB.sexo"]},
-            ...opcionalesPopulatePaciente,
-          })
-          .sort({areaDB: 1, fecha: 1, pacienteDB: 1})
-          .exec();
-      }
+              "$vacio",
+            ],
+          },
+          pacienteTelefonoDB: "$pacienteDB.telefono",
+          pacienteFec_nacDB: "$pacienteDB.fec_nac",
+          sexo: {$ifNull: ["$sexo", "$pacienteDB.sexo"]},
+          ...opcionalesPopulatePaciente,
+        })
+        .sort({areaDB: 1, fecha: 1, pacienteDB: 1})
+        .exec();
 
       // Vacunas Header
-      let vacunasHeader = null;
-      if (modelos?.vacHeader) {
+      if (modelos?.pre) {
         vacunasHeader = VacunaAplicacion.aggregate()
           .match(filtro)
           .project({
@@ -384,16 +417,21 @@ app.get(
           .exec();
       }
 
-      [reporte, vacunasHeader] = await Promise.all([reporte, vacunasHeader]);
+      // Esperar que se concluyan las consultas a la BD
+      [reporte, vacunasHeader, insumosDB, areasDB] = await Promise.all([
+        reporte,
+        vacunasHeader,
+        insumosDB,
+        areasDB,
+      ]);
 
-      // TOTALES del Reporte
-      let totales = {};
-      if (modelos?.rep) {
+      // Reporte raw -> TOTALES
+      if (modelos?.pre) {
         totales.Total_de_Pacientes_Vacunados = reporte.length;
         totales.Total_de_Dosis_Aplicadas = 0;
         totales.vacunaciones = {};
 
-        // opcionales
+        // OPCIONALES
         if (opcionalesTotales.menores_15) {
           totales.Menores_de_15 = 0;
         }
@@ -524,11 +562,32 @@ app.get(
           }
         }
       }
+
+      // Reporte raw -> obj (opcional) formato -> {area: [data]}
+      if (modelos?.obj) {
+        // recorremos y formateamos -> {area: [data]}
+        reporte = reporte.reduce(
+          // (acumulador, valor de iteracion)
+          (objAreasTemp, value) => {
+            (objAreasTemp[value.areaDB] ??= []).push(value);
+            return objAreasTemp;
+          },
+          // acumulador inicial
+          {}
+        );
+      }
+
+      // pre: payload.preCarga ?? false, // {areasDB, insumosDB, vacunasHeader, (raw) totales}
+      // raw: payload.raw ?? false, // [data]
+      // obj: payload.objAreas ?? false, // (raw) {area: [data]}
       return res.status(200).json({
         ok: true,
-        reporte,
-        totales,
+        areasDB,
+        insumosDB,
         vacunasHeader: vacunasHeader?.[0]?.vacunasHeader,
+        totales,
+        reporte: modelos?.raw ? reporte : null,
+        reporteObj: modelos?.obj ? reporte : null,
       });
     } catch (err) {
       return errorMessage(res, err, err.code);

@@ -232,7 +232,7 @@ const saveFarmaciaEstadistica = function () {
         });
         let mergeSave = await FarmaciaEstadistica.insertMany(merge, {
           ordered: false,
-          rawResult: true,
+          includeResultMetadata: true,
         });
 
         // console.log("primerDiaMes", primerDiaMes.toUTCString());

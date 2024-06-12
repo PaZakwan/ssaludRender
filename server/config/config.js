@@ -31,11 +31,14 @@ process.env.DH = path.join(__dirname, "cert/dhparam.pem");
 //  IP LOCAL O SERVIDOR
 // ============================
 
-if (process.env.BASE_URL) {
-  process.env.BASE_URL = process.env.BASE_URL;
-} else {
-  const ip = require("ip");
-  process.env.BASE_URL = ip.address().toString();
+if (!process.env.BASE_URL) {
+  const ip = Object.values(require("os").networkInterfaces())
+    .flat()
+    .reduce(
+      (ip, {internal, family, address}) => ip || (!internal && family === "IPv4" && address),
+      ""
+    );
+  process.env.BASE_URL = ip;
 }
 
 // ============================

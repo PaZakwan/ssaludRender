@@ -11,6 +11,23 @@
 
 ##### Unreleased
 
+##### [1.7.20240612] - 2024-06-12
+
+- Improve a Sistema - Navegacion => La barra de navegacion se podra editar de forma mas sencilla, +href +title array.
+- Improve a Sistema - Upload => Tiempo de espera configurable, ahora al subir archivos no hay tiempo de espera de 10 min.
+
+- Fix a Patrimonio - Movimientos => En el Excel "Destino Area" no se exportaba.
+
+- Changed a Farmacia - Entregas => por defecto Busca las entregas de la ultima semana de las salas que tiene en gestion, antes cargaba de todas las salas (liberara sobre carga del servidor).
+- Improve a Farmacia - Solicitudes => Autocompletado del destino Aceptada/Rechazada si solo tiene una gestion.
+- Fix a Farmacia - Transferencia => Ver transferencias sin recibir y que no son de nuestra gestion. Acceso denegado al querer cargar la lista de insumos del "origen".
+
+- Added a Vacunatorio - Videos Tutorial => link a lista de youtube con videos guia de como usar el aplicativo.
+- Changed a Vacunatorio - Vacunas => Procedencias -> "Region", "Historial", "Paciente", "Carga inicial".
+- Changed a Vacunatorio - Aplicaciones => por defecto Busca las aplicaciones de la ultima semana de las salas que tiene en gestion, antes cargaba de todas las salas (liberara sobre carga del servidor).
+- Improve a Vacunatorio - Solicitudes => Autocompletado del destino Aceptada/Rechazada si solo tiene una gestion.
+- Fix a Vacunatorio - Transferencia => Ver transferencias sin recibir y que no son de nuestra gestion. Acceso denegado al querer cargar la lista de insumos del "origen".
+
 ##### [1.7.20240509] - 2024-05-09
 
 - Improve a Sistema - Backend => Servidor se ejecuta mejor, secuencialmente, la BD se prepara para indexar antes de levantar el server web/api.

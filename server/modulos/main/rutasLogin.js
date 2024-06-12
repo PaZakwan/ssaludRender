@@ -13,23 +13,23 @@ app.post("/login", async (req, res) => {
   try {
     let body = req.body;
     if (!body.password || !body.usuario) {
-      return errorMessage(res, {message: "Usuario y/o contraseña requeridos."}, 400);
+      return errorMessage(res, {message: "Usuario y/o contraseña requeridos."}, 412);
     }
 
     let usuarioDB = await Usuario.findOne({usuario: body.usuario}).exec();
 
     if (!usuarioDB) {
-      return errorMessage(res, {message: "Usuario y/o contraseña incorrectos."}, 400);
+      return errorMessage(res, {message: "Usuario y/o contraseña incorrectos."}, 401);
     }
     if (usuarioDB.estado === false) {
       return errorMessage(
         res,
         {message: "Usuario desactivado.\n Comuníquese con un administrador."},
-        400
+        403
       );
     }
     if (!bcrypt.compareSync(body.password, usuarioDB.password)) {
-      return errorMessage(res, {message: "Usuario y/o contraseña incorrectos."}, 400);
+      return errorMessage(res, {message: "Usuario y/o contraseña incorrectos."}, 401);
     }
 
     // Actualizar lastLogin
@@ -40,7 +40,7 @@ app.post("/login", async (req, res) => {
     ).exec();
 
     if (!usuarioLoginDB) {
-      return errorMessage(res, {message: "Usuario y/o contraseña incorrectos."}, 400);
+      return errorMessage(res, {message: "Usuario y/o contraseña incorrectos."}, 401);
     }
 
     return res.status(201).json({

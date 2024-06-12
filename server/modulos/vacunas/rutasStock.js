@@ -1,3 +1,4 @@
+const {readFile} = require("fs/promises");
 const express = require("express");
 
 const _pick = require("lodash/pick");
@@ -549,6 +550,32 @@ app.get(
         });
       }
 
+      // Leer datos de archivo public/static/options/vacunas-base.json
+      let procedenciaSubtotal = [];
+      let objectSubtotal = {};
+      try {
+        procedenciaSubtotal = JSON.parse(
+          await readFile(
+            process.env.MAIN_FOLDER + "/../public/static/options/vacunas-base.json",
+            "utf8"
+          )
+        );
+        // Quitar "Historial" y "Paciente"
+        procedenciaSubtotal = procedenciaSubtotal?.json?.insumo_procedencia?.filter(
+          (procedencia) => !["Historial", "Paciente"].includes(procedencia)
+        );
+        // Generar contadores para grupo -> subtotal_<prop> : { $sum: { $cond: [{$eq: ["$procedencia", "<prop>"]}, "$cantidad", 0], }}
+        procedenciaSubtotal.forEach((procedencia) => {
+          objectSubtotal[`subtotal_${procedencia}`] = {
+            $sum: {$cond: [{$eq: ["$procedencia", `${procedencia}`]}, "$cantidad", 0]},
+          };
+        });
+      } catch (err) {
+        console.error(
+          "rutasStock.js - /vacunas/stock/total -> no existe el archivo: vacunas-base.json"
+        );
+      }
+
       let stockDB = await VacunaStock.aggregate()
         .match(filtro)
         // Opciones Minimos
@@ -563,70 +590,18 @@ app.get(
         })
         .group({
           _id: {insumo: "$insumo"},
-          // subtotal_Otros: {
-          //   $sum: {
-          //     $cond: [
-          //       {
-          //         $not: [
-          //           {
-          //             $in: [
-          //               "$procedencia",
-          //               ["Municipal", "Remediar", "SUMAR", "Region", "Nacion", "Donacion"],
-          //             ],
-          //           },
-          //         ],
-          //       },
-          //       "$cantidad",
-          //       0,
-          //     ],
-          //   },
-          // },
-          subtotal_Municipal: {
-            $sum: {
-              $cond: [{$eq: ["$procedencia", "Municipal"]}, "$cantidad", 0],
-            },
-          },
-          subtotal_Remediar: {
-            $sum: {
-              $cond: [{$eq: ["$procedencia", "Remediar"]}, "$cantidad", 0],
-            },
-          },
-          subtotal_SUMAR: {
-            $sum: {
-              $cond: [{$eq: ["$procedencia", "SUMAR"]}, "$cantidad", 0],
-            },
-          },
-          subtotal_Region: {
-            $sum: {
-              $cond: [{$eq: ["$procedencia", "Region"]}, "$cantidad", 0],
-            },
-          },
-          subtotal_Nacion: {
-            $sum: {
-              $cond: [{$eq: ["$procedencia", "Nacion"]}, "$cantidad", 0],
-            },
-          },
-          subtotal_Donacion: {
-            $sum: {
-              $cond: [{$eq: ["$procedencia", "Donacion"]}, "$cantidad", 0],
-            },
-          },
+          // agregar los contadores al agrupado
+          ...objectSubtotal,
           total: {$sum: "$cantidad"},
           cant_min_prom: {$avg: "$cant_min"},
         })
         .addFields({
+          // subtotal_Otros -> total - ["$subtotal_<prop>"]
           subtotal_Otros: {
             $subtract: [
               "$total",
               {
-                $sum: [
-                  "$subtotal_Municipal",
-                  "$subtotal_Remediar",
-                  "$subtotal_SUMAR",
-                  "$subtotal_Region",
-                  "$subtotal_Nacion",
-                  "$subtotal_Donacion",
-                ],
+                $sum: procedenciaSubtotal.map((procedencia) => `$subtotal_${procedencia}`),
               },
             ],
           },
@@ -647,6 +622,7 @@ app.get(
       return res.status(200).json({
         ok: true,
         stock: stockDB,
+        procedenciaSubtotal,
       });
     } catch (err) {
       return errorMessage(res, err, err.code);

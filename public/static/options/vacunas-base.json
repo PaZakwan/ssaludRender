@@ -1,16 +1,6 @@
 {
   "json": {
-    "insumo_procedencia": [
-      "Municipal",
-      "Remediar",
-      "SUMAR",
-      "Region",
-      "Nacion",
-      "Donacion",
-      "Historial",
-      "Paciente",
-      "Carga inicial"
-    ],
+    "insumo_procedencia": ["Region", "Historial", "Paciente", "Carga inicial"],
     "vacunas_condiciones": [
       "No Embarazada",
       "No Puerpera",
@@ -30,7 +20,8 @@
       "Anual",
       "Refuerzo",
       "Refuerzo 2do",
-      "Refuerzo 3ero"
+      "Refuerzo 3ero",
+      "Refuerzo 4to"
     ],
     "vacunas_estrategia": [
       "Calendario",

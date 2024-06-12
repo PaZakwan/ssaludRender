@@ -361,6 +361,14 @@ const guardarCSV = ({streamFile, json, line, error, advertencia}) => {
 
       default:
         if (json[VacunacionProperties[index]]) {
+          if (
+            Object.prototype.toString.call(json[VacunacionProperties[index]]) === "[object Date]" &&
+            !isNaN(json[VacunacionProperties[index]])
+          ) {
+            json[VacunacionProperties[index]] = json[VacunacionProperties[index]]
+              .toISOString()
+              .slice(0, 10);
+          }
           row += crearContentCSV({content: json[VacunacionProperties[index]]});
         }
         break;

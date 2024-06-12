@@ -376,7 +376,7 @@ const savePacientesUnHilo = async ({documentos, totales, line, logFile, csvError
       // throwOnValidationError -> tirar error si una falla pero carga el resto.
       // lean -> skips hydrating and validating the documents. performance!
       {ordered: false, lean: true}
-      // {ordered: false, rawResult: true, throwOnValidationError: true}
+      // {ordered: false, includeResultMetadata: true, throwOnValidationError: true}
     );
     totales.exitosos += bulkPacientes?.length ?? 0;
     // si insertMany() con Lean false
@@ -401,7 +401,7 @@ const savePacientesUnHilo = async ({documentos, totales, line, logFile, csvError
   } catch (error) {
     // Si fallo alguna Insercion guardar en el log
     // si insertMany() con Lean false
-    // totales.exitosos += error?.rawResult?.insertedCount ?? 0;
+    // totales.exitosos += error?.includeResultMetadata?.insertedCount ?? 0;
     // totales.errores += error?.validationErrors?.length ?? 0;
     // if (error?.validationErrors?.length > 0) {
     //   let mensajeTemp = `\n\nSave Errors [Fila ${line}] ${error?.validationErrors?.length}~${documentos.length}:`;
