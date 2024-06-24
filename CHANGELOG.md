@@ -11,6 +11,14 @@
 
 ##### Unreleased
 
+##### [1.7.20240624] - 2024-06-24
+
+- Added a Sistema - Usuarios => campos nuevos opcionales -> documento / legajo / mp (matricula provincial)/ mn (matricula nacional).
+
+- Fix a Farmacia - Ingreso/Transferencia => solucion al problema con el color y el boton habilitado para "retirar/recibir" cuando el usuario solo tiene permiso general de todo.
+
+- Fix a Vacunatorio - Ingreso/Transferencia => solucion al problema con el color y el boton habilitado para "retirar/recibir" cuando el usuario solo tiene permiso general de todo.
+
 ##### [1.7.20240612] - 2024-06-12
 
 - Improve a Sistema - Navegacion => La barra de navegacion se podra editar de forma mas sencilla, +href +title array.

@@ -14,14 +14,18 @@ const app = express();
 
 let listaUsuario = [
   "usuario",
+  "password",
   "nombre",
   "apellido",
+  "documento",
   "area",
-  "password",
   "actividad",
   "email",
   "telefono",
-  // borra con splice(8)
+  "legajo",
+  "mp",
+  "mn",
+  // borra con splice(12)
   "role",
   "estado",
   //   permisos
@@ -140,9 +144,8 @@ app.post("/usuario", async (req, res) => {
   try {
     let listaCrear = listaUsuario.slice();
     // Se quitan de la lista los valores del role y los usados para los derechos de los demás módulos. Por cuestión de seguridad al crear usuarios.
-    listaCrear.splice(8);
+    listaCrear.splice(12);
 
-    // Segundo parametro que propiedades tomar _pick(req.body, ['usuario', 'nombre', 'email', 'password', 'role', 'telefono', 'especialidad', 'estado']).
     let body = isVacio({
       dato: _pick(req.body, listaCrear),
       borrar: true,

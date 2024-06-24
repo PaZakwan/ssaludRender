@@ -131,6 +131,20 @@ let usuarioSchema = new mongoose.Schema(
       match: [/^[0-9a-zA-Z\u00f1\u00d1]+$/, "Solo se admiten letras(sin acentos) y números."],
       required: [true, "El nombre de usuario es necesario."],
     },
+    password: {
+      type: String,
+      minlength: 4,
+      required: [true, "La contraseña es obligatoria."],
+    },
+    role: {
+      type: String,
+      default: "USER_ROLE",
+      enum: {
+        values: ["ADMIN_ROLE", "USER_ROLE"],
+        message: "{VALUE} no es un rol válido.",
+      },
+    },
+
     nombre: {
       type: String,
       minlength: 2,
@@ -145,24 +159,14 @@ let usuarioSchema = new mongoose.Schema(
       required: [true, "El apellido es necesario."],
       set: capitalize,
     },
+    documento: {
+      type: String,
+    },
 
     area: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Area",
       required: [true, "El Area donde trabaja es necesario."],
-    },
-    password: {
-      type: String,
-      minlength: 4,
-      required: [true, "La contraseña es obligatoria."],
-    },
-    role: {
-      type: String,
-      default: "USER_ROLE",
-      enum: {
-        values: ["ADMIN_ROLE", "USER_ROLE"],
-        message: "{VALUE} no es un rol válido.",
-      },
     },
     actividad: {
       type: String,
@@ -172,6 +176,16 @@ let usuarioSchema = new mongoose.Schema(
       match: [/^([\w-\.]+@([\w-]+\.)+[\w-]{2,12})?$/, "El e-mail no es valido."],
     },
     telefono: {
+      type: String,
+    },
+
+    legajo: {
+      type: String,
+    },
+    mp: {
+      type: String,
+    },
+    mn: {
       type: String,
     },
 

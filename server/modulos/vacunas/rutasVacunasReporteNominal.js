@@ -554,6 +554,10 @@ app.get(
                 for (let key in reporte[index].vacunacionesObject) {
                   totales.vacunaciones[key] = (totales.vacunaciones[key] ?? 0) + 1;
                 }
+                // ordenar keys del objeto para cuando se itera
+                totales.vacunaciones = Object.fromEntries(
+                  Object.entries(totales.vacunaciones).sort((a, b) => a[0].localeCompare(b[0]))
+                );
                 break;
 
               default:
