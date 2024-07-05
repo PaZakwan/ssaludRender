@@ -11,6 +11,12 @@
 
 ##### Unreleased
 
+##### [1.7.20240705] - 2024-07-05
+
+- Changed a Laboratorio Bromatologico - PDFs => Se cambiaron, actualizaron, los nombres del area en los encabezados y pie de pagina.
+
+- Improve a Vacunatorio - Uploads => Ultimos reajustes.
+
 ##### [1.7.20240624] - 2024-06-24
 
 - Added a Sistema - Usuarios => campos nuevos opcionales -> documento / legajo / mp (matricula provincial)/ mn (matricula nacional).

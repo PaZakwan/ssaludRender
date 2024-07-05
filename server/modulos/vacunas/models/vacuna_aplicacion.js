@@ -58,6 +58,19 @@ let VacunaAplicacionSchema = new Schema(
     },
 
     // Valores del Paciente para acelerar Reportes...
+    tipo_doc: {
+      type: String,
+    },
+    documento: {
+      type: String,
+      trim: true,
+      uppercase: true,
+    },
+    doc_responsable: {
+      type: String,
+      trim: true,
+      uppercase: true,
+    },
     sexo: {
       // para group etario estadistica
       type: String,
@@ -184,7 +197,7 @@ let VacunaAplicacionSchema = new Schema(
     ps_nombreC: {
       type: String,
     },
-    ps_doc_responsable: {
+    ps_fecha_nacimiento: {
       type: String,
     },
 

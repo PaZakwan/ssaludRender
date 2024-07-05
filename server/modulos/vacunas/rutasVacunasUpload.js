@@ -20,12 +20,11 @@ const {
 const app = express();
 
 // CONSULTA PARA BORRAR EN MONGODB
-// db.getCollection("VacunaAplicaciones")
-//   .find({})
-//   .skip(10)
-//   .forEach(function (obj) {
-//     db.getCollection("VacunaAplicaciones").deleteOne(obj);
-//   });
+
+// db.getCollection("VacunaAplicaciones").remove({_id:
+//     { $in: db.getCollection("VacunaAplicaciones").find({}).skip(11).map(doc => doc._id) }
+// });
+
 const ps_us_oficina = {
   // ps_us => oficina_nro
   // Alvarez
@@ -112,7 +111,7 @@ const ps_us_oficina = {
   376: "15209",
   // San Ambrosio
   384: "15245",
-  // Bongiovani
+  // Bongiovani / Bongiovanni
   392: "15215",
   // La reja
   406: "15208",
@@ -195,13 +194,14 @@ const ps_dosis_name = {
   R: "Refuerzo",
   R2: "Refuerzo 2do",
   R3: "Refuerzo 3ero",
+  R4: "Refuerzo 4to",
 };
 
 const ps_vacuna_name = {
   1: "BCG",
   2: "Hepatitis B Pediatrica 10mcg",
   3: "Sabin OPV",
-  4: "Neumococo Conjugada (13)",
+  4: "Neumococo (13) Conjugada",
   5: "Pentavalente DPT HB Hib",
   6: "Cuadruple Bacteriana DPT Hib",
   7: "Cuadruple Bacteriana Acelular DPTa Hib",
@@ -212,12 +212,12 @@ const ps_vacuna_name = {
   12: "DT Doble Bacteriana",
   13: "VPH Cuadrivalente",
   14: "SR Doble Viral",
-  15: "Neumococo Polisacarida (23)",
+  15: "Neumococo (23) Polisacarida",
   16: "Varicela",
   17: "Antigripal Pediatrica",
   18: "Salk IPV",
   26: "Rotavirus",
-  27: "Meningococo ACYW",
+  27: "Meningococo menveo ACYW",
   28: "PPD", //name tuberculosis examen
   30: "Antigripal Adultos",
   31: "Antigripal Mayores", //name
@@ -231,6 +231,46 @@ const ps_vacuna_name = {
   40: "Gamaglobulina Hepatitis B", //name
   41: "Hepatitis A adultos", //name
   43: "Covid 19", //name
+  44: "Neumococo (20) Conjugada", //name
+  45: "Meningococcica Conjugada", //name
+  46: "VSR", //name
+};
+
+// zona_sanitaria - PSVacunas
+const getZonaPS = (zona) => {
+  switch (zona) {
+    case "Alvarez La Reja":
+    case "Cuartel V":
+    case "Moreno Sur":
+    case "Moreno Norte":
+    case "Paso Del Rey":
+    case "Trujui I":
+    case "Trujui II":
+    case "Nivel Central":
+    case "Otros":
+      return zona;
+
+    // PS
+    case "1":
+      return "Alvarez La Reja";
+    case "2":
+      return "Cuartel V";
+    case "3":
+      return "Moreno Sur";
+    case "4":
+      return "Moreno Norte";
+    case "5":
+      return "Paso Del Rey";
+    case "6":
+      return "Trujui I";
+    case "7":
+      return "Trujui II";
+    case "8":
+      return "Nivel Central";
+
+    default:
+      return false;
+  }
 };
 
 const getVacunaID = (json, vacunasDB) => {
@@ -294,13 +334,14 @@ const VacunacionProperties = [
 
   "ps_paciente", // IdPersona (paciente.ps_id)
   "paciente",
-  "tipo_doc",
-  "documento",
 
   "vacunadorName",
   "fecha_futura_cita",
 
   // Obetener sexo y localidad del paciente para la "zona_sanitaria"
+  "tipo_doc",
+  "documento",
+  "doc_responsable",
   "sexo",
   "edad_valor",
   "edad_unidad",
@@ -334,7 +375,7 @@ const VacunacionProperties = [
   // PS
   "ps_id",
   "ps_nombreC",
-  "ps_doc_responsable",
+  "ps_fecha_nacimiento",
 
   "error",
   "advertencia",
@@ -484,7 +525,7 @@ const VacunacionFormat = async ({
       delete json.IdPersona;
     }
     // crear select en base a los datos que podrian faltar.
-    let selectPaciente = false;
+    let selectPaciente = "";
     if (json.sexo || json.Sexo) {
       json.sexo = json.sexo ?? json.Sexo;
       delete json.Sexo;
@@ -606,8 +647,6 @@ const VacunacionFormat = async ({
         }).`;
       }
     }
-    delete json.tipo_doc;
-    delete json.documento;
     // realizar busqueda con filtroPaciente y completar los selectPaciente)?
     if (filtroPaciente && selectPaciente) {
       selectPaciente = selectPaciente.trim();
@@ -652,16 +691,29 @@ const VacunacionFormat = async ({
       delete json.Nombres;
     }
 
-    json.ps_doc_responsable = json.ps_doc_responsable ?? json.doc_responsable;
-    delete json.doc_responsable;
-    if (!json.ps_doc_responsable) {
-      delete json.ps_doc_responsable;
+    json.doc_responsable = json.ps_doc_responsable ?? json.doc_responsable;
+    delete json.ps_doc_responsable;
+    if (!json.doc_responsable) {
+      delete json.doc_responsable;
     }
-    // ############### terminar de VER ###############
 
-    json.zona_sanitaria = json.zona_sanitaria ?? origenTemp?.zona_us;
-    if (!json.zona_sanitaria) {
-      delete json.zona_sanitaria;
+    json.ps_fecha_nacimiento = json.ps_fecha_nacimiento ?? json.FechaNac;
+    delete json.FechaNac;
+    if (!json.ps_fecha_nacimiento) {
+      delete json.ps_fecha_nacimiento;
+    } else if (!isDateValid(json.ps_fecha_nacimiento)) {
+      errores += ` fecha nacimiento PS (${json.ps_fecha_nacimiento}) [YYYY-MM-DD].`;
+    } else {
+      json.ps_fecha_nacimiento = new Date(json.ps_fecha_nacimiento);
+    }
+
+    if (json.zona_sanitaria) {
+      json.zona_sanitaria = getZonaPS(json.zona_sanitaria);
+      if (!json.zona_sanitaria) {
+        delete json.zona_sanitaria;
+      }
+    } else if (origenTemp?.zona_us) {
+      json.zona_sanitaria = origenTemp?.zona_us;
     }
 
     // edad_valor

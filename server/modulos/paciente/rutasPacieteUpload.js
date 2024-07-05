@@ -21,12 +21,103 @@ const {
 const app = express();
 
 // CONSULTA PARA BORRAR EN MONGODB
-// db.getCollection("pacientes")
-//   .find({})
-//   .skip(40)
-//   .forEach(function (obj) {
-//     db.getCollection("pacientes").deleteOne(obj);
-//   });
+
+// db.getCollection("pacientes").remove({_id:
+//     { $in: db.getCollection("pacientes").find({}).skip(40).map(doc => doc._id) }
+// });
+
+// dir_localidad - PSVacunas
+const getLocalidadPS = (id) => {
+  switch (id) {
+    case "1":
+      return "Francisco Alvarez";
+    case "2":
+      return "Cuartel V";
+    case "3":
+    case "4":
+    case "8":
+      return "Moreno";
+    case "5":
+      return "Paso Del Rey";
+    case "6":
+    case "7":
+      return "Trujui";
+
+    default:
+      return false;
+  }
+};
+
+// dir_municipio - PSVacunas
+const getMunicipioPS = (id) => {
+  switch (id) {
+    case "1":
+      return "Moreno";
+    case "2":
+      return "Merlo";
+    case "3":
+      return "Ituzaingo";
+    case "4":
+      return "Moron";
+    case "5":
+      return "General Rodriguez";
+
+    case "6":
+      return "Tres de Febrero";
+    case "7":
+      return "Lujan";
+    case "8":
+      return "Marcos Paz";
+    case "9":
+      return "General Las Heras";
+    case "10":
+      return "Hurlingham";
+
+    case "11":
+      return "Campana";
+    case "12":
+      return "Escobar";
+    case "13":
+      return "Exaltacion de la Cruz";
+    case "14":
+      return "General San Martin";
+    case "15":
+      return "Jose C. Paz";
+
+    case "16":
+      return "Malvinas Argentinas";
+    case "17":
+      return "Pilar";
+    case "18":
+      return "San Fernando";
+    case "19":
+      return "San Isidro";
+    case "20":
+      return "San Miguel";
+
+    case "21":
+      return "Tigre";
+    case "22":
+      return "Vicente Lopez";
+    case "23":
+      return "Zarate";
+    case "24":
+      return "Ciudad de Buenos Aires";
+    case "25":
+      return "La Matanza";
+
+    case "200":
+      return "Otro Municipio";
+    case "201":
+      return "Otra Provincia";
+    case "202":
+      return "Otro Pais";
+
+    default:
+      return id;
+  }
+};
+
 const PacienteProperties = [
   "apellido",
   "nombre",
@@ -109,7 +200,7 @@ const guardarCSV = ({streamFile, json, line, error, advertencia}) => {
 // ============================
 // Verificando/Validando formato de Pacientes
 // ============================
-const PacienteFormat = ({json, totales, line, logFile, csvErrors, csvFix}) => {
+const PacienteFormat = async ({json, totales, line, logFile, csvErrors, csvFix}) => {
   try {
     let errores = "";
     let advertencia = "";
@@ -256,36 +347,21 @@ const PacienteFormat = ({json, totales, line, logFile, csvErrors, csvFix}) => {
       }
     } else if (json.ZonaReside) {
       // ZonaReside - PSVacunas
-      switch (json.ZonaReside) {
-        case "1":
-          json.dir_localidad = "Francisco Alvarez";
-          delete json.ZonaReside;
-          break;
-        case "2":
-          json.dir_localidad = "Cuartel V";
-          delete json.ZonaReside;
-          break;
-        case "3":
-        case "4":
-        case "8":
-          json.dir_localidad = "Moreno";
-          delete json.ZonaReside;
-          break;
-        case "5":
-          json.dir_localidad = "Paso Del Rey";
-          delete json.ZonaReside;
-          break;
-        case "6":
-        case "7":
-          json.dir_localidad = "Trujui";
-          delete json.ZonaReside;
-          break;
-
-        default:
-          errores += ` ZonaReside / dir_localidad (${json.ZonaReside}).`;
+      json.dir_localidad = getLocalidadPS(json.ZonaReside);
+      if (json.dir_localidad) {
+        delete json.ZonaReside;
+      } else {
+        delete json.dir_localidad;
+        errores += ` ZonaReside / dir_localidad (${json.ZonaReside}).`;
       }
     } else {
-      errores += " dir_localidad Sin Dato.";
+      advertencia += " dir_localidad Sin Dato.";
+    }
+
+    // dir_municipio
+    if (json.dir_municipio) {
+      // dir_municipio - PSVacunas
+      json.dir_municipio = getMunicipioPS(json.dir_municipio);
     }
 
     // email
@@ -330,19 +406,33 @@ const PacienteFormat = ({json, totales, line, logFile, csvErrors, csvFix}) => {
       // errores-fixable => documento-apellido-nombre.. o apellido/nombre con numero.
       // fec_nac, dir_localidad o dir_calle/dir_numero
       if (
-        json.fec_nac &&
-        (json.dir_localidad || (json.dir_calle && json.dir_numero)) &&
-        ((json.documento && json.documento != 0 && json.apellido && json.nombre) ||
-          (!json.documento && (/\d/.test(json.apellido) || /\d/.test(json.nombre))))
+        (json.documento && json.documento != 0) ||
+        (!json.documento && (/\d/.test(json.apellido) || /\d/.test(json.nombre)))
       ) {
-        guardarCSV({
-          streamFile: csvFix,
-          json,
-          line,
-          error: errores,
-          advertencia,
-        });
-        totales["errores-fix"] += 1;
+        // buscar en la BD si ya esta cargada esa persona, si esta cargada no agregar a fixable y agregarle el ps_id.
+        let existe = null;
+        if (json.documento && json.documento != 0) {
+          existe = await mongoose.connections[1].models.Paciente.findOneAndUpdate(
+            {
+              tipo_doc: json.tipo_doc,
+              documento: json.documento,
+            },
+            {$addToSet: {ps_id: {$each: json.ps_id}}},
+            {new: true, lean: true}
+          ).exec();
+        }
+        if (existe) {
+          totales["errores-exist"] += 1;
+        } else {
+          guardarCSV({
+            streamFile: csvFix,
+            json,
+            line,
+            error: errores,
+            advertencia,
+          });
+          totales["errores-fix"] += 1;
+        }
       }
       guardarCSV({
         streamFile: csvErrors,
@@ -589,7 +679,14 @@ app.post(
           json.estado = true;
 
           // Validar datos (Manipulando json para luego actualizar la BD)
-          let pacienteTemp = PacienteFormat({json, totales, line, logFile, csvErrors, csvFix});
+          let pacienteTemp = await PacienteFormat({
+            json,
+            totales,
+            line,
+            logFile,
+            csvErrors,
+            csvFix,
+          });
           totales = pacienteTemp.totales;
           if (pacienteTemp.return) {
             return;
@@ -631,7 +728,7 @@ app.post(
 
       guardarContentStream({
         streamFile: logFile,
-        content: `\n\nTotales:\r\n\t⚠ Errores: ${totales.errores}.\r\n\t\t• Fixables: ${totales["errores-fix"]}.\r\n\t\t◙ Ya cargado: ${totales["errores-exist"]}.\r\n\tⓘ Advertencias: ${totales.advertencias}.\r\n\t☺ Exitosos: ${totales.exitosos}.`,
+        content: `\n\nTotales:\r\n\t⚠ Errores: ${totales.errores}.\r\n\t\t• Fixables: ${totales["errores-fix"]}.\r\n\t\t◙ Ya cargado: ${totales["errores-exist"]}.\r\n\tⓘ Advertencias: ${totales.advertencias}.\r\n\t☺ Exitosos: ${totales.exitosos}.\r\n\nAdevertencias: Pueden ser documentos nuevos que se cargaron sin algun dato de los Recomendados (violeta)`,
       });
       return res.json({
         ok: true,

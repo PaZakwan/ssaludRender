@@ -32,6 +32,16 @@ app.get(
       // Reporte Vacuna -> por Vacunatorio con Grupo Etario y dosis y condiciones de reporte segun vacuna. +totales.
       //   Fecha del reporte, entre fechas seleccionadas.
       // filtro -> area - desde/hasta - insumos/procedencias - opciones.
+      //          OPCIONALES ->
+      //            "Masculinos",
+      //            "Femeninos",
+      //            "Embarazadas",
+      //            "Puerperas",
+      //            "Grupo de Riesgo",
+      //            "Estrategia - Campaña",
+      //            "Estrategia - Contactos",
+      //            "Personal de Salud",
+      //            "Personal Esencial"
       let filtro = {};
       let insumosDB = null;
       let areasDB = null;
@@ -88,16 +98,6 @@ app.get(
         }
         // regresa mongoose.Types.ObjectId(insumo);
         filtro.insumo = isObjectIdValid(filtro.insumo[0]);
-        // Consulta a BD -> insumosDB "nombre"
-        if (modelos?.pre) {
-          insumosDB = VacunaInsumo.aggregate()
-            .match({_id: filtro.insumo})
-            .project({
-              _id: 0,
-              nombre: 1,
-            })
-            .exec();
-        }
       } else {
         return errorMessage(res, {message: "Falta seleccionar la vacuna para proceder."}, 412);
       }
@@ -106,8 +106,6 @@ app.get(
       let vacunasHeader = null;
       let opcionalesProyect = {};
       let opcionalesGroup = {};
-      let opcionalesTotales = {};
-      let opcionalesPopulatePaciente = {};
       let totales = {};
 
       // Consulta a BD -> areasDB "nombres"
@@ -123,6 +121,99 @@ app.get(
           .exec();
       }
 
+      // OPCIONALES
+      // generar consulta para mongoDB en mongoose en base las opciones seleccionadas :D
+      if (req.query.opciones && req.query.opciones !== "[]") {
+        let opcionesTemp = JSON.parse(req.query.opciones);
+        opcionesTemp.forEach((opcion) => {
+          switch (opcion) {
+            case "Masculinos":
+              opcionalesProyect.total_area_dosis_masculino = 1;
+              opcionalesGroup.total_area_dosis_masculino = {
+                $sum: {
+                  $cond: [{$eq: ["$sexo", "Masculino"]}, 1, 0],
+                },
+              };
+              break;
+
+            case "Femeninos":
+              opcionalesProyect.total_area_dosis_femenino = 1;
+              opcionalesGroup.total_area_dosis_femenino = {
+                $sum: {
+                  $cond: [{$eq: ["$sexo", "Femenino"]}, 1, 0],
+                },
+              };
+              break;
+
+            case "Embarazadas":
+              opcionalesProyect.total_area_dosis_embarazada = 1;
+              opcionalesGroup.total_area_dosis_embarazada = {
+                $sum: {
+                  $cond: [{$gte: ["$embarazada_semana", 0]}, 1, 0],
+                },
+              };
+              break;
+
+            case "Puerperas":
+              opcionalesProyect.total_area_dosis_puerpera = 1;
+              opcionalesGroup.total_area_dosis_puerpera = {
+                $sum: {
+                  $cond: [{$eq: ["$puerpera", true]}, 1, 0],
+                },
+              };
+              break;
+
+            case "Grupo de Riesgo":
+              opcionalesProyect.total_area_dosis_riesgo = 1;
+              opcionalesGroup.total_area_dosis_riesgo = {
+                $sum: {
+                  $cond: [{$eq: ["$riesgo", true]}, 1, 0],
+                },
+              };
+              break;
+
+            case "Estrategia - Campaña":
+              opcionalesProyect.total_area_dosis_campaña = 1;
+              opcionalesGroup.total_area_dosis_campaña = {
+                $sum: {
+                  $cond: [{$eq: ["$estrategia", "Campaña"]}, 1, 0],
+                },
+              };
+              break;
+
+            case "Estrategia - Contactos":
+              opcionalesProyect.total_area_dosis_contactos = 1;
+              opcionalesGroup.total_area_dosis_contactos = {
+                $sum: {
+                  $cond: [{$eq: ["$estrategia", "Contactos"]}, 1, 0],
+                },
+              };
+              break;
+
+            case "Personal de Salud":
+              opcionalesProyect.total_area_dosis_personal_salud = 1;
+              opcionalesGroup.total_area_dosis_personal_salud = {
+                $sum: {
+                  $cond: [{$eq: ["$personal_salud", true]}, 1, 0],
+                },
+              };
+              break;
+
+            case "Personal Esencial":
+              opcionalesProyect.total_area_dosis_personal_esencial = 1;
+              opcionalesGroup.total_area_dosis_personal_esencial = {
+                $sum: {
+                  $cond: [{$eq: ["$personal_esencial", true]}, 1, 0],
+                },
+              };
+              break;
+
+            default:
+              break;
+          }
+        });
+      }
+
       // Obtener grupo etario de la vacuna
       let etarioDB = VacunaInsumo.findById(filtro.insumo, "nombre grupo_etario").exec();
       let grupo_etarioDB = {};
@@ -132,7 +223,7 @@ app.get(
         .match(filtro)
         .group({
           _id: {area: "$origen", dosis: "$dosis"},
-          total: {$sum: 1},
+          total_area_dosis: {$sum: 1},
           aplicaciones: {
             $push: {
               // contar_separado)?
@@ -140,13 +231,15 @@ app.get(
               edad_valor: {$ifNull: ["$edad_valor", null]},
             },
           },
+          ...opcionalesGroup,
         })
         .project({
           _id: 0,
           area: "$_id.area",
           dosis: "$_id.dosis",
-          total: 1,
+          total_area_dosis: 1,
           aplicaciones: 1,
+          ...opcionalesProyect,
         })
         .lookup({
           from: "areas",
@@ -161,20 +254,52 @@ app.get(
         .sort({areaDB: 1, dosis: 1})
         .exec();
 
+      // Vacunas Header
+      if (modelos?.pre) {
+        vacunasHeader = VacunaAplicacion.aggregate()
+          .match(filtro)
+          .project({
+            _id: 0,
+            dosis: 1,
+          })
+          .group({
+            _id: "$dosis",
+            total_dosis: {$sum: 1},
+          })
+          .project({
+            _id: 0,
+            dosis: "$_id",
+            total_dosis: 1,
+          })
+          // sort
+          .sort({dosis: 1})
+          .exec();
+      }
+
       // Esperar que se concluyan las consultas a la BD
-      [etarioDB, reporte, vacunasHeader, insumosDB, areasDB] = await Promise.all([
+      [etarioDB, reporte, vacunasHeader, areasDB] = await Promise.all([
         etarioDB,
         reporte,
         vacunasHeader,
-        insumosDB,
         areasDB,
       ]);
+
+      // insumosDB -> [{"nombre"}]
+      if (modelos?.pre) {
+        insumosDB = [{nombre: etarioDB.nombre}];
+      }
 
       if (etarioDB.grupo_etario) {
         for (let eta of etarioDB.grupo_etario) {
           grupo_etarioDB[eta.unidad] = eta.boundaries;
         }
       }
+
+      // DESARROLLAR
+      // vacunasHeader -> [grupo_etario/edad no especifica/otras edades/totales - dosis/subtotal]
+      // TOTALES -> sumar al recorrer "reporte" y agregarlo al final, despues de loopear.
+
+      // NO AL PDF!!
 
       // reporte -> sumar aplicaciones
       for (let index = 0; index < reporte.length; index++) {
@@ -233,6 +358,31 @@ app.get(
         delete reporte[index].aplicaciones;
       }
 
+      // format vacunasHeader
+      let headerTemp = [];
+      for (let index = 0; index < vacunasHeader.length; index++) {
+        totales[`total_area_dosis - ${vacunasHeader[index].dosis}`] =
+          vacunasHeader[index].total_dosis ?? 0;
+
+        // [grupo_etario - dosis/subtotal]
+        // Object.keys(grupo_etarioDB).forEach((unidad) => {
+        //   reporte[index][unidad] = {};
+        //   for (let index2 = 1; index2 < grupo_etarioDB[unidad].length; index2++) {
+        //     reporte[index][unidad][
+        //       `${grupo_etarioDB[unidad][index2 - 1]}-${grupo_etarioDB[unidad][index2] - 1}`
+        //     ] = 0;
+        //   }
+        // });
+        // [edad no especifica - dosis/subtotal]
+        // [otras edades - dosis/subtotal]
+        // [totales - dosis/total]
+        // [opcionalesProyect.keys - dosis]
+      }
+      // objectkeys opcionalesProyect
+
+      console.log("reporte 22:", reporte);
+      console.log("etarioDB:", grupo_etarioDB);
+
       // ver los contadores a parte)?
 
       // agrupar para PDF¡?¡?
@@ -247,7 +397,7 @@ app.get(
       // ver tipos de DOSIS para los headers del reporte
 
       // agrupar para Excel¡?¡?
-      // Separar Año / Mes -> <index0> a <index1> <unidad>
+      // areaDB / grupo etario [Otras Edades / Edad No Especificada / Totales] (<unidad>, <index0> a <index1>) / dosis [subtotal] / cantidad
 
       // pre: payload.preCarga ?? false, // {areasDB, insumosDB, vacunasHeader, (raw) totales}
       // raw: payload.raw ?? false, // [data]
@@ -256,15 +406,10 @@ app.get(
         ok: true,
         areasDB,
         insumosDB,
-        vacunasHeader: vacunasHeader?.[0]?.vacunasHeader,
+        vacunasHeader,
         totales,
         reporte: modelos?.raw ? reporte : null,
         reporteObj: modelos?.obj ? reporte : null,
-
-        // ok: true,
-        // reporte: aplicacionesDB,
-        // vacunasHeader: "lala",
-        // totales: "lolo",
       });
     } catch (err) {
       return errorMessage(res, err, err.code);

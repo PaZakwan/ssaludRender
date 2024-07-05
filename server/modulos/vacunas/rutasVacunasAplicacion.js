@@ -21,6 +21,9 @@ let listaVacunaciones = [
   "vacunadorName",
   "fecha_futura_cita",
 
+  "tipo_doc",
+  "documento",
+  "doc_responsable",
   "sexo",
   "edad_valor",
   "edad_unidad",
@@ -150,15 +153,22 @@ app.get(
           pacienteDocDB: {
             $ifNull: [
               {
-                $concat: ["$pacienteDB.tipo_doc", " ", "$pacienteDB.documento"],
+                $concat: ["$tipo_doc", " ", "$documento"],
               },
               {
                 $ifNull: [
                   {
-                    $concat: ["Resp ", "$pacienteDB.doc_responsable"],
+                    $concat: ["$pacienteDB.tipo_doc", " ", "$pacienteDB.documento"],
                   },
                   {
-                    $concat: ["Resp ", "$ps_doc_responsable"],
+                    $ifNull: [
+                      {
+                        $concat: ["Resp ", "$doc_responsable"],
+                      },
+                      {
+                        $concat: ["Resp ", "$pacienteDB.doc_responsable"],
+                      },
+                    ],
                   },
                 ],
               },
