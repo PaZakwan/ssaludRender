@@ -12,6 +12,63 @@ const VacunaAplicacion = require("./models/vacuna_aplicacion");
 
 const app = express();
 
+// =================================================================================================
+// crear vacunasHeader [grupo_etario/edad no especifica/otras edades/totales - dosis/subtotal/total]
+// =================================================================================================
+const createHeader = ({vacunasHeader, grupo_etarioDB, opcionalesProyect}) => {
+  let headerTemp = [];
+  // recorrer grupos etarios y dentro recorrer los nombres dosis.
+  ["Hora", "Dia", "Semana", "Mes", "Año"].forEach((unidad) => {
+    // [grupo_etario - dosis/subtotal]
+    for (let index2 = 1; index2 < grupo_etarioDB[unidad]?.length; index2++) {
+      // rango 0 a rango 1 unidad - dosis
+      // recorrer nombre dosis
+      for (let index = 0; index < vacunasHeader?.length; index++) {
+        headerTemp.push(
+          `${grupo_etarioDB[unidad][index2 - 1]} a ${
+            grupo_etarioDB[unidad][index2] - 1
+          } ${unidad} - ${vacunasHeader[index].dosis}`
+        );
+      }
+      headerTemp.push(
+        `${grupo_etarioDB[unidad][index2 - 1]} a ${
+          grupo_etarioDB[unidad][index2] - 1
+        } ${unidad} - Subtotal`
+      );
+    }
+  });
+
+  // recorrer totales especiales y dentro recorrer los nombres dosis.
+  ["otras", "no especifica"].forEach((rango) => {
+    // recorrer nombre dosis
+    for (let index = 0; index < vacunasHeader?.length; index++) {
+      // [rango - dosis]
+      headerTemp.push(`${rango} - ${vacunasHeader[index].dosis}`);
+    }
+    headerTemp.push(`${rango} - Subtotal`);
+  });
+
+  // totales
+  // recorrer nombre dosis
+  for (let index = 0; index < vacunasHeader?.length; index++) {
+    // [rango - dosis]
+    headerTemp.push(`total_area_dosis - ${vacunasHeader[index].dosis}`);
+  }
+  headerTemp.push("total_area_dosis - Total");
+
+  // recorrer totales opcionales y dentro recorrer los nombres dosis.
+  Object.keys(opcionalesProyect).forEach((rango) => {
+    // recorrer nombre dosis
+    for (let index = 0; index < vacunasHeader?.length; index++) {
+      // [rango - dosis]
+      headerTemp.push(`${rango} - ${vacunasHeader[index].dosis}`);
+    }
+    headerTemp.push(`${rango} - Subtotal`);
+  });
+
+  return headerTemp;
+};
+
 // ============================
 // Mostrar Aplicaciones por Vacuna con su Grupo Etario - Dosis.
 //  Filtro: Vacuna - Fecha Aplicacion
@@ -109,17 +166,15 @@ app.get(
       let totales = {};
 
       // Consulta a BD -> areasDB "nombres"
-      if (modelos?.pre) {
-        areasDB = Area.aggregate()
-          .collation({locale: "es", numericOrdering: true})
-          .match({_id: filtro.origen})
-          .project({
-            _id: 0,
-            area: 1,
-          })
-          .sort({area: 1})
-          .exec();
-      }
+      areasDB = Area.aggregate()
+        .collation({locale: "es", numericOrdering: true})
+        .match({_id: filtro.origen ?? {$exists: true}, vacunatorio: "true"})
+        .project({
+          _id: 0,
+          area: 1,
+        })
+        .sort({area: 1})
+        .exec();
 
       // OPCIONALES
       // generar consulta para mongoDB en mongoose en base las opciones seleccionadas :D
@@ -215,73 +270,73 @@ app.get(
       }
 
       // Obtener grupo etario de la vacuna
-      let etarioDB = VacunaInsumo.findById(filtro.insumo, "nombre grupo_etario").exec();
+      let etarioDB = VacunaInsumo.findById(
+        filtro.insumo,
+        "nombre grupo_etario dosis_posibles"
+      ).exec();
       let grupo_etarioDB = {};
 
-      // Agrupar por vacunatorio - dosis -> + edad_unidad + edad_valor
-      reporte = VacunaAplicacion.aggregate()
+      // Vacunas Header
+      vacunasHeader = VacunaAplicacion.aggregate()
         .match(filtro)
+        .project({
+          _id: 0,
+          dosis: 1,
+        })
         .group({
-          _id: {area: "$origen", dosis: "$dosis"},
-          total_area_dosis: {$sum: 1},
-          aplicaciones: {
-            $push: {
-              // contar_separado)?
-              edad_unidad: {$ifNull: ["$edad_unidad", null]},
-              edad_valor: {$ifNull: ["$edad_valor", null]},
-            },
-          },
-          ...opcionalesGroup,
+          _id: "$dosis",
         })
         .project({
           _id: 0,
-          area: "$_id.area",
-          dosis: "$_id.dosis",
-          total_area_dosis: 1,
-          aplicaciones: 1,
-          ...opcionalesProyect,
+          dosis: "$_id",
         })
-        .lookup({
-          from: "areas",
-          localField: "area",
-          foreignField: "_id",
-          as: "areaDB",
-        })
-        .unwind({path: "$areaDB"})
-        .addFields({
-          areaDB: "$areaDB.area",
-        })
-        .sort({areaDB: 1, dosis: 1})
+        // sort
+        .sort({dosis: 1})
         .exec();
 
-      // Vacunas Header
-      if (modelos?.pre) {
-        vacunasHeader = VacunaAplicacion.aggregate()
+      // Agrupar por vacunatorio - dosis -> + edad_unidad + edad_valor
+      if (modelos?.raw) {
+        reporte = VacunaAplicacion.aggregate()
           .match(filtro)
-          .project({
-            _id: 0,
-            dosis: 1,
-          })
           .group({
-            _id: "$dosis",
-            total_dosis: {$sum: 1},
+            _id: {area: "$origen", dosis: "$dosis"},
+            total_area_dosis: {$sum: 1},
+            aplicaciones: {
+              $push: {
+                // contar_separado)?
+                edad_unidad: {$ifNull: ["$edad_unidad", null]},
+                edad_valor: {$ifNull: ["$edad_valor", null]},
+              },
+            },
+            ...opcionalesGroup,
           })
           .project({
             _id: 0,
-            dosis: "$_id",
-            total_dosis: 1,
+            area: "$_id.area",
+            dosis: "$_id.dosis",
+            total_area_dosis: 1,
+            aplicaciones: 1,
+            ...opcionalesProyect,
           })
-          // sort
-          .sort({dosis: 1})
+          .lookup({
+            from: "areas",
+            localField: "area",
+            foreignField: "_id",
+            as: "areaDB",
+          })
+          .unwind({path: "$areaDB"})
+          .addFields({
+            areaDB: "$areaDB.area",
+          })
           .exec();
       }
 
       // Esperar que se concluyan las consultas a la BD
-      [etarioDB, reporte, vacunasHeader, areasDB] = await Promise.all([
-        etarioDB,
-        reporte,
-        vacunasHeader,
+      [areasDB, etarioDB, vacunasHeader, reporte] = await Promise.all([
         areasDB,
+        etarioDB,
+        vacunasHeader,
+        reporte,
       ]);
 
       // insumosDB -> [{"nombre"}]
@@ -295,95 +350,122 @@ app.get(
         }
       }
 
-      // DESARROLLAR
+      // format vacunasHeader
       // vacunasHeader -> [grupo_etario/edad no especifica/otras edades/totales - dosis/subtotal]
-      // TOTALES -> sumar al recorrer "reporte" y agregarlo al final, despues de loopear.
+      vacunasHeader = createHeader({vacunasHeader, grupo_etarioDB, opcionalesProyect});
 
-      // NO AL PDF!!
-
-      // reporte -> sumar aplicaciones
-      for (let index = 0; index < reporte.length; index++) {
-        reporte[index]["otras"] = 0;
-        reporte[index]["no especifica"] = 0;
-        // creando grupos en 0 del grupo_etarioDB de la vacuna
-        Object.keys(grupo_etarioDB).forEach((unidad) => {
-          reporte[index][unidad] = {};
-          for (let index2 = 1; index2 < grupo_etarioDB[unidad].length; index2++) {
-            reporte[index][unidad][
-              `${grupo_etarioDB[unidad][index2 - 1]}-${grupo_etarioDB[unidad][index2] - 1}`
-            ] = 0;
-          }
+      if (modelos?.raw) {
+        let reporteTemp = {};
+        // reporteTemp -> key -> areaDB : {(rango - dosis/Subtotal/Total) : #, ...vacunasHeader... }
+        // crear objeto del reporte con el areaDB como key principal para despues pasarlo a array de un solo areaDB
+        // ese areaDB tendra como objeto las keys de vacunasHeader y los valores correspondientes que se cuentan.
+        areasDB.forEach((area) => {
+          // creando areas para reporte
+          reporteTemp[area.area] = {};
+          vacunasHeader.forEach((header) => {
+            // creando areas en 0 de vacunasHeader
+            reporteTemp[area.area][header] = 0;
+            // creando totales en 0 de vacunasHeader
+            totales[header] = 0;
+          });
         });
-        // recorrer y contar aplicaciones => edad_unidad -> edad_valor
-        for (let index2 = 0; index2 < reporte[index].aplicaciones.length; index2++) {
-          let aplicacionTemp = reporte[index].aplicaciones[index2];
-          if (aplicacionTemp.edad_unidad === null) {
-            // primero ver si edad_unidad es null -> "no especifica"
-            reporte[index]["no especifica"]++;
-          } else if (Object.keys(grupo_etarioDB).includes(aplicacionTemp.edad_unidad)) {
-            // segundo ver si edad_unidad esta en grupo_etarioDB key =>
-            if (
-              grupo_etarioDB[aplicacionTemp.edad_unidad].at(0) <= aplicacionTemp.edad_valor &&
-              aplicacionTemp.edad_valor < grupo_etarioDB[aplicacionTemp.edad_unidad].at(-1)
-            ) {
-              // condicionar edad_valor con el grupo_etarioDB -> esta en el rango etario buscar el rango
-              for (
-                let index3 = 1;
-                index3 < grupo_etarioDB[aplicacionTemp.edad_unidad].length;
-                index3++
+
+        // reporte -> sumar aplicaciones
+        // TOTALES -> sumar al recorrer "reporte" y agregarlo al final, despues de loopear.
+        for (let index = 0; index < reporte.length; index++) {
+          // recorrer y contar aplicaciones => edad_unidad -> edad_valor
+          for (let index2 = 0; index2 < reporte[index].aplicaciones.length; index2++) {
+            let aplicacionTemp = reporte[index].aplicaciones[index2];
+            if (aplicacionTemp.edad_unidad === null) {
+              // primero ver si edad_unidad es null -> "no especifica"
+              reporteTemp[reporte[index].areaDB][`no especifica - ${reporte[index].dosis}`]++;
+              reporteTemp[reporte[index].areaDB][`no especifica - Subtotal`]++;
+              totales[`no especifica - ${reporte[index].dosis}`]++;
+              totales[`no especifica - Subtotal`]++;
+            } else if (Object.keys(grupo_etarioDB).includes(aplicacionTemp.edad_unidad)) {
+              // segundo ver si edad_unidad esta en grupo_etarioDB key =>
+              if (
+                grupo_etarioDB[aplicacionTemp.edad_unidad].at(0) <= aplicacionTemp.edad_valor &&
+                aplicacionTemp.edad_valor < grupo_etarioDB[aplicacionTemp.edad_unidad].at(-1)
               ) {
-                // rango etario
-                if (
-                  grupo_etarioDB[aplicacionTemp.edad_unidad][index3 - 1] <=
-                    aplicacionTemp.edad_valor &&
-                  aplicacionTemp.edad_valor < grupo_etarioDB[aplicacionTemp.edad_unidad][index3]
+                // condicionar edad_valor con el grupo_etarioDB -> esta en el rango etario buscar el rango
+                for (
+                  let index3 = 1;
+                  index3 < grupo_etarioDB[aplicacionTemp.edad_unidad].length;
+                  index3++
                 ) {
-                  reporte[index][aplicacionTemp.edad_unidad][
-                    `${grupo_etarioDB[aplicacionTemp.edad_unidad][index3 - 1]}-${
-                      grupo_etarioDB[aplicacionTemp.edad_unidad][index3] - 1
-                    }`
-                  ]++;
-                  break;
+                  // rango etario
+                  if (
+                    grupo_etarioDB[aplicacionTemp.edad_unidad][index3 - 1] <=
+                      aplicacionTemp.edad_valor &&
+                    aplicacionTemp.edad_valor < grupo_etarioDB[aplicacionTemp.edad_unidad][index3]
+                  ) {
+                    reporteTemp[reporte[index].areaDB][
+                      `${grupo_etarioDB[aplicacionTemp.edad_unidad][index3 - 1]} a ${
+                        grupo_etarioDB[aplicacionTemp.edad_unidad][index3] - 1
+                      } ${aplicacionTemp.edad_unidad} - ${reporte[index].dosis}`
+                    ]++;
+                    reporteTemp[reporte[index].areaDB][
+                      `${grupo_etarioDB[aplicacionTemp.edad_unidad][index3 - 1]} a ${
+                        grupo_etarioDB[aplicacionTemp.edad_unidad][index3] - 1
+                      } ${aplicacionTemp.edad_unidad} - Subtotal`
+                    ]++;
+                    totales[
+                      `${grupo_etarioDB[aplicacionTemp.edad_unidad][index3 - 1]} a ${
+                        grupo_etarioDB[aplicacionTemp.edad_unidad][index3] - 1
+                      } ${aplicacionTemp.edad_unidad} - ${reporte[index].dosis}`
+                    ]++;
+                    totales[
+                      `${grupo_etarioDB[aplicacionTemp.edad_unidad][index3 - 1]} a ${
+                        grupo_etarioDB[aplicacionTemp.edad_unidad][index3] - 1
+                      } ${aplicacionTemp.edad_unidad} - Subtotal`
+                    ]++;
+                    break;
+                  }
                 }
+              } else {
+                // condicionar edad_valor con el grupo_etarioDB -> no esta en el rango etario "otras"
+                reporteTemp[reporte[index].areaDB][`otras - ${reporte[index].dosis}`]++;
+                reporteTemp[reporte[index].areaDB][`otras - Subtotal`]++;
+                totales[`otras - ${reporte[index].dosis}`]++;
+                totales[`otras - Subtotal`]++;
               }
             } else {
-              // condicionar edad_valor con el grupo_etarioDB -> no esta en el rango etario "otras"
-              reporte[index]["otras"]++;
+              // tercero si no esta en edad_unidad -> "otras"
+              reporteTemp[reporte[index].areaDB][`otras - ${reporte[index].dosis}`]++;
+              reporteTemp[reporte[index].areaDB][`otras - Subtotal`]++;
+              totales[`otras - ${reporte[index].dosis}`]++;
+              totales[`otras - Subtotal`]++;
             }
-          } else {
-            // tercero si no esta en edad_unidad -> "otras"
-            reporte[index]["otras"]++;
           }
+
+          // TOTALES
+          reporteTemp[reporte[index].areaDB][`total_area_dosis - ${reporte[index].dosis}`] =
+            reporte[index]["total_area_dosis"];
+          reporteTemp[reporte[index].areaDB][`total_area_dosis - Total`] +=
+            reporte[index]["total_area_dosis"];
+          totales[`total_area_dosis - ${reporte[index].dosis}`] +=
+            reporte[index]["total_area_dosis"];
+          totales[`total_area_dosis - Total`] += reporte[index]["total_area_dosis"];
+
+          // Sumando total de Opcionales
+          Object.keys(opcionalesProyect).forEach((rango) => {
+            reporteTemp[reporte[index].areaDB][`${rango} - ${reporte[index].dosis}`] =
+              reporte[index][rango];
+            reporteTemp[reporte[index].areaDB][`${rango} - Subtotal`] += reporte[index][rango];
+            totales[`${rango} - ${reporte[index].dosis}`] += reporte[index][rango];
+            totales[`${rango} - Subtotal`] += reporte[index][rango];
+          });
+
+          delete reporte[index].aplicaciones;
         }
-        delete reporte[index].aplicaciones;
+
+        // transformar reporteTemp {objeto} a [{array de objetos}]
+        reporte = [];
+        Object.keys(reporteTemp).forEach((key) => {
+          reporte.push({areaDB: key, ...reporteTemp[key]});
+        });
       }
-
-      // format vacunasHeader
-      let headerTemp = [];
-      for (let index = 0; index < vacunasHeader.length; index++) {
-        totales[`total_area_dosis - ${vacunasHeader[index].dosis}`] =
-          vacunasHeader[index].total_dosis ?? 0;
-
-        // [grupo_etario - dosis/subtotal]
-        // Object.keys(grupo_etarioDB).forEach((unidad) => {
-        //   reporte[index][unidad] = {};
-        //   for (let index2 = 1; index2 < grupo_etarioDB[unidad].length; index2++) {
-        //     reporte[index][unidad][
-        //       `${grupo_etarioDB[unidad][index2 - 1]}-${grupo_etarioDB[unidad][index2] - 1}`
-        //     ] = 0;
-        //   }
-        // });
-        // [edad no especifica - dosis/subtotal]
-        // [otras edades - dosis/subtotal]
-        // [totales - dosis/total]
-        // [opcionalesProyect.keys - dosis]
-      }
-      // objectkeys opcionalesProyect
-
-      console.log("reporte 22:", reporte);
-      console.log("etarioDB:", grupo_etarioDB);
-
-      // ver los contadores a parte)?
 
       // agrupar para PDF¡?¡?
       // Vacunatorio -> Edad_unidad-valor[rango] -> DOSIS + *Subtotal ETARIO
@@ -394,20 +476,15 @@ app.get(
       //             -> Edad No especificada -> DOSIS + *Subtotal
       //             -> TOTAL -> Subtotal DOSIS + *TOTAL
 
-      // ver tipos de DOSIS para los headers del reporte
-
-      // agrupar para Excel¡?¡?
-      // areaDB / grupo etario [Otras Edades / Edad No Especificada / Totales] (<unidad>, <index0> a <index1>) / dosis [subtotal] / cantidad
-
       // pre: payload.preCarga ?? false, // {areasDB, insumosDB, vacunasHeader, (raw) totales}
       // raw: payload.raw ?? false, // [data]
       // obj: payload.objAreas ?? false, // (raw) {area: [data]}
       return res.status(200).json({
         ok: true,
-        areasDB,
-        insumosDB,
-        vacunasHeader,
-        totales,
+        areasDB: modelos?.pre && filtro.origen ? areasDB : null,
+        insumosDB: modelos?.pre ? insumosDB : null,
+        vacunasHeader: modelos?.pre ? vacunasHeader : null,
+        totales: modelos?.raw ? totales : null,
         reporte: modelos?.raw ? reporte : null,
         reporteObj: modelos?.obj ? reporte : null,
       });

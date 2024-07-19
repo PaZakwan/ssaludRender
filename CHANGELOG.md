@@ -11,6 +11,15 @@
 
 ##### Unreleased
 
+##### [1.7.20240719] - 2024-07-19
+
+- Improve a Sistema - Fechas => updateFechas -> actualiza las fechas al navegar por el aplicativo, corrige errores que ocasionan al dejar la pagina abierta por dias.
+
+- Added a Farmacia/Vacunatorio - Transferencia => Se agrego al Remito la Fecha Planificada de entrega.
+- Fix a Farmacia/Vacunatorio - Ingreso => fix al color de los ingresos con permiso para recibir en gestion.
+
+- Added a Vacunatorio - Reporte => Grupo Etario por Vacuna.
+
 ##### [1.7.20240705] - 2024-07-05
 
 - Changed a Laboratorio Bromatologico - PDFs => Se cambiaron, actualizaron, los nombres del area en los encabezados y pie de pagina.
