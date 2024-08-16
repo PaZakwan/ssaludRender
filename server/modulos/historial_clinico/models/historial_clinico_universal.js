@@ -2,8 +2,6 @@ const mongoose = require("mongoose");
 const uniqueValidator = require("mongoose-unique-validator");
 const {resolve} = require("path");
 
-const {getEdad} = require(resolve(process.env.MAIN_FOLDER, "tools/object"));
-
 let schemaOptions = {
   toObject: {
     getters: true,
@@ -79,8 +77,8 @@ let HistorialClinicoUniversalSchema = new Schema(
       },
     ],
 
-    embarazada: {
-      type: Date,
+    embarazada_semana: {
+      type: Number,
     },
 
     puerpera: {
@@ -107,21 +105,6 @@ let HistorialClinicoUniversalSchema = new Schema(
   },
   schemaOptions
 );
-
-HistorialClinicoUniversalSchema.virtual("embarazada_semana").get(function () {
-  try {
-    // edad_years: "",
-    // edad_months: "",
-    // edad_weeks: "",
-    // edad_days: "",
-    if (!!this.embarazada) {
-      return getEdad({date: this.embarazada, onlyYear: false})?.edad_weeks;
-    }
-    return undefined;
-  } catch (error) {
-    return "ERROR Edad";
-  }
-});
 
 HistorialClinicoUniversalSchema.pre("findOneAndUpdate", async function (next) {
   if (this.getUpdate().$set) {

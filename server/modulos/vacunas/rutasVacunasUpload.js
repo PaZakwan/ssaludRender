@@ -22,7 +22,7 @@ const app = express();
 // CONSULTA PARA BORRAR EN MONGODB
 
 // db.getCollection("VacunaAplicaciones").remove({_id:
-//     { $in: db.getCollection("VacunaAplicaciones").find({}).skip(11).map(doc => doc._id) }
+//     { $in: db.getCollection("VacunaAplicaciones").find({}).skip(11).limit(500000).map(doc => doc._id) }
 // });
 
 const ps_us_oficina = {
@@ -61,20 +61,20 @@ const ps_us_oficina = {
   66: "15217",
   // Salud Mental
   69: "15110",
-  // Dia Salud Mental
-  110: "15110",
+  // Dia (Espejos Cruzados) Salud Mental
+  110: "12035",
   // Emergencias Salud Mental
-  500: "15110",
+  500: "500",
   // Prisma Salud Mental
-  915: "15110",
+  915: "915",
   // ACAIS (salud Mental)
-  917: "15110",
+  917: "917",
   // Molina Campos
   74: "15230",
   // Vacunatorio Central
   86: "15115",
   // Vacunatorio Movil
-  909: "15115",
+  909: "909",
   // Odontologia
   90: "15204",
   // Obesidad
@@ -148,10 +148,10 @@ const ps_us_oficina = {
   900: false,
   // Maternidad e Infancia
   901: "12042",
-  // Promocion Territorial
+  // Promocion Territorial (Salud Comunitaria)
   902: "15107",
-  // Trasbordo Promocion Territorial
-  903: "15107",
+  // Trasbordo Promocion Territorial (Salud Comunitaria)
+  903: "903",
   // Salud del Adulto
   904: "15109",
   // Enfermeria TBC
@@ -462,7 +462,6 @@ const VacunacionFormat = async ({
       }
     } else if (json.ps_us) {
       // buscar en ps_us_oficina con el ps_us la oficina_nro
-      json.origen = json.ps_us;
       if (ps_us_oficina[json.ps_us]) {
         // buscar en vacunatoriosDB el _id con la oficina_nro
         origenTemp = vacunatoriosDB.find((vacunatorio) => {

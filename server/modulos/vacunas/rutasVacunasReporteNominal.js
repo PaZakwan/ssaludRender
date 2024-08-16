@@ -68,7 +68,7 @@ app.get(
         let temp = dateUTC({
           date: req.query.desde,
           hours: "00:00:00.000",
-          timezone: req.get("timezoneoffset"),
+          // timezone: req.get("timezoneoffset"),
         });
         if (temp.error) {
           return errorMessage(res, {message: temp.error}, 400);
@@ -77,7 +77,7 @@ app.get(
         temp = dateUTC({
           date: req.query.hasta,
           hours: "23:59:59.999",
-          timezone: req.get("timezoneoffset"),
+          // timezone: req.get("timezoneoffset"),
         });
         if (temp.error) {
           return errorMessage(res, {message: temp.error}, 400);

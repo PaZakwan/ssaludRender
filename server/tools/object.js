@@ -2,8 +2,8 @@ const {ObjectId} = require("mongodb");
 
 const isObjectIdValid = (id) => {
   try {
-    if (ObjectId.isValid(id) && new ObjectId(id) == id) {
-      return new ObjectId(id);
+    if (ObjectId.isValid(id) && ObjectId.createFromHexString(id) == id) {
+      return ObjectId.createFromHexString(id);
     } else {
       return false;
     }
@@ -59,6 +59,35 @@ const dateUTC = ({date, hours = "00:00:00.000", timezone = "+00:00", excelValue 
   }
 };
 
+const getDiferenciaDias = ({date, dateHasta = new Date().toISOString().slice(0, 10)}) => {
+  try {
+    if (Object.prototype.toString.call(dateHasta) === "[object Date]" && !isNaN(dateHasta)) {
+      dateHasta = dateHasta.toISOString().slice(0, 10);
+    }
+    let hasta = dateUTC({
+      date: dateHasta,
+      hours: "00:00:00.000",
+    });
+    if (hasta.error) {
+      return {dato: {date, dateHasta}, error: `getDiferenciaDias hasta: ${hasta.error}`};
+    }
+    if (Object.prototype.toString.call(date) === "[object Date]" && !isNaN(date)) {
+      date = date.toISOString().slice(0, 10);
+    }
+    let desde = dateUTC({
+      date: date,
+      hours: "00:00:00.000",
+    });
+    if (desde.error) {
+      return {dato: {date, dateHasta}, error: `getDiferenciaDias desde: ${desde.error}`};
+    }
+
+    return (hasta.getTime() - desde.getTime()) / (1000 * 60 * 60 * 24);
+  } catch (error) {
+    return {dato: {date, dateHasta}, error};
+  }
+};
+
 const getEdad = ({date, onlyYear = true}) => {
   try {
     let hoy = dateUTC({
@@ -102,34 +131,53 @@ const getEdad = ({date, onlyYear = true}) => {
   }
 };
 
-const getDiferenciaDias = ({date, dateHasta = new Date().toISOString().slice(0, 10)}) => {
+const getEdadUnidades = ({edad_valor, edad_unidad}) => {
+  // 'Año', 'Mes', 'Semana', 'Dia', 'Hora'
   try {
-    if (Object.prototype.toString.call(dateHasta) === "[object Date]" && !isNaN(dateHasta)) {
-      dateHasta = dateHasta.toISOString().slice(0, 10);
-    }
-    let hasta = dateUTC({
-      date: dateHasta,
-      hours: "00:00:00.000",
-    });
-    if (hasta.error) {
-      return {dato: {date, dateHasta}, error: `getDiferenciaDias hasta: ${hasta.error}`};
-    }
-    if (Object.prototype.toString.call(date) === "[object Date]" && !isNaN(date)) {
-      date = date.toISOString().slice(0, 10);
-    }
-    let desde = dateUTC({
-      date: date,
-      hours: "00:00:00.000",
-    });
-    if (desde.error) {
-      return {dato: {date, dateHasta}, error: `getDiferenciaDias desde: ${desde.error}`};
-    }
+    // segun la edad_unidad -> obtener las demas edad_unidad
+    let dias = 0;
+    switch (edad_unidad) {
+      case "Año":
+        dias = edad_valor * 365.25;
+        break;
 
-    return (hasta.getTime() - desde.getTime()) / (1000 * 60 * 60 * 24);
+      case "Mes":
+        dias = edad_valor * (365.25 / 12);
+        break;
+
+      case "Semana":
+        dias = edad_valor * 7;
+        break;
+
+      case "Dia":
+        dias = edad_valor;
+        break;
+
+      case "Hora":
+        dias = edad_valor / 24;
+        break;
+
+      default:
+        return {
+          dato: {edad_valor, edad_unidad},
+          error: `getEdadUnidades edad_unidad: ${edad_unidad}`,
+        };
+    }
+    return {
+      Año: Math.floor(dias / 365.25),
+      Mes: Math.floor(dias / 30), // 30.4375
+      Semana: Math.floor(dias / 7),
+      Dia: Math.floor(dias),
+      Hora: Math.floor(dias * 24),
+    };
   } catch (error) {
-    return {dato: {date, dateHasta}, error};
+    return {dato: {edad_valor, edad_unidad}, error};
   }
 };
+
+// // 'Año', 'Mes', 'Semana', 'Dia', 'Hora'
+// let test = {edad_valor: "30", edad_unidad: "Dia"};
+// console.log("### TEST ", getEdadUnidades(test));
 
 const isVacio = (payload) => {
   try {
@@ -454,6 +502,67 @@ const groupBy = ({array, keys}) => {
   }, {});
 };
 
+// ==============================================================================
+// valorInRangoArray [0, 1, ..., n-1, n], retorna string "rangoArray[i-1] a rangoArray[i]" o false
+// ==============================================================================
+const valorInRangoArray = ({valor, rangoArray}) => {
+  try {
+    // ordenar rangoArray
+    rangoArray.sort?.((a, b) => a - b);
+    // esta en el rango
+    if (valor < rangoArray.at(-1) && rangoArray.at(0) <= valor) {
+      // Recorrer rangoArray y determinar en que rango esta
+      for (let index = 1; index < rangoArray.length; index++) {
+        // rango etario
+        if (rangoArray[index - 1] <= valor && valor < rangoArray[index]) {
+          return [rangoArray[index - 1], rangoArray[index] - 1];
+        }
+      }
+      return false;
+    } else {
+      return false;
+    }
+  } catch (error) {
+    return {dato: {valor, rangoArray}, error};
+  }
+};
+
+// ==============================================================================
+// valorInMatriz [[min,max], ..., [min,max]], retorna string "matriz[i][0] a matriz[i][1]" o false
+// ==============================================================================
+const valorInMatriz = ({valor, matriz}) => {
+  try {
+    // ordenar matriz
+    matriz.sort?.((a, b) => {
+      if (a[0] === b[0]) {
+        // ordenar por segundo elemento
+        if (a[1] === b[1]) {
+          return 0;
+        } else {
+          return a[1] < b[1] ? -1 : 1;
+        }
+      } else {
+        return a[0] < b[0] ? -1 : 1;
+      }
+    });
+    // esta en el rango
+    if (valor < matriz.at(-1)[1] && matriz.at(0)[0] <= valor) {
+      // Recorrer matriz y determinar en que rango esta
+      for (let index = 0; index < matriz.length; index++) {
+        // rango etario
+        if (matriz[index][0] <= valor && valor < matriz[index][1]) {
+          return [matriz[index][0], matriz[index][1] - 1];
+        }
+      }
+      return false;
+    } else {
+      return false;
+    }
+  } catch (error) {
+    return {dato: {valor, matriz}, error};
+  }
+};
+
 const arrayFromSumarPropsInArrays = ({
   arrays,
   compare = (a, b) => {
@@ -509,9 +618,11 @@ exports.isDateValid = isDateValid;
 
 exports.dateUTC = dateUTC;
 
+exports.getDiferenciaDias = getDiferenciaDias;
+
 exports.getEdad = getEdad;
 
-exports.getDiferenciaDias = getDiferenciaDias;
+exports.getEdadUnidades = getEdadUnidades;
 
 exports.isVacio = isVacio;
 
@@ -522,5 +633,9 @@ exports.objectToFind = objectToFind;
 exports.sumarProps = sumarProps;
 
 exports.groupBy = groupBy;
+
+exports.valorInRangoArray = valorInRangoArray;
+
+exports.valorInMatriz = valorInMatriz;
 
 exports.arrayFromSumarPropsInArrays = arrayFromSumarPropsInArrays;

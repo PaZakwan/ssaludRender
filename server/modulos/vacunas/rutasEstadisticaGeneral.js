@@ -32,8 +32,17 @@ app.get(
   ],
   async (req, res) => {
     try {
-      // para descartes
+      // ###########
+      // filtrar por fecha...
+      // aplicaciones/descartes segun fecha(no timezone) y existe retirado.
+      // ingreso segun insumo.recibido (timezone).
+      // transferenciaIn segun insumo.retirado (timezone) y haya sido recibido.
+      // transferenciaOut segun insumo.retirado (timezone).
+      // ###########
+      // para aplicaciones/descartes
       let filtroIndividual = {};
+      // otros
+      let fechaTimezone = {};
       if (req.query.desde && req.query.hasta) {
         let temp = dateUTC({
           date: req.query.desde,
@@ -43,7 +52,11 @@ app.get(
         if (temp.error) {
           return errorMessage(res, {message: temp.error}, 400);
         }
-        (filtroIndividual.fecha ??= {}).$gte = temp;
+        fechaTimezone.$gte = temp;
+        (filtroIndividual.fecha ??= {}).$gte = dateUTC({
+          date: req.query.desde,
+          hours: "00:00:00.000",
+        });
         temp = dateUTC({
           date: req.query.hasta,
           hours: "23:59:59.999",
@@ -52,7 +65,11 @@ app.get(
         if (temp.error) {
           return errorMessage(res, {message: temp.error}, 400);
         }
-        (filtroIndividual.fecha ??= {}).$lte = temp;
+        fechaTimezone.$lte = temp;
+        (filtroIndividual.fecha ??= {}).$lte = dateUTC({
+          date: req.query.hasta,
+          hours: "23:59:59.999",
+        });
       } else {
         return errorMessage(res, {message: "Faltan las Fechas del Filtro para proceder."}, 412);
       }
@@ -83,44 +100,38 @@ app.get(
       };
       // }
 
-      let filtroStock = {...filtroIndividual};
-      delete filtroStock.fecha;
-      delete filtroStock.origen;
-      filtroStock.area = filtroIndividual.origen;
-
-      let filtroSolicitud = {...filtroIndividual};
-      delete filtroSolicitud.fecha;
-      delete filtroSolicitud.procedencia;
-      if (filtroIndividual.insumo) {
-        delete filtroSolicitud.insumo;
-        filtroSolicitud["insumos.insumo"] = filtroIndividual.insumo;
-      }
-
-      let filtroRecibido = {...filtroIndividual};
-      delete filtroRecibido.origen;
+      let filtroStock = {};
+      let filtroSolicitud = {};
+      let filtroMinimos = {};
+      let filtroRecibido = {};
+      let filtroRetirado = {};
+      // filtroIndividual -> fecha / origen / insumo / procedencia
+      // filtroStock -> area / insumo / procedencia
+      // filtroSolicitud -> origen / insumos.insumo
+      // filtroMinimos -> origen / insumos.insumo
+      // filtroRecibido -> insumos.recibido / destino / insumos.insumo / insumos.procedencia
+      // filtroRetirado -> insumos.retirado / insumos.insumo / insumos.procedencia
       if (filtroIndividual.fecha) {
-        delete filtroRecibido.fecha;
-        filtroRecibido["insumos.recibido"] = filtroIndividual.fecha;
+        filtroRecibido["insumos.recibido"] = fechaTimezone;
+        filtroRetirado["insumos.retirado"] = fechaTimezone;
+      }
+      if (filtroIndividual.origen) {
+        filtroStock.area = filtroIndividual.origen;
+        filtroSolicitud.origen = filtroIndividual.origen;
+        filtroMinimos["area"] = filtroIndividual.origen;
+        filtroRecibido.destino = filtroIndividual.origen;
       }
       if (filtroIndividual.insumo) {
-        delete filtroRecibido.insumo;
+        filtroStock.insumo = filtroIndividual.insumo;
+        filtroSolicitud["insumos.insumo"] = filtroIndividual.insumo;
+        filtroMinimos.insumo = filtroIndividual.insumo;
         filtroRecibido["insumos.insumo"] = filtroIndividual.insumo;
+        filtroRetirado["insumos.insumo"] = filtroIndividual.insumo;
       }
       if (filtroIndividual.procedencia) {
-        delete filtroRecibido.procedencia;
+        filtroStock.procedencia = filtroIndividual.procedencia;
         filtroRecibido["insumos.procedencia"] = filtroIndividual.procedencia;
-      }
-
-      let filtroRetirado = {...filtroRecibido};
-      if (filtroRecibido["insumos.recibido"]) {
-        delete filtroRetirado["insumos.recibido"];
-        filtroRetirado["insumos.retirado"] = filtroRecibido["insumos.recibido"];
-      }
-
-      let filtroIndividualRetirado = {...filtroIndividual};
-      if (filtroIndividual.fecha) {
-        delete filtroIndividualRetirado.fecha;
-        filtroIndividualRetirado.retirado = filtroIndividual.fecha;
+        filtroRetirado["insumos.procedencia"] = filtroIndividual.procedencia;
       }
 
       let stock = VacunaStock.aggregate()
@@ -235,10 +246,7 @@ app.get(
         .exec();
 
       let minimos = VacunaConfig.aggregate()
-        .match({
-          area: filtroIndividual.origen,
-          insumo: filtroIndividual.insumo || {$exists: true},
-        })
+        .match(filtroMinimos)
         .project({
           _id: {
             $concat: [
@@ -280,11 +288,9 @@ app.get(
         .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1})
         .exec();
 
+      // ingreso segun insumo.retirado (timezone)
       let ingresos = VacunaIngreso.aggregate()
-        .match({
-          ...filtroRecibido,
-          destino: filtroIndividual.origen,
-        })
+        .match(filtroRecibido)
         .project({
           _id: 0,
           destino: 1,
@@ -346,10 +352,12 @@ app.get(
         .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1})
         .exec();
 
+      // transferenciaIn segun insumo.retirado (timezone) y haya sido recibido
       let transferenciaIn = VacunaTransferencia.aggregate()
         .match({
-          ...filtroRecibido,
+          ...filtroRetirado,
           destino: filtroIndividual.origen,
+          "insumos.recibido": {$exists: true},
         })
         .project({
           _id: 0,
@@ -358,9 +366,14 @@ app.get(
           "insumos.procedencia": 1,
           "insumos.cantidad": 1,
           "insumos.recibido": 1,
+          "insumos.retirado": 1,
         })
         .unwind({path: "$insumos"})
-        .match(filtroRecibido)
+        .match({
+          ...filtroRetirado,
+          destino: filtroIndividual.origen,
+          "insumos.recibido": {$exists: true},
+        })
         .project({
           area: "$destino",
           insumo: "$insumos.insumo",
@@ -412,6 +425,7 @@ app.get(
         .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1})
         .exec();
 
+      // transferenciaOut segun insumo.retirado (timezone)
       let transferenciaOut = VacunaTransferencia.aggregate()
         .match({
           ...filtroRetirado,
@@ -426,7 +440,10 @@ app.get(
           "insumos.retirado": 1,
         })
         .unwind({path: "$insumos"})
-        .match(filtroRetirado)
+        .match({
+          ...filtroRetirado,
+          origen: filtroIndividual.origen,
+        })
         .project({
           area: "$origen",
           insumo: "$insumos.insumo",
@@ -478,8 +495,12 @@ app.get(
         .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1})
         .exec();
 
+      // aplicaciones/descartes segun fecha(no timezone) y existe retirado.
       let descartes = VacunaDescarte.aggregate()
-        .match(filtroIndividualRetirado)
+        .match({
+          ...filtroIndividual,
+          retirado: {$exists: true},
+        })
         .project({
           _id: 0,
           origen: 1,
@@ -538,9 +559,12 @@ app.get(
         .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1})
         .exec();
 
+      // aplicaciones/descartes segun fecha(no timezone) y existe retirado.
       let vacunaciones = VacunaAplicacion.aggregate()
-        // buscar por fecha de retirado porque es reporte de stock
-        .match(filtroIndividualRetirado)
+        .match({
+          ...filtroIndividual,
+          retirado: {$exists: true},
+        })
         .project({
           _id: 0,
           origen: 1,

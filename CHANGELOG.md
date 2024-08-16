@@ -11,6 +11,17 @@
 
 ##### Unreleased
 
+##### [1.7.20240816] - 2024-08-16
+
+- Added a Sistema - getEdadUnidades => {edad_valor, edad_unidad} -> 'Año', 'Mes', 'Semana', 'Dia', 'Hora'.
+- Added a Sistema - valorInRangoArray => {valor, rangoArray} -> revisa si valor esta en el rango generado por los elementos del array y retorna [min, max].
+- Added a Sistema - valorInMatriz => {valor, matriz} -> revisa si valor esta en el rango de los elementos de la matriz (array de arrays, [[min,max],..]) y retorna [min, max].
+
+- Changed a HICLEM - Historial Gral => Se cambio fecha de Embarazada con Semana de Emabarazo.
+
+- Fix a Vacunatorio - Upload => PS id de Areas -> +Vacunatorio Movil +Salud Comunitaria +Salud Mental.
+- Fix a Vacunatorio - Reporte => Aplicacion filtro -> fecha no TimeZone.
+
 ##### [1.7.20240719] - 2024-07-19
 
 - Improve a Sistema - Fechas => updateFechas -> actualiza las fechas al navegar por el aplicativo, corrige errores que ocasionan al dejar la pagina abierta por dias.

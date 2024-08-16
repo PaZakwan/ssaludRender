@@ -33,12 +33,20 @@ app.get(
   ],
   async (req, res) => {
     try {
-      // para seleccionar los modelos || entregas; descartes; transferencias;
+      // ###########
+      // filtrar por fecha...
+      // aplicaciones/descartes segun fecha(no timezone) y existe retirado.
+      // transferenciaIn segun insumo.retirado (timezone) y haya sido recibido.
+      // transferenciaOut segun insumo.retirado (timezone).
+      // ###########
+      // VER EL TEMA DEL $elemMatch Y UNIFICAR FILTROS CON ESTADISTICA GENERAL...
+      // ###########
+      // para seleccionar los modelos || aplicaciones; descartes; transferencias;
       let modelos = JSON.parse(req.query.mod);
 
       // para transferencias
       let filtro = {};
-      // para entregas/descartes
+      // para aplicaciones/descartes
       let filtroIndividual = {};
       if (req.query.areas && req.query.areas !== "[]") {
         filtro.origen = {
@@ -82,14 +90,12 @@ app.get(
         });
         filtroIndividual.insumo = filtro.insumos.$elemMatch.insumo;
       }
-      // sacar la procedencia "Paciente" "Historial"  - solo dejar "Region" "Carga inicial"
       if (req.query.procedencias && req.query.procedencias !== "[]") {
         filtro.insumos = {
           $elemMatch: {
             ...(filtro.insumos?.$elemMatch || {}),
             procedencia: {
               $in: JSON.parse(req.query.procedencias),
-              // $in: ["Carga inicial", "Region"],
             },
           },
         };
@@ -105,7 +111,7 @@ app.get(
         if (temp.error) {
           return errorMessage(res, {message: temp.error}, 400);
         }
-        (filtro.fecha ??= {}).$gte = temp;
+        (filtro["insumos.retirado"] ??= {}).$gte = temp;
         (filtroIndividual.fecha ??= {}).$gte = dateUTC({
           date: req.query.desde,
           hours: "00:00:00.000",
@@ -120,7 +126,7 @@ app.get(
         if (temp.error) {
           return errorMessage(res, {message: temp.error}, 400);
         }
-        (filtro.fecha ??= {}).$lte = temp;
+        (filtro["insumos.retirado"] ??= {}).$lte = temp;
         (filtroIndividual.fecha ??= {}).$lte = dateUTC({
           date: req.query.hasta,
           hours: "23:59:59.999",
@@ -147,12 +153,10 @@ app.get(
           },
         };
         if (modelos.vac.nd) {
-          // sacar la procedencia "Paciente" "Historial"  - solo dejar "Region" "Carga inicial"
-          // $in: ["Carga inicial", "Region"],
           detallado = null;
-          filtroIndividual.procedencia = {
-            // $in: JSON.parse(req.query.procedencias),
-            $in: ["Carga inicial", "Region"],
+          // no tiene en cuenta las aplicaciones que no salieron de stock.. (como las de procedencia "Paciente" e "Historial")
+          filtroIndividual.retirado = {
+            $exists: true,
           };
         }
 
@@ -391,7 +395,7 @@ app.get(
           .unwind({path: "$insumos"})
           // encontrar retirados
           .match({
-            "insumos.retirado": {$ne: null},
+            "insumos.retirado": filtro["insumos.retirado"],
             "insumos.insumo": filtro.insumos?.$elemMatch.insumo || {$exists: true},
             "insumos.procedencia": filtro.insumos?.$elemMatch.procedencia || {$exists: true},
           })

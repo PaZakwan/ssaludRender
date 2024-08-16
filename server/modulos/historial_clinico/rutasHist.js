@@ -29,12 +29,11 @@ let listaHistorial = [
   "inmunodeprimida",
   "fuma",
   "riesgo",
-  "embarazada",
+  "embarazada_semana",
   "puerpera",
   "personal_salud",
   "personal_esencial",
   "observacion",
-  // "embarazada_semana" //virtual
   // "motivos", //[motivosSchema]
 ];
 

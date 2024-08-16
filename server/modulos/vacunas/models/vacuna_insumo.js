@@ -50,14 +50,18 @@ let VacunaInsumoSchema = new Schema(
     grupo_etario: {
       type: [
         {
-          // para group etario estadistica
-          // unidad -> ""
-          // boundaries -> [number]
+          // para estadistica
           unidad: {
             type: String,
             required: [true, "La Unidad de Edad del Grupo Etario es necesaria."],
           },
-          boundaries: [Number],
+          value: {
+            type: [Number],
+            validate: [
+              (arr) => arr.length === 2,
+              "{PATH} El rango debe poseer dos valores [min,max).",
+            ],
+          },
         },
       ],
       _id: false,
