@@ -11,6 +11,17 @@
 
 ##### Unreleased
 
+##### [1.7.20240906] - 2024-09-06
+
+- Changed a Lab Bromatologico - FisicoQuimico => Campos Obligatorios a Opcionales -> Arsenico, Dureza, Alcalinidad, Sulfatos, Cloruros, Nitratos.
+- Changed a Lab Bromatologico - PDF - FisicoQuimico => Sulfato cuando valor es menor 200 aparece como texto -> "<200".
+- Changed a Lab Bromatologico - PDF - FisicoQuimico => Arsenico cuando valor es menor 0.01 aparece como texto -> "<0.01".
+
+- Fix a Vacunatorio - Reporte => Aplicacion filtro -> Cuenta vacunaciones aplicadas por el sistema y el PS, pero no las de procedencia historial, no tiene en cuenta el filtro de Procedencia ahora...
+- Fix a Vacunatorio - Reporte => Nominal -> la opcion "Menores de 15" -> ahora no cuenta los sin edad.
+
+- Added a Vacunatorio - Reporte => Aplicaciones Resumen (Hoja2).
+
 ##### [1.7.20240816] - 2024-08-16
 
 - Added a Sistema - getEdadUnidades => {edad_valor, edad_unidad} -> 'Año', 'Mes', 'Semana', 'Dia', 'Hora'.
@@ -33,7 +44,7 @@
 
 ##### [1.7.20240705] - 2024-07-05
 
-- Changed a Laboratorio Bromatologico - PDFs => Se cambiaron, actualizaron, los nombres del area en los encabezados y pie de pagina.
+- Changed a Lab Bromatologico - PDFs => Se cambiaron, actualizaron, los nombres del area en los encabezados y pie de pagina.
 
 - Improve a Vacunatorio - Uploads => Ultimos reajustes.
 

@@ -212,7 +212,25 @@ app.get(
 
       // REPORTE
       reporte = VacunaAplicacion.aggregate()
-        .match(filtro)
+        .match({
+          $and: [
+            filtro,
+            // procedencia -> "Carga inicial" , "Region" , "Paciente" , "Historial" con ps_id ;
+            {
+              $or: [
+                {
+                  procedencia: {
+                    $in: ["Carga inicial", "Region", "Paciente"],
+                  },
+                },
+                {
+                  procedencia: "Historial",
+                  ps_id: {$exists: true},
+                },
+              ],
+            },
+          ],
+        })
         // fec_apl + Datos del Paciente (apynm,doc(tip,num),domicilio,telefono,municipio, fec.nac,edad(v,u),sexo)
         //             vacuna/vucunaName-dosis(valor - estrategia), total dosis por paciente.
         .project({
@@ -383,7 +401,25 @@ app.get(
       // Vacunas Header
       if (modelos?.pre) {
         vacunasHeader = VacunaAplicacion.aggregate()
-          .match(filtro)
+          .match({
+            $and: [
+              filtro,
+              // procedencia -> "Carga inicial" , "Region" , "Paciente" , "Historial" con ps_id ;
+              {
+                $or: [
+                  {
+                    procedencia: {
+                      $in: ["Carga inicial", "Region", "Paciente"],
+                    },
+                  },
+                  {
+                    procedencia: "Historial",
+                    ps_id: {$exists: true},
+                  },
+                ],
+              },
+            ],
+          })
           .project({
             _id: 0,
             insumo: 1,
@@ -474,6 +510,7 @@ app.get(
                 // Menores de 15
                 if (
                   opcionalesTotales.menores_15 &&
+                  reporte[index].edad_unidad &&
                   !(reporte[index].edad_unidad === "Año" && reporte[index].edad_valor > 15)
                 ) {
                   totales.Menores_de_15 += 1;

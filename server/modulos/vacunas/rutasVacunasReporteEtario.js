@@ -296,7 +296,25 @@ app.get(
 
       // Vacunas Header
       vacunasHeader = VacunaAplicacion.aggregate()
-        .match(filtro)
+        .match({
+          $and: [
+            filtro,
+            // procedencia -> "Carga inicial" , "Region" , "Paciente" , "Historial" con ps_id ;
+            {
+              $or: [
+                {
+                  procedencia: {
+                    $in: ["Carga inicial", "Region", "Paciente"],
+                  },
+                },
+                {
+                  procedencia: "Historial",
+                  ps_id: {$exists: true},
+                },
+              ],
+            },
+          ],
+        })
         .project({
           _id: 0,
           dosis: 1,
@@ -315,7 +333,25 @@ app.get(
       // Agrupar por vacunatorio - dosis -> + edad_unidad + edad_valor
       if (modelos?.raw) {
         reporte = VacunaAplicacion.aggregate()
-          .match(filtro)
+          .match({
+            $and: [
+              filtro,
+              // procedencia -> "Carga inicial" , "Region" , "Paciente" , "Historial" con ps_id ;
+              {
+                $or: [
+                  {
+                    procedencia: {
+                      $in: ["Carga inicial", "Region", "Paciente"],
+                    },
+                  },
+                  {
+                    procedencia: "Historial",
+                    ps_id: {$exists: true},
+                  },
+                ],
+              },
+            ],
+          })
           .group({
             _id: {area: "$origen", dosis: "$dosis"},
             total_area_dosis: {$sum: 1},
