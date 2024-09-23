@@ -1,7 +1,5 @@
 {
-  "URL": "https://192.168.104.83:443/api",
-  "Casa": "https://192.168.0.151:443/api",
-  "Salud": "https://192.168.104.83:443/api",
-  "Servidor": "https://192.168.185.9:443/api",
-  "Nube": "https://ssalud.herokuapp.com/api"
+  "URL": "https://ssaludmoreno.onrender.com/api",
+  "RENDER": "https://ssaludmoreno.onrender.com/api",
+  "Heroku": "https://ssalud.herokuapp.com/api"
 }
