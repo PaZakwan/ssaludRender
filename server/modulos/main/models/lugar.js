@@ -70,6 +70,6 @@ lugarSchema.pre("findOneAndUpdate", function (next) {
   next();
 });
 
-lugarSchema.plugin(uniqueValidator, {message: "{PATH} valor repetido, debe de ser único."});
+lugarSchema.plugin(uniqueValidator, {message: "Ya existe. Valor repetido: '{VALUE}'."});
 
 module.exports = mongoose.model("Lugar", lugarSchema, "Lugares");

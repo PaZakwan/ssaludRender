@@ -229,7 +229,13 @@ app.get(
 
       let stockDB = FarmaciaStock.aggregate()
         .match(filtro)
-        .sort({vencimiento: 1, _id: -1})
+        .addFields({
+          existVencimiento: {$gt: ["$vencimiento", null]},
+        })
+        .sort({existVencimiento: -1, vencimiento: 1, _id: -1})
+        .project({
+          existVencimiento: 0,
+        })
         .addFields({
           expirado: {
             $cond: [
@@ -303,7 +309,7 @@ app.get(
           foreignField: "_id",
           as: "areaDB",
         })
-        .unwind({path: "$areaDB"})
+        .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
         .addFields({
           areaDB: "$areaDB.area",
         })
@@ -313,7 +319,7 @@ app.get(
           foreignField: "_id",
           as: "insumoDB",
         })
-        .unwind({path: "$insumoDB"})
+        .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
         .addFields({
           categoriaDB: "$insumoDB.categoria",
           insumoDB: "$insumoDB.nombre",
@@ -419,7 +425,6 @@ app.get(
 
       let stockDB = await FarmaciaStock.aggregate()
         .match(filtro)
-        .sort({insumo: -1, vencimiento: 1, _id: -1})
         .addFields({
           expirado: {
             $cond: [
@@ -461,7 +466,7 @@ app.get(
           foreignField: "_id",
           as: "areaDB",
         })
-        .unwind({path: "$areaDB"})
+        .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
         .addFields({
           areaDB: "$areaDB.area",
         })
@@ -471,8 +476,22 @@ app.get(
           foreignField: "_id",
           as: "insumoDB",
         })
-        .unwind({path: "$insumoDB"})
-        .addFields(insumoSelect);
+        .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
+        .addFields(insumoSelect)
+        .addFields({
+          existVencimiento: {$gt: ["$vencimiento", null]},
+        })
+        .sort({
+          areaDB: 1,
+          insumoCategoriaDB: 1,
+          insumoDB: 1,
+          existVencimiento: -1,
+          vencimiento: 1,
+          _id: -1,
+        })
+        .project({
+          existVencimiento: 0,
+        });
 
       if (req.query.categoria !== "null" && stockDB.length > 0) {
         let categoria = JSON.parse(req.query.categoria);
@@ -674,7 +693,7 @@ app.get(
         .project({
           _id: 0,
         })
-        .unwind({path: "$insumoDB"})
+        .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
         .addFields({categoriaDB: "$insumoDB.categoria", insumoDB: "$insumoDB.nombre"})
         .sort({categoriaDB: 1, insumoDB: 1});
 

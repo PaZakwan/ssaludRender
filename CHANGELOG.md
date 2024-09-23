@@ -1,17 +1,41 @@
-## Changelog
-
-## Known Issues
+## Known Issues (Problemas Conocidos)
 
 - Chromium:
+
   - Descargar PDFs - (Error: Error de red) Usando el boton proporcionado por el navegador cuando previsualiza el PDF.
-    Solucion Temporaria: https://youtu.be/kRvcB-4OXak o navegadores con otro motor como Firefox/Safari.
-    Info Tech: https://support.google.com/chrome/thread/47987652/failed-network-error-when-click-download-a-pdf-file-in-blob-url?hl=en
+    **Solucion Temporaria:** [Video en Youtube](https://www.youtube.com/watch?v=kRvcB-4OXak&list=PLqJxYXwAoKrQQB5dS2-LnIEUYpeswAmIq&index=8) o navegadores con otro motor como Firefox/Safari.
+    Informacion Tecnica: https://support.google.com/chrome/thread/47987652/failed-network-error-when-click-download-a-pdf-file-in-blob-url?hl=en
     https://bugs.chromium.org/p/chromium/issues/detail?id=892133
     https://bugs.chromium.org/p/chromium/issues/detail?id=1224027
 
-##### Unreleased
+- Excels descargados:
 
-##### [1.7.20240906] - 2024-09-06
+  - El Formato y la extension del archivo no coinciden (.xls), abrir de todos modos.
+    **Solucion Temporaria:** [Video en Youtube](https://www.youtube.com/watch?v=fz8Foga0InM&list=PLqJxYXwAoKrQQB5dS2-LnIEUYpeswAmIq&index=9).
+
+# Changelog (Historial de Cambios)
+
+#### Unreleased - W.I.P. (Work in Progress)
+
+- Continuara... ToDo File ^.^
+
+### [1.7.20240923] - 2024-09-23
+
+- Improve a Sistema - Botones => v-card-actions se mejoro el responsive con v-layout row wrap.
+- Improve a Sistema - Alerts/Dialogs => Carteles de error mejoran la deteccion del mismo error repetido y se cambiaron los "alert" por dialogs de Vue.
+- Improve a Sistema - Objetos => Los clonados con stringify() / Obect.assign() / {... , ...} se cambio a structuredClone({... , ...}).
+- Improve a Sistema - Unique Values => Se mejoraron los mensajes de error para cuando los valores deben ser unicos y se estan repitiendo.
+
+- Added a Sistema - Pie de Pagina => Abre el Changelog del Sistema al clickear sobre la version en el pie de pagina.
+- Added a Sistema - Pacientes => Upload acepta el campo "direccion" y lo agrega a "dir_descripcion".
+
+- Improve a Farmacia/Vacunatorio - Stock/Entrega/Aplicacion => Ahora los Insumos que no tienen vencimiento aparecen ultimos cuando se los lista.
+- Improve a Farmacia/Vacunatorio - Rutas Backend => Improve count of deleted documents with preserveNullAndEmptyArrays.
+
+- Added a Farmacia - Entrega => Buscar -> tabla con telefono de paciente +filtro por categoria +reporte no detallado.
+- Added a Farmacia - Entrega => Exportar Detallado o Totales en formato PDF o Exel.
+
+### [1.7.20240906] - 2024-09-06
 
 - Changed a Lab Bromatologico - FisicoQuimico => Campos Obligatorios a Opcionales -> Arsenico, Dureza, Alcalinidad, Sulfatos, Cloruros, Nitratos.
 - Changed a Lab Bromatologico - PDF - FisicoQuimico => Sulfato cuando valor es menor 200 aparece como texto -> "<200".
@@ -22,7 +46,7 @@
 
 - Added a Vacunatorio - Reporte => Aplicaciones Resumen (Hoja2).
 
-##### [1.7.20240816] - 2024-08-16
+### [1.7.20240816] - 2024-08-16
 
 - Added a Sistema - getEdadUnidades => {edad_valor, edad_unidad} -> 'Año', 'Mes', 'Semana', 'Dia', 'Hora'.
 - Added a Sistema - valorInRangoArray => {valor, rangoArray} -> revisa si valor esta en el rango generado por los elementos del array y retorna [min, max].
@@ -33,7 +57,7 @@
 - Fix a Vacunatorio - Upload => PS id de Areas -> +Vacunatorio Movil +Salud Comunitaria +Salud Mental.
 - Fix a Vacunatorio - Reporte => Aplicacion filtro -> fecha no TimeZone.
 
-##### [1.7.20240719] - 2024-07-19
+### [1.7.20240719] - 2024-07-19
 
 - Improve a Sistema - Fechas => updateFechas -> actualiza las fechas al navegar por el aplicativo, corrige errores que ocasionan al dejar la pagina abierta por dias.
 
@@ -42,13 +66,13 @@
 
 - Added a Vacunatorio - Reporte => Grupo Etario por Vacuna.
 
-##### [1.7.20240705] - 2024-07-05
+### [1.7.20240705] - 2024-07-05
 
 - Changed a Lab Bromatologico - PDFs => Se cambiaron, actualizaron, los nombres del area en los encabezados y pie de pagina.
 
 - Improve a Vacunatorio - Uploads => Ultimos reajustes.
 
-##### [1.7.20240624] - 2024-06-24
+### [1.7.20240624] - 2024-06-24
 
 - Added a Sistema - Usuarios => campos nuevos opcionales -> documento / legajo / mp (matricula provincial)/ mn (matricula nacional).
 
@@ -56,7 +80,7 @@
 
 - Fix a Vacunatorio - Ingreso/Transferencia => solucion al problema con el color y el boton habilitado para "retirar/recibir" cuando el usuario solo tiene permiso general de todo.
 
-##### [1.7.20240612] - 2024-06-12
+### [1.7.20240612] - 2024-06-12
 
 - Improve a Sistema - Navegacion => La barra de navegacion se podra editar de forma mas sencilla, +href +title array.
 - Improve a Sistema - Upload => Tiempo de espera configurable, ahora al subir archivos no hay tiempo de espera de 10 min.
@@ -73,7 +97,7 @@
 - Improve a Vacunatorio - Solicitudes => Autocompletado del destino Aceptada/Rechazada si solo tiene una gestion.
 - Fix a Vacunatorio - Transferencia => Ver transferencias sin recibir y que no son de nuestra gestion. Acceso denegado al querer cargar la lista de insumos del "origen".
 
-##### [1.7.20240509] - 2024-05-09
+### [1.7.20240509] - 2024-05-09
 
 - Improve a Sistema - Backend => Servidor se ejecuta mejor, secuencialmente, la BD se prepara para indexar antes de levantar el server web/api.
 
@@ -84,7 +108,7 @@
 
 - Added a Farmacia - Stock => Se agrego posibilidad de exportar en formato xls.
 
-##### [1.7.20240404] - 2024-04-04
+### [1.7.20240404] - 2024-04-04
 
 - Improve a Sistema - Scrollbar => Si el navegador soporta webkit-scrollbar se carga una version mejor de Scrollbar.
 
@@ -97,7 +121,7 @@
 
 - Added a Vacunatorio - Nuevos subsistema similar al de Farmacia (gestion de stock y aplicacion nominal).
 
-##### [1.7.20240228] - 2024-02-28
+### [1.7.20240228] - 2024-02-28
 
 - Added a Sistema - Object => Funcion global arrayFromSumarPropsInArrays() mejora global para fusionar datos para reportes.
 - Changed a Sistema - String => Funcion global capitalize() mejora el capitalizado de palabras del "medio" como articulos, conjunciones y Preposiciones.
@@ -117,7 +141,7 @@
 
 - Added a Vacunatorio - Reportes => Permite la descarga de las aplicaciones nominal en formato excel (CIPRES).
 
-##### [1.7.20240105] - 2024-01-05
+### [1.7.20240105] - 2024-01-05
 
 - Added a Sistema - File => crearContentCSV() Funcion para crear contenido de una celda de CSV sin problemas de compatibilidad.
 - Improve a Sistema - File => Crear y Leer archivos grandes que ocasionaban problemas con la memoria del sistema (memoria insuficiente) ahora lo hacen por medio de la tecnologia Stream evitando tal problema.
@@ -134,7 +158,7 @@
 - Improve a Farmacia - Vacunaciones => Permite aplicaciones de insumos traidos por paciente y previas en otras instituciones.
 - Changed a Farmacia - Descartes => No se pueden egresar Insumos de Categoria "Vacuna" con motivo de "Utilizado".
 
-##### [1.7.20231020] - 2023-10-20
+### [1.7.20231020] - 2023-10-20
 
 - Added a Sistema - Fechas => +object.dateUTC -> excelValue to UTC.
 - Added a Sistema - Pacientes => Tipos de Documento -> +Paises. Documento -> alphanumerico.
@@ -146,7 +170,7 @@
 - Added a Farmacia - Entregas => expandInsumosRecibidos -> Ahora se pueden ver todos los Insumos Recibidos por el Paciente seleccionado.
 - Fix a Farmacia - Ingreso => Insumos sin procedencia al no seleccionar Proveedor/Procedencia.
 
-##### [1.7.20230906] - 2023-09-06
+### [1.7.20230906] - 2023-09-06
 
 - Added a Sistema - Navegacion => Abre automaticamente el menu de navegacion al loguear o recargar la pagina.
 - Changed a Sistema - Navegacion => Vacunaciones y Farmacia Entregas estan afuera de un submenu.
@@ -157,7 +181,7 @@
 - Added a Farmacia - Vacunaciones => Vacunador (Usuario logueado) obligatorio.
 - Changed a Farmacia - Vacunaciones => Autocompletar Cantidad con 1 vacuna.
 
-##### [1.7.20230830] - 2023-08-30
+### [1.7.20230830] - 2023-08-30
 
 - Added a Sistema - Usuario => Permiso de +farmacia.vacunas.
 - Fix a Sistema - Usuario => Buscar No mostraba el campo de Opciones (Minimos).
@@ -190,7 +214,7 @@
 - Added a Patrimonio - Objeto/Movimiento/Info => +Lugar -> ubicacion fisica del objeto con direccion e IP.
 - fix a Patrimonio - Excel => inventario/serie -> numeros que inician con 0 o -0... generaban que se omitieran los 0.
 
-##### [1.7.20230710] - 2023-07-10
+### [1.7.20230710] - 2023-07-10
 
 - Added a Sistema - Pacientes => Nuevo campo opcional para agregar un Telefono Alternativo del Paciente.
 - Improve a Sistema - Fechas => +object.dateUTC => Mensajes de error centralizados.
@@ -224,7 +248,7 @@
 - Fix a Farmacia - Salidas => Estadistica => No estaba teniendo en cuenta la fecha de los filtros.
 - Fix a Farmacia - Transferencias => Remito => El color en la columna de Vencimientos segun sus fechas no se estaban reflejando en el PDF.
 
-##### [1.7.20230621] - 2023-06-21
+### [1.7.20230621] - 2023-06-21
 
 - Added a Sistema - Usuarios => Permiso farmacia.general.opciones para configurar los minimos de insumos en Farmacias.
 - Added a Sistema - Confirm => Se agrego dialog global para confirmacion de funciones.
@@ -240,7 +264,7 @@
 - Fix/Improve a Patrimonio - Crear Bien => Mensaje de error, cuando no fallaba y se actualizo codigo con requestAPI.
 - Fix/Improve a Patrimonio - Editar Bien => Al editarse un Insumos con cantidad 0, este perdia la cantidad y con el sus propiedades de entrega/deposito.
 
-##### [1.7.20230609] - 2023-06-09
+### [1.7.20230609] - 2023-06-09
 
 - Added a Sistema => Muestra un "Cargando..." cuando se esta cargando la app.. Notable con conexiones lentas.
 - Fix a Sistema - Dialogs => Ahora muestran bien el primer mostrarLoading, en conexiones lentas se notaba mucho mas.
@@ -252,7 +276,7 @@
 - Fix a Farmacia - Ingresos/Transferencias => Formato de Fecha, Hora, en los Dialogs.
 - Fix a Farmacia - Ingresos => Los cargados en versiones anteriores se mostraban mal las procedencias de los mismos.
 
-##### [1.7.20230531] - 2023-05-31
+### [1.7.20230531] - 2023-05-31
 
 - Removed a Farmacia - Ingresos => Carga inicial, Autorecibir.
 
@@ -267,7 +291,7 @@
 
 - Changed a Farmacia - Insumos => Insumos mal cargados pueden ser borrados sino han sido utilizados.
 
-##### [1.7.20230512] - 2023-05-12
+### [1.7.20230512] - 2023-05-12
 
 - Changed a Farmacia - Entregas => Filtro Inicial Fecha Desde: Principio de mes anterior => Semanda Pasada.
   (disminuira la cantidad de entregas cargadas en la primera carga si necesitan ver cargas pasadas todavia pueden modificar el filtro con la fecha necesaria)

@@ -89,6 +89,6 @@ SignosVitalesSchema.pre("findOneAndUpdate", async function (next) {
   next();
 });
 
-SignosVitalesSchema.plugin(uniqueValidator, {message: "{PATH} debe de ser único."});
+SignosVitalesSchema.plugin(uniqueValidator, {message: "Ya existe. Valor repetido: '{VALUE}'."});
 
 module.exports = mongoose.model("SignosVitales", SignosVitalesSchema);

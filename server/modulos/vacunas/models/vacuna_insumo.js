@@ -106,6 +106,6 @@ VacunaInsumoSchema.pre("findOneAndUpdate", function (next) {
   next();
 });
 
-VacunaInsumoSchema.plugin(uniqueValidator, {message: "{PATH} debe de ser único."});
+VacunaInsumoSchema.plugin(uniqueValidator, {message: "Ya existe. Valor repetido: '{VALUE}'."});
 
 module.exports = mongoose.model("VacunaInsumo", VacunaInsumoSchema, "VacunaInsumos");

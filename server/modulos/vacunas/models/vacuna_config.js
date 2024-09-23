@@ -39,10 +39,10 @@ VacunaConfigSchema.index(
   {area: 1, insumo: 1},
   {
     name: "Insumo en el Vacunatorio",
-    unique: "Opcion de Insumo ya existente en el Vacunatorio, debe ser unico.",
+    unique: true,
   }
 );
 
-VacunaConfigSchema.plugin(uniqueValidator, {message: "{PATH} debe de ser único."});
+VacunaConfigSchema.plugin(uniqueValidator, {message: "Ya existe. Valor repetido: '{VALUE}'."});
 
 module.exports = mongoose.model("VacunaConfig", VacunaConfigSchema, "VacunaConfigs");

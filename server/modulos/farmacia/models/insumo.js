@@ -133,6 +133,6 @@ InsumoSchema.pre("findOneAndUpdate", function (next) {
   next();
 });
 
-InsumoSchema.plugin(uniqueValidator, {message: "{PATH} debe de ser único."});
+InsumoSchema.plugin(uniqueValidator, {message: "Ya existe. Valor repetido: '{VALUE}'."});
 
 module.exports = mongoose.model("Insumo", InsumoSchema, "Insumos");

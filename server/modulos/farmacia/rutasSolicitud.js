@@ -130,7 +130,7 @@ app.get(
           ],
         })
         // descomprimir
-        .unwind({path: "$insumos"})
+        .unwind({path: "$insumos", preserveNullAndEmptyArrays: true})
         // encontrar insumo
         .match({
           "insumos.insumo": filtro.insumo || {$exists: true},
@@ -223,7 +223,7 @@ app.get(
           foreignField: "_id",
           as: "areaDB",
         })
-        .unwind({path: "$areaDB"})
+        .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
         .addFields({
           areaDB: "$areaDB.area",
         })
@@ -233,7 +233,7 @@ app.get(
           foreignField: "_id",
           as: "insumoDB",
         })
-        .unwind({path: "$insumoDB"})
+        .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
         .addFields({
           categoriaDB: "$insumoDB.categoria",
           insumoDB: "$insumoDB.nombre",
@@ -359,7 +359,7 @@ app.get(
           foreignField: "_id",
           as: "origenDB",
         })
-        .unwind({path: "$origenDB"})
+        .unwind({path: "$origenDB", preserveNullAndEmptyArrays: true})
         .addFields({
           origenDB: "$origenDB.area",
         })

@@ -287,6 +287,6 @@ usuarioSchema.pre("findOneAndUpdate", function (next) {
   next();
 });
 
-usuarioSchema.plugin(uniqueValidator, {message: "{PATH} debe de ser único."});
+usuarioSchema.plugin(uniqueValidator, {message: "Ya existe. Valor repetido: '{VALUE}'."});
 
 module.exports = mongoose.model("Usuario", usuarioSchema);

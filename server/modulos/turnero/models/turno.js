@@ -80,7 +80,7 @@ let turnoSchema = new Schema(
 
 turnoSchema.index(
   {uas: 1, fecha: 1, profesional: 1, especialidad: 1, "horario.0": 1},
-  {name: "turno_unico", unique: "Turno ya tomado, recargue la pagina."}
+  {name: "turno_unico", unique: true}
 );
 
 turnoSchema.pre("findOneAndUpdate", async function (next) {
@@ -92,6 +92,6 @@ turnoSchema.pre("findOneAndUpdate", async function (next) {
   next();
 });
 
-turnoSchema.plugin(uniqueValidator, {message: "{PATH} debe de ser único."});
+turnoSchema.plugin(uniqueValidator, {message: "Ya existe. Valor repetido: '{VALUE}'."});
 
 module.exports = mongoose.model("Turno", turnoSchema);

@@ -378,7 +378,7 @@ app.get(
             foreignField: "_id",
             as: "areaDB",
           })
-          .unwind({path: "$areaDB"})
+          .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
           .addFields({
             areaDB: "$areaDB.area",
           })

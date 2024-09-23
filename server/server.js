@@ -94,6 +94,18 @@ const loadRutasApi = () => {
     // Configuración global de rutas de la API
     app.use("/api", require("./rutas_api_index"));
 
+    // Changelog de la API
+    app.get("/api/system/changelog", async (req, res) => {
+      let changelog = await fs.promises.readFile(
+        path.resolve(__dirname, "../CHANGELOG.md"),
+        "utf8"
+      );
+      return res.status(200).json({
+        ok: true,
+        changelog,
+      });
+    });
+
     // Si no encuentra la ruta responde con lo siguiente 404
     app.use((req, res, next) => {
       return res.status(404).send({

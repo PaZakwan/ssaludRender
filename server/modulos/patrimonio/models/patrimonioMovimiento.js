@@ -98,7 +98,7 @@ patrimonioMovimientoSchema.pre("findOneAndUpdate", function (next) {
 });
 
 patrimonioMovimientoSchema.plugin(uniqueValidator, {
-  message: "{PATH} valor repetido, debe de ser único.",
+  message: "Ya existe. Valor repetido: '{VALUE}'.",
 });
 
 module.exports = mongoose.model("PatrimonioMovimiento", patrimonioMovimientoSchema);

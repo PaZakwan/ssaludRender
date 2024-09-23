@@ -178,7 +178,7 @@ pacienteSchema.index(
   {documento: 1, tipo_doc: 1},
   {
     name: "documento_unico",
-    unique: "Documento ya existente en el sistema, debe ser unico ({PATH}={VALUE}).",
+    unique: true,
     sparse: true,
   }
 );
@@ -303,7 +303,7 @@ pacienteSchema.pre("findOneAndUpdate", async function (next) {
   next();
 });
 
-pacienteSchema.plugin(uniqueValidator, {message: "{PATH} debe de ser único."});
+pacienteSchema.plugin(uniqueValidator, {message: "Ya existe. Valor repetido: '{VALUE}'."});
 
 // para usarlo en el Schema.pre("save")
 const Paciente = mongoose.model("Paciente", pacienteSchema);

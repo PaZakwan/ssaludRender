@@ -140,6 +140,6 @@ let TuberculosisSchema = new Schema(
   schemaOptions
 );
 
-TuberculosisSchema.plugin(uniqueValidator, {message: "{PATH} debe de ser único."});
+TuberculosisSchema.plugin(uniqueValidator, {message: "Ya existe. Valor repetido: '{VALUE}'."});
 
 module.exports = TuberculosisSchema;

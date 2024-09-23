@@ -229,7 +229,7 @@ app.get(
             foreignField: "_id",
             as: "areaDB",
           })
-          .unwind({path: "$areaDB"})
+          .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
           .addFields({
             areaDB: "$areaDB.area",
           })
@@ -336,7 +336,7 @@ app.get(
             foreignField: "_id",
             as: "areaDB",
           })
-          .unwind({path: "$areaDB"})
+          .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
           .addFields({
             areaDB: "$areaDB.area",
           })
@@ -346,7 +346,7 @@ app.get(
             foreignField: "_id",
             as: "insumoDB",
           })
-          .unwind({path: "$insumoDB"})
+          .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
           .addFields({
             categoriaDB: "$insumoDB.categoria",
             insumoDB: "$insumoDB.nombre",
@@ -387,12 +387,12 @@ app.get(
             foreignField: "_id",
             as: "destinoDB",
           })
-          .unwind({path: "$destinoDB"})
+          .unwind({path: "$destinoDB", preserveNullAndEmptyArrays: true})
           .addFields({
             destinoDB: "$destinoDB.area",
           })
           // descomprimir
-          .unwind({path: "$insumos"})
+          .unwind({path: "$insumos", preserveNullAndEmptyArrays: true})
           // encontrar retirados
           .match({
             "insumos.retirado": filtro["insumos.retirado"],
@@ -420,7 +420,7 @@ app.get(
             foreignField: "_id",
             as: "areaDB",
           })
-          .unwind({path: "$areaDB"})
+          .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
           .addFields({
             areaDB: "$areaDB.area",
           })
@@ -430,7 +430,7 @@ app.get(
             foreignField: "_id",
             as: "insumoDB",
           })
-          .unwind({path: "$insumoDB"})
+          .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
           .addFields({
             categoriaDB: "$insumoDB.categoria",
             insumoDB: "$insumoDB.nombre",

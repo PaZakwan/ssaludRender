@@ -222,9 +222,15 @@ app.get(
       let hoy = new Date();
       let porExpirar = new Date(new Date().setDate(hoy.getDate() + 90));
 
-      let stockDB = await VacunaStock.aggregate()
+      let stockDB = VacunaStock.aggregate()
         .match(filtro)
-        .sort({vencimiento: 1, _id: -1})
+        .addFields({
+          existVencimiento: {$gt: ["$vencimiento", null]},
+        })
+        .sort({existVencimiento: -1, vencimiento: 1, _id: -1})
+        .project({
+          existVencimiento: 0,
+        })
         .addFields({
           expirado: {
             $cond: [
@@ -298,7 +304,7 @@ app.get(
           foreignField: "_id",
           as: "areaDB",
         })
-        .unwind({path: "$areaDB"})
+        .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
         .addFields({
           areaDB: "$areaDB.area",
         })
@@ -308,7 +314,7 @@ app.get(
           foreignField: "_id",
           as: "insumoDB",
         })
-        .unwind({path: "$insumoDB"})
+        .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
         .addFields({
           categoriaDB: "$insumoDB.categoria",
           insumoDB: "$insumoDB.nombre",
@@ -317,6 +323,35 @@ app.get(
           _id: {$concat: ["$areaDB", "-", "$insumoDB"]},
         })
         .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1});
+
+      // Excel detallado
+      if (req.query.ex && !req.query.nd) {
+        stockDB
+          .unwind({path: "$detalle", preserveNullAndEmptyArrays: true})
+          .addFields({
+            procedencia: {$ifNull: ["$detalle.procedencia", "$noRetornaNada"]},
+            lote: {$ifNull: ["$detalle.lote", "$noRetornaNada"]},
+            vencimiento: {$ifNull: ["$detalle.vencimiento", "$noRetornaNada"]},
+            cantidad: {$ifNull: ["$detalle.cantidad", 0]},
+            porExpirar: {$ifNull: ["$detalle.porExpirar", "$noRetornaNada"]},
+            expirado: {$ifNull: ["$detalle.expirado", "$noRetornaNada"]},
+          })
+          .addFields({
+            cant_min: {$cond: [{$eq: ["$cantidad", 0]}, "$cant_min", "$noRetornaNada"]},
+          })
+          // borrar props
+          .project({
+            detalle: 0,
+            total: 0,
+            total_expirado: 0,
+            total_porExpirar: 0,
+            total_buenos: 0,
+            area: 0,
+            insumo: 0,
+          });
+      }
+
+      stockDB = await stockDB.exec();
 
       return res.status(200).json({
         ok: true,
@@ -384,7 +419,6 @@ app.get(
 
       let stockDB = await VacunaStock.aggregate()
         .match(filtro)
-        .sort({insumo: -1, vencimiento: 1, _id: -1})
         .addFields({
           expirado: {
             $cond: [
@@ -426,7 +460,7 @@ app.get(
           foreignField: "_id",
           as: "areaDB",
         })
-        .unwind({path: "$areaDB"})
+        .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
         .addFields({
           areaDB: "$areaDB.area",
         })
@@ -436,8 +470,22 @@ app.get(
           foreignField: "_id",
           as: "insumoDB",
         })
-        .unwind({path: "$insumoDB"})
-        .addFields(insumoSelect);
+        .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
+        .addFields(insumoSelect)
+        .addFields({
+          existVencimiento: {$gt: ["$vencimiento", null]},
+        })
+        .sort({
+          areaDB: 1,
+          insumoCategoriaDB: 1,
+          insumoDB: 1,
+          existVencimiento: -1,
+          vencimiento: 1,
+          _id: -1,
+        })
+        .project({
+          existVencimiento: 0,
+        });
 
       if (req.query.categoria !== "null" && stockDB.length > 0) {
         let categoria = JSON.parse(req.query.categoria);
@@ -615,7 +663,7 @@ app.get(
         .project({
           _id: 0,
         })
-        .unwind({path: "$insumoDB"})
+        .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
         .addFields({categoriaDB: "$insumoDB.categoria", insumoDB: "$insumoDB.nombre"})
         .sort({categoriaDB: 1, insumoDB: 1});
 

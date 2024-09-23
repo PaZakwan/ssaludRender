@@ -244,7 +244,7 @@ patrimonioSchema.pre("findOneAndUpdate", async function (next) {
   next();
 });
 
-patrimonioSchema.plugin(uniqueValidator, {message: "{PATH} valor repetido, debe de ser único."});
+patrimonioSchema.plugin(uniqueValidator, {message: "Ya existe. Valor repetido: '{VALUE}'."});
 
 // para usarlo en el Schema.pre("save")
 const Patrimonio = mongoose.model("Patrimonio", patrimonioSchema);

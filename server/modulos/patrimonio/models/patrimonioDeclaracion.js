@@ -105,7 +105,7 @@ patrimonioDeclaracionSchema.pre("findOneAndUpdate", function (next) {
 });
 
 patrimonioDeclaracionSchema.plugin(uniqueValidator, {
-  message: "{PATH} valor repetido, debe de ser único.",
+  message: "Ya existe. Valor repetido: '{VALUE}'.",
 });
 
 module.exports = mongoose.model("PatrimonioDeclaracion", patrimonioDeclaracionSchema);

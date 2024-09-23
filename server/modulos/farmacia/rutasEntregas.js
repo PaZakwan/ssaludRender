@@ -111,7 +111,7 @@ app.get(
           foreignField: "_id",
           as: "origenDB",
         })
-        .unwind({path: "$origenDB"})
+        .unwind({path: "$origenDB", preserveNullAndEmptyArrays: true})
         .addFields({
           origenDB: "$origenDB.area",
         })
@@ -121,14 +121,31 @@ app.get(
           foreignField: "_id",
           as: "pacienteDB",
         })
-        .unwind({path: "$pacienteDB"})
+        .unwind({path: "$pacienteDB", preserveNullAndEmptyArrays: true})
         .addFields({
-          pacienteOSocDB: "$pacienteDB.oSocial",
-          pacienteDocDB: {
-            $concat: ["$pacienteDB.tipo_doc", " ", "$pacienteDB.documento"],
-          },
           pacienteDB: {
-            $concat: ["$pacienteDB.apellido", ", ", "$pacienteDB.nombre"],
+            $ifNull: [
+              {$concat: ["$pacienteDB.apellido", ", ", "$pacienteDB.nombre"]},
+              "$pacienteDB.ps_id",
+            ],
+          },
+          pacienteDocDB: {
+            $ifNull: [
+              {
+                $concat: ["$pacienteDB.tipo_doc", " ", "$pacienteDB.documento"],
+              },
+              {
+                $ifNull: [
+                  {
+                    $concat: ["Resp ", "$pacienteDB.doc_responsable"],
+                  },
+                  "$vacio",
+                ],
+              },
+            ],
+          },
+          pacienteTelefonoDB: {
+            $ifNull: ["$pacienteDB.telefono", "$pacienteDB.telefono_alt"],
           },
         })
         .lookup({
@@ -137,7 +154,7 @@ app.get(
           foreignField: "_id",
           as: "insumoDB",
         })
-        .unwind({path: "$insumoDB"})
+        .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
         .addFields({
           categoriaDB: "$insumoDB.categoria",
           insumoDB: "$insumoDB.nombre",

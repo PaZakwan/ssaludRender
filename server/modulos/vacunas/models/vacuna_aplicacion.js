@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const uniqueValidator = require("mongoose-unique-validator");
 
 let schemaOptions = {
   toObject: {
@@ -212,6 +213,8 @@ let VacunaAplicacionSchema = new Schema(
   },
   schemaOptions
 );
+
+VacunaAplicacionSchema.plugin(uniqueValidator, {message: "Ya existe. Valor repetido: '{VALUE}'."});
 
 module.exports = mongoose.connections[1].model(
   "VacunaAplicacion",

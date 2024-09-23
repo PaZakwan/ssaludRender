@@ -169,7 +169,7 @@ app.get(
           foreignField: "_id",
           as: "areaDB",
         })
-        .unwind({path: "$areaDB"})
+        .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
         .addFields({
           areaDB: "$areaDB.area",
         })
@@ -179,7 +179,7 @@ app.get(
           foreignField: "_id",
           as: "insumoDB",
         })
-        .unwind({path: "$insumoDB"})
+        .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
         .addFields({
           categoriaDB: "$insumoDB.categoria",
           insumoDB: "$insumoDB.nombre",
@@ -193,7 +193,7 @@ app.get(
           estado: "Pendiente",
         })
         .project({_id: 0, origen: 1, insumos: 1})
-        .unwind({path: "$insumos"})
+        .unwind({path: "$insumos", preserveNullAndEmptyArrays: true})
         .match(filtroSolicitud)
         .project({
           area: "$origen",
@@ -227,7 +227,7 @@ app.get(
           foreignField: "_id",
           as: "areaDB",
         })
-        .unwind({path: "$areaDB"})
+        .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
         .addFields({
           areaDB: "$areaDB.area",
         })
@@ -237,7 +237,7 @@ app.get(
           foreignField: "_id",
           as: "insumoDB",
         })
-        .unwind({path: "$insumoDB"})
+        .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
         .addFields({
           categoriaDB: "$insumoDB.categoria",
           insumoDB: "$insumoDB.nombre",
@@ -270,7 +270,7 @@ app.get(
           foreignField: "_id",
           as: "areaDB",
         })
-        .unwind({path: "$areaDB"})
+        .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
         .addFields({
           areaDB: "$areaDB.area",
         })
@@ -280,7 +280,7 @@ app.get(
           foreignField: "_id",
           as: "insumoDB",
         })
-        .unwind({path: "$insumoDB"})
+        .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
         .addFields({
           categoriaDB: "$insumoDB.categoria",
           insumoDB: "$insumoDB.nombre",
@@ -299,7 +299,7 @@ app.get(
           "insumos.cantidad": 1,
           "insumos.recibido": 1,
         })
-        .unwind({path: "$insumos"})
+        .unwind({path: "$insumos", preserveNullAndEmptyArrays: true})
         .match(filtroRecibido)
         .project({
           area: "$destino",
@@ -334,7 +334,7 @@ app.get(
           foreignField: "_id",
           as: "areaDB",
         })
-        .unwind({path: "$areaDB"})
+        .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
         .addFields({
           areaDB: "$areaDB.area",
         })
@@ -344,7 +344,7 @@ app.get(
           foreignField: "_id",
           as: "insumoDB",
         })
-        .unwind({path: "$insumoDB"})
+        .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
         .addFields({
           categoriaDB: "$insumoDB.categoria",
           insumoDB: "$insumoDB.nombre",
@@ -368,7 +368,7 @@ app.get(
           "insumos.recibido": 1,
           "insumos.retirado": 1,
         })
-        .unwind({path: "$insumos"})
+        .unwind({path: "$insumos", preserveNullAndEmptyArrays: true})
         .match({
           ...filtroRetirado,
           destino: filtroIndividual.origen,
@@ -407,7 +407,7 @@ app.get(
           foreignField: "_id",
           as: "areaDB",
         })
-        .unwind({path: "$areaDB"})
+        .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
         .addFields({
           areaDB: "$areaDB.area",
         })
@@ -417,7 +417,7 @@ app.get(
           foreignField: "_id",
           as: "insumoDB",
         })
-        .unwind({path: "$insumoDB"})
+        .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
         .addFields({
           categoriaDB: "$insumoDB.categoria",
           insumoDB: "$insumoDB.nombre",
@@ -439,7 +439,7 @@ app.get(
           "insumos.cantidad": 1,
           "insumos.retirado": 1,
         })
-        .unwind({path: "$insumos"})
+        .unwind({path: "$insumos", preserveNullAndEmptyArrays: true})
         .match({
           ...filtroRetirado,
           origen: filtroIndividual.origen,
@@ -477,7 +477,7 @@ app.get(
           foreignField: "_id",
           as: "areaDB",
         })
-        .unwind({path: "$areaDB"})
+        .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
         .addFields({
           areaDB: "$areaDB.area",
         })
@@ -487,7 +487,7 @@ app.get(
           foreignField: "_id",
           as: "insumoDB",
         })
-        .unwind({path: "$insumoDB"})
+        .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
         .addFields({
           categoriaDB: "$insumoDB.categoria",
           insumoDB: "$insumoDB.nombre",
@@ -541,7 +541,7 @@ app.get(
           foreignField: "_id",
           as: "areaDB",
         })
-        .unwind({path: "$areaDB"})
+        .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
         .addFields({
           areaDB: "$areaDB.area",
         })
@@ -551,7 +551,7 @@ app.get(
           foreignField: "_id",
           as: "insumoDB",
         })
-        .unwind({path: "$insumoDB"})
+        .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
         .addFields({
           categoriaDB: "$insumoDB.categoria",
           insumoDB: "$insumoDB.nombre",
@@ -606,7 +606,7 @@ app.get(
           foreignField: "_id",
           as: "areaDB",
         })
-        .unwind({path: "$areaDB"})
+        .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
         .addFields({
           areaDB: "$areaDB.area",
         })

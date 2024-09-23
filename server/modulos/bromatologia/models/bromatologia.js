@@ -215,6 +215,8 @@ bromatologiaSchema.pre("findOneAndUpdate", function (next) {
   next();
 });
 
-bromatologiaSchema.plugin(uniqueValidator, {message: "{PATH} valor repetido, debe de ser único."});
+bromatologiaSchema.plugin(uniqueValidator, {
+  message: "Ya existe. Valor repetido: '{VALUE}'.",
+});
 
 module.exports = mongoose.model("Bromatologia", bromatologiaSchema);

@@ -134,7 +134,7 @@ app.get(
           foreignField: "_id",
           as: "origenDB",
         })
-        .unwind({path: "$origenDB"})
+        .unwind({path: "$origenDB", preserveNullAndEmptyArrays: true})
         .addFields({
           origenDB: "$origenDB.area",
         })

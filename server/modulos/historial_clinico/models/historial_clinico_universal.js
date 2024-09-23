@@ -115,7 +115,9 @@ HistorialClinicoUniversalSchema.pre("findOneAndUpdate", async function (next) {
   next();
 });
 
-HistorialClinicoUniversalSchema.plugin(uniqueValidator, {message: "{PATH} debe de ser único."});
+HistorialClinicoUniversalSchema.plugin(uniqueValidator, {
+  message: "Ya existe. Valor repetido: '{VALUE}'.",
+});
 
 module.exports = mongoose.model(
   "HistorialClinico",

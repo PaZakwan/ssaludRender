@@ -199,6 +199,6 @@ NutricionSchema.pre("findOneAndUpdate", async function (next) {
   next();
 });
 
-NutricionSchema.plugin(uniqueValidator, {message: "{PATH} debe de ser único."});
+NutricionSchema.plugin(uniqueValidator, {message: "Ya existe. Valor repetido: '{VALUE}'."});
 
 module.exports = mongoose.model("Nutricion", NutricionSchema, "HistorialConsultasNutricion");

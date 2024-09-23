@@ -39,10 +39,10 @@ FarmaciaOpcionesSchema.index(
   {area: 1, insumo: 1},
   {
     name: "Insumo en la Farmacia",
-    unique: "Opcion de Insumo ya existente en la Farmacia, debe ser unico.",
+    unique: true,
   }
 );
 
-FarmaciaOpcionesSchema.plugin(uniqueValidator, {message: "{PATH} debe de ser único."});
+FarmaciaOpcionesSchema.plugin(uniqueValidator, {message: "Ya existe. Valor repetido: '{VALUE}'."});
 
 module.exports = mongoose.model("FarmaciaOpciones", FarmaciaOpcionesSchema, "FarmaciaOpciones");

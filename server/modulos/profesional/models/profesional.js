@@ -117,6 +117,6 @@ profesionalesSchema.pre("findOneAndUpdate", function (next) {
   next();
 });
 
-profesionalesSchema.plugin(uniqueValidator, {message: "{PATH} valor repetido, debe de ser único."});
+profesionalesSchema.plugin(uniqueValidator, {message: "Ya existe. Valor repetido: '{VALUE}'."});
 
 module.exports = mongoose.model("Profesional", profesionalesSchema);

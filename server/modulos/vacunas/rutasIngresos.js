@@ -190,7 +190,7 @@ app.get(
           foreignField: "_id",
           as: "destinoDB",
         })
-        .unwind({path: "$destinoDB"})
+        .unwind({path: "$destinoDB", preserveNullAndEmptyArrays: true})
         .addFields({
           destinoDB: "$destinoDB.area",
         });
@@ -270,14 +270,14 @@ app.get(
           },
         })
         // descomprimir para buscar los insumos
-        .unwind({path: "$insumos"})
+        .unwind({path: "$insumos", preserveNullAndEmptyArrays: true})
         .lookup({
           from: "VacunaInsumos",
           localField: "insumos.insumo",
           foreignField: "_id",
           as: "insumos.insumoDB",
         })
-        .unwind({path: "$insumos.insumoDB"})
+        .unwind({path: "$insumos.insumoDB", preserveNullAndEmptyArrays: true})
         .addFields({
           "insumos.insumoDB": "$insumos.insumoDB.nombre",
           "insumos.categoriaDB": "$insumos.insumoDB.categoria",
@@ -306,7 +306,7 @@ app.get(
           foreignField: "_id",
           as: "destinoDB",
         })
-        .unwind({path: "$destinoDB"})
+        .unwind({path: "$destinoDB", preserveNullAndEmptyArrays: true})
         .addFields({
           destinoDB: "$destinoDB.area",
         })
@@ -316,7 +316,7 @@ app.get(
           foreignField: "_id",
           as: "origenDB",
         })
-        .unwind({path: "$origenDB"})
+        .unwind({path: "$origenDB", preserveNullAndEmptyArrays: true})
         .addFields({
           origenDB: "$origenDB.area",
         })
@@ -655,14 +655,14 @@ app.get(
           },
         })
         // descomprimir para buscar los insumos
-        .unwind({path: "$insumos"})
+        .unwind({path: "$insumos", preserveNullAndEmptyArrays: true})
         .lookup({
           from: "VacunaInsumos",
           localField: "insumos.insumo",
           foreignField: "_id",
           as: "insumos.insumoDB",
         })
-        .unwind({path: "$insumos.insumoDB"})
+        .unwind({path: "$insumos.insumoDB", preserveNullAndEmptyArrays: true})
         .addFields({
           "insumos.insumoDB": "$insumos.insumoDB.nombre",
           "insumos.categoriaDB": "$insumos.insumoDB.categoria",
@@ -729,7 +729,7 @@ app.get(
           foreignField: "_id",
           as: "destinoDB",
         })
-        .unwind({path: "$destinoDB"})
+        .unwind({path: "$destinoDB", preserveNullAndEmptyArrays: true})
         .addFields({
           destinoDB: "$destinoDB.area",
         })
@@ -739,7 +739,7 @@ app.get(
           foreignField: "_id",
           as: "origenDB",
         })
-        .unwind({path: "$origenDB"})
+        .unwind({path: "$origenDB", preserveNullAndEmptyArrays: true})
         .addFields({
           origenDB: "$origenDB.area",
         })
@@ -1054,7 +1054,7 @@ app.get(
         ingresosOrdenDB = await VacunaIngreso.aggregate()
           .match(filtro)
           // descomprimir
-          .unwind({path: "$insumos"})
+          .unwind({path: "$insumos", preserveNullAndEmptyArrays: true})
           // encontrar recibidos
           .match({
             "insumos.recibido": {$ne: null},
@@ -1089,7 +1089,7 @@ app.get(
             foreignField: "_id",
             as: "areaDB",
           })
-          .unwind({path: "$areaDB"})
+          .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
           .addFields({
             areaDB: "$areaDB.area",
           })
@@ -1099,7 +1099,7 @@ app.get(
             foreignField: "_id",
             as: "insumoDB",
           })
-          .unwind({path: "$insumoDB"})
+          .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
           .addFields({
             categoriaDB: "$insumoDB.categoria",
             insumoDB: "$insumoDB.nombre",
@@ -1117,7 +1117,7 @@ app.get(
         transferenciaInDB = await VacunaTransferencia.aggregate()
           .match(filtro)
           // descomprimir
-          .unwind({path: "$insumos"})
+          .unwind({path: "$insumos", preserveNullAndEmptyArrays: true})
           // encontrar recibidos
           .match({
             "insumos.recibido": {$ne: null},
@@ -1151,7 +1151,7 @@ app.get(
             foreignField: "_id",
             as: "areaDB",
           })
-          .unwind({path: "$areaDB"})
+          .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
           .addFields({
             areaDB: "$areaDB.area",
           })
@@ -1161,7 +1161,7 @@ app.get(
             foreignField: "_id",
             as: "insumoDB",
           })
-          .unwind({path: "$insumoDB"})
+          .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
           .addFields({
             categoriaDB: "$insumoDB.categoria",
             insumoDB: "$insumoDB.nombre",

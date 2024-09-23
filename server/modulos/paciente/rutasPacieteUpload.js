@@ -382,6 +382,11 @@ const PacienteFormat = async ({json, totales, line, logFile, csvErrors, csvFix})
       advertencia += ` dir_numero No es un Numero (${json.dir_numero}) y fue guardado en dir_descripcion.`;
       delete json.dir_numero;
     }
+    // direccion
+    if (json.direccion) {
+      json.dir_descripcion = `${json.direccion}. ${json.dir_descripcion}`;
+      delete json.direccion;
+    }
     // dir_descripcion
     if (json.dir_descripcion) {
       json.dir_descripcion = trim_between(json.dir_descripcion);

@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const uniqueValidator = require("mongoose-unique-validator");
 
 let schemaOptions = {
   toObject: {
@@ -50,8 +51,8 @@ let VacunaStockSchema = new Schema(
 VacunaStockSchema.index(
   {area: 1, insumo: 1, procedencia: 1, lote: 1, vencimiento: 1},
   {
-    name: "Conjunto del Insumo",
-    unique: "Conjunto del Insumo ya existente en el area, debe ser unico.",
+    name: "Insumo lote en el Vacunatorio",
+    unique: true,
   }
 );
 
@@ -63,5 +64,7 @@ VacunaStockSchema.pre("findOneAndUpdate", function (next) {
   }
   next();
 });
+
+VacunaStockSchema.plugin(uniqueValidator, {message: "Ya existe. Valor repetido: '{VALUE}'."});
 
 module.exports = mongoose.model("VacunaStock", VacunaStockSchema, "VacunaStock");

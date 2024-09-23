@@ -338,7 +338,7 @@ app.get(
           foreignField: "_id",
           as: "areaDB",
         })
-        .unwind({path: "$areaDB"})
+        .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
         .addFields({
           areaDB: "$areaDB.area",
         })
@@ -444,7 +444,7 @@ app.get(
             },
           })
           // sort
-          .unwind({path: "$vacunasHeader"})
+          .unwind({path: "$vacunasHeader", preserveNullAndEmptyArrays: true})
           .sort({vacunasHeader: 1})
           .group({
             _id: null,

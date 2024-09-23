@@ -247,7 +247,9 @@ HistorialMedicacionSchema.virtual("declaracion_vencida").get(function () {
 //   // Rojo = Obesidad (IMC >30)
 // });
 
-HistorialMedicacionSchema.plugin(uniqueValidator, {message: "{PATH} debe de ser único."});
+HistorialMedicacionSchema.plugin(uniqueValidator, {
+  message: "Ya existe. Valor repetido: '{VALUE}'.",
+});
 
 module.exports = mongoose.model(
   "HistorialMedicacion",

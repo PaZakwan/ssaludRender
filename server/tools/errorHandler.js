@@ -22,6 +22,7 @@ const errorMessage = function (res, error, statusTemp) {
   // Mongoose Errors
   if (error.name === "ValidationError") {
     // pasar object de errors a array de string.. key: message
+    status = 400;
     let temp = [];
     Object.keys(error.errors).forEach((key) => {
       temp.push(`${key}: ${error.errors[key].message}`);

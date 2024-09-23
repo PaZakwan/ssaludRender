@@ -1350,7 +1350,7 @@ app.get(
       ];
 
       // Masculino_Edad.Todos
-      resumenDB[0].Masculino_Edad.Todos = Object.assign({}, JSON.parse(JSON.stringify(baseProp)));
+      resumenDB[0].Masculino_Edad.Todos = structuredClone(baseProp);
       if (resumenDB[0].Masculino_Edad.length > 0) {
         for (let i = 0; i < resumenDB[0].Masculino_Edad.length; i++) {
           resumenDB[0].Masculino_Edad.Todos = sumarProps(
@@ -1372,7 +1372,7 @@ app.get(
       }
 
       // Femenino_Edad.Todas
-      resumenDB[0].Femenino_Edad.Todas = Object.assign({}, JSON.parse(JSON.stringify(baseProp)));
+      resumenDB[0].Femenino_Edad.Todas = structuredClone(baseProp);
       if (resumenDB[0].Femenino_Edad.length > 0) {
         for (let i = 0; i < resumenDB[0].Femenino_Edad.length; i++) {
           resumenDB[0].Femenino_Edad.Todas = sumarProps(
@@ -1394,7 +1394,7 @@ app.get(
       }
 
       // Todos_Edad.Todos
-      resumenDB[0].Todos_Edad = {Todos: Object.assign({}, JSON.parse(JSON.stringify(baseProp)))};
+      resumenDB[0].Todos_Edad = {Todos: structuredClone(baseProp)};
       resumenDB[0].Todos_Edad.Todos = sumarProps(
         resumenDB[0].Masculino_Edad.Todos,
         resumenDB[0].Femenino_Edad.Todas
@@ -1418,7 +1418,7 @@ app.get(
 
       // Todos_Edad
       baseRango.forEach((Rango) => {
-        resumenDB[0].Todos_Edad[Rango] = Object.assign({}, JSON.parse(JSON.stringify(baseProp)));
+        resumenDB[0].Todos_Edad[Rango] = structuredClone(baseProp);
         resumenDB[0].Todos_Edad[Rango].Genero = {Masculino: 0, Femenino: 0};
         // buscar index del Rango del each
         let MasculinoIndex = resumenDB[0].Masculino_Edad.findIndex((x) => x.Rango === Rango);
@@ -1463,12 +1463,9 @@ app.get(
         if (MasculinoIndex != -1) {
           // si existe borrar props y copiar
           delete resumenDB[0].Masculino_Edad[MasculinoIndex]._id;
-          MasculinoTemp[Rango] = Object.assign(
-            {},
-            JSON.parse(JSON.stringify(resumenDB[0].Masculino_Edad[MasculinoIndex]))
-          );
+          MasculinoTemp[Rango] = structuredClone(resumenDB[0].Masculino_Edad[MasculinoIndex]);
         } else {
-          MasculinoTemp[Rango] = Object.assign({}, JSON.parse(JSON.stringify(baseProp)));
+          MasculinoTemp[Rango] = structuredClone(baseProp);
         }
         MasculinoTemp[Rango].Edad_Promedio = MasculinoTemp[Rango].Edad_Promedio.toLocaleString(
           "es-AR",
@@ -1479,7 +1476,7 @@ app.get(
         );
         MasculinoTemp[Rango].Rango = Rango;
       });
-      resumenDB[0].Masculino_Edad = Object.assign({}, JSON.parse(JSON.stringify(MasculinoTemp)));
+      resumenDB[0].Masculino_Edad = structuredClone(MasculinoTemp);
 
       // Femenino_Edad
       let FemeninoTemp = {Todas: resumenDB[0].Femenino_Edad.Todas};
@@ -1489,12 +1486,9 @@ app.get(
         if (FemeninoIndex != -1) {
           // si existe borrar props y copiar
           delete resumenDB[0].Femenino_Edad[FemeninoIndex]._id;
-          FemeninoTemp[Rango] = Object.assign(
-            {},
-            JSON.parse(JSON.stringify(resumenDB[0].Femenino_Edad[FemeninoIndex]))
-          );
+          FemeninoTemp[Rango] = structuredClone(resumenDB[0].Femenino_Edad[FemeninoIndex]);
         } else {
-          FemeninoTemp[Rango] = Object.assign({}, JSON.parse(JSON.stringify(baseProp)));
+          FemeninoTemp[Rango] = structuredClone(baseProp);
         }
         FemeninoTemp[Rango].Edad_Promedio = FemeninoTemp[Rango].Edad_Promedio.toLocaleString(
           "es-AR",
@@ -1505,7 +1499,7 @@ app.get(
         );
         FemeninoTemp[Rango].Rango = Rango;
       });
-      resumenDB[0].Femenino_Edad = Object.assign({}, JSON.parse(JSON.stringify(FemeninoTemp)));
+      resumenDB[0].Femenino_Edad = structuredClone(FemeninoTemp);
 
       res.json({
         ok: true,

@@ -66,6 +66,8 @@ HistorialCoberturaMedicaSchema.pre("findOneAndUpdate", async function (next) {
   next();
 });
 
-HistorialCoberturaMedicaSchema.plugin(uniqueValidator, {message: "{PATH} debe de ser único."});
+HistorialCoberturaMedicaSchema.plugin(uniqueValidator, {
+  message: "Ya existe. Valor repetido: '{VALUE}'.",
+});
 
 module.exports = mongoose.model("HistorialCoberturaMedica", HistorialCoberturaMedicaSchema);

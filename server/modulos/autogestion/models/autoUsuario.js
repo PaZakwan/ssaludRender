@@ -157,6 +157,8 @@ autoUsuarioSchema.pre("findOneAndUpdate", function (next) {
   next();
 });
 
-autoUsuarioSchema.plugin(uniqueValidator, {message: "{PATH} debe de ser único."});
+autoUsuarioSchema.plugin(uniqueValidator, {
+  message: "Ya existe. Valor repetido: '{VALUE}'.",
+});
 
 module.exports = mongoose.model("autoUsuario", autoUsuarioSchema);

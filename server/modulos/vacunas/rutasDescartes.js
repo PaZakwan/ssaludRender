@@ -123,7 +123,7 @@ app.get(
           foreignField: "_id",
           as: "origenDB",
         })
-        .unwind({path: "$origenDB"})
+        .unwind({path: "$origenDB", preserveNullAndEmptyArrays: true})
         .addFields({
           origenDB: "$origenDB.area",
         })
@@ -133,7 +133,7 @@ app.get(
           foreignField: "_id",
           as: "insumoDB",
         })
-        .unwind({path: "$insumoDB"})
+        .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
         .addFields({
           categoriaDB: "$insumoDB.categoria",
           insumoDB: "$insumoDB.nombre",

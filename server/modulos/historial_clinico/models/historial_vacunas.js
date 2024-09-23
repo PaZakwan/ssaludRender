@@ -79,6 +79,6 @@ HistorialVacunaSchema.pre("findOneAndUpdate", async function (next) {
   next();
 });
 
-HistorialVacunaSchema.plugin(uniqueValidator, {message: "{PATH} debe de ser único."});
+HistorialVacunaSchema.plugin(uniqueValidator, {message: "Ya existe. Valor repetido: '{VALUE}'."});
 
 module.exports = mongoose.model("HistorialVacuna", HistorialVacunaSchema);

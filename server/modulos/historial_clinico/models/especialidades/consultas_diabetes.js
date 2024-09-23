@@ -128,6 +128,6 @@ DiabetesSchema.virtual("fecha_ultimo_control").get(function () {
   }
 });
 
-DiabetesSchema.plugin(uniqueValidator, {message: "{PATH} debe de ser único."});
+DiabetesSchema.plugin(uniqueValidator, {message: "Ya existe. Valor repetido: '{VALUE}'."});
 
 module.exports = DiabetesSchema;

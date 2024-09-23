@@ -146,7 +146,7 @@ app.get(
                   fecha: {$dateToString: {format: "%Y-%m-%d", date: "$fecha"}},
                   pacienteDB: "$pacienteDB",
                   pacienteDocDB: "$pacienteDocDB",
-                  pacienteOSocDB: "$pacienteOSocDB",
+                  pacienteTelefonoDB: "$pacienteTelefonoDB",
                   oSocial: "$oSocial",
                   procedencia: "$procedencia",
                   cantidad: "$cantidad",
@@ -156,7 +156,7 @@ app.get(
               },
             };
 
-        entregasDB = await InsumoEntrega.aggregate()
+        entregasDB = InsumoEntrega.aggregate()
           .match(filtroIndividual)
           .sort({fecha: 1, _id: 1})
           .lookup({
@@ -165,7 +165,7 @@ app.get(
             foreignField: "_id",
             as: "pacienteDB",
           })
-          .unwind({path: "$pacienteDB"})
+          .unwind({path: "$pacienteDB", preserveNullAndEmptyArrays: true})
           .addFields({
             pacienteDB: {
               $ifNull: [
@@ -188,7 +188,9 @@ app.get(
                 },
               ],
             },
-            pacienteOSocDB: "$pacienteDB.oSocial",
+            pacienteTelefonoDB: {
+              $ifNull: ["$pacienteDB.telefono", "$pacienteDB.telefono_alt"],
+            },
           })
           .group({
             ...{
@@ -210,7 +212,7 @@ app.get(
             foreignField: "_id",
             as: "areaDB",
           })
-          .unwind({path: "$areaDB"})
+          .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
           .addFields({
             areaDB: "$areaDB.area",
           })
@@ -220,7 +222,7 @@ app.get(
             foreignField: "_id",
             as: "insumoDB",
           })
-          .unwind({path: "$insumoDB"})
+          .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
           .addFields({
             categoriaDB: "$insumoDB.categoria",
             insumoDB: "$insumoDB.nombre",
@@ -231,6 +233,42 @@ app.get(
             total_entregas: "$total",
           })
           .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1});
+
+        // Excel detallado
+        if (modelos.entr.ex && !modelos.entr.nd) {
+          entregasDB
+            // borrar props
+            .project({
+              total: 0,
+              total_nominal: 0,
+              total_entregas: 0,
+              area: 0,
+              insumo: 0,
+            })
+            .unwind({path: "$detalle_entregas", preserveNullAndEmptyArrays: true})
+            .addFields({
+              fecha: {$ifNull: ["$detalle_entregas.fecha", "$noRetornaNada"]},
+              pacienteDB: {$ifNull: ["$detalle_entregas.pacienteDB", "$noRetornaNada"]},
+              pacienteDocDB: {$ifNull: ["$detalle_entregas.pacienteDocDB", "$noRetornaNada"]},
+              pacienteTelefonoDB: {
+                $ifNull: ["$detalle_entregas.pacienteTelefonoDB", "$noRetornaNada"],
+              },
+              oSocial: {$ifNull: ["$detalle_entregas.oSocial", "$noRetornaNada"]},
+              procedencia: {$ifNull: ["$detalle_entregas.procedencia", "$noRetornaNada"]},
+              lote: {$ifNull: ["$detalle_entregas.lote", "$noRetornaNada"]},
+              vencimiento: {$ifNull: ["$detalle_entregas.vencimiento", "$noRetornaNada"]},
+              cantidad: {$ifNull: ["$detalle_entregas.cantidad", 0]},
+            })
+            .addFields({
+              cant_min: {$cond: [{$eq: ["$cantidad", 0]}, "$cant_min", "$noRetornaNada"]},
+            })
+            // borrar detalle
+            .project({
+              detalle_entregas: 0,
+            });
+        }
+
+        entregasDB = entregasDB.exec();
       }
 
       // Descartes
@@ -251,7 +289,7 @@ app.get(
               },
             };
 
-        descartesDB = await FarmaciaDescarte.aggregate()
+        descartesDB = FarmaciaDescarte.aggregate()
           .match(filtroIndividual)
           .sort({fecha: 1, _id: 1})
           .group({
@@ -317,7 +355,7 @@ app.get(
             foreignField: "_id",
             as: "areaDB",
           })
-          .unwind({path: "$areaDB"})
+          .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
           .addFields({
             areaDB: "$areaDB.area",
           })
@@ -327,7 +365,7 @@ app.get(
             foreignField: "_id",
             as: "insumoDB",
           })
-          .unwind({path: "$insumoDB"})
+          .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
           .addFields({
             categoriaDB: "$insumoDB.categoria",
             insumoDB: "$insumoDB.nombre",
@@ -336,7 +374,8 @@ app.get(
             _id: {$concat: ["$areaDB", "-", "$insumoDB"]},
             total_descartes: "$total",
           })
-          .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1});
+          .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1})
+          .exec();
       }
 
       // Egresos Transferencias Remitos (clearing) retirados
@@ -358,7 +397,7 @@ app.get(
               },
             };
 
-        transferenciaOutDB = await FarmaciaTransferencia.aggregate()
+        transferenciaOutDB = FarmaciaTransferencia.aggregate()
           .match(filtro)
           .sort({fecha: 1, _id: 1})
           // buscar nombres de DestinosDB
@@ -368,12 +407,12 @@ app.get(
             foreignField: "_id",
             as: "destinoDB",
           })
-          .unwind({path: "$destinoDB"})
+          .unwind({path: "$destinoDB", preserveNullAndEmptyArrays: true})
           .addFields({
             destinoDB: "$destinoDB.area",
           })
           // descomprimir
-          .unwind({path: "$insumos"})
+          .unwind({path: "$insumos", preserveNullAndEmptyArrays: true})
           // encontrar retirados
           .match({
             "insumos.retirado": filtro["insumos.retirado"],
@@ -401,7 +440,7 @@ app.get(
             foreignField: "_id",
             as: "areaDB",
           })
-          .unwind({path: "$areaDB"})
+          .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
           .addFields({
             areaDB: "$areaDB.area",
           })
@@ -411,7 +450,7 @@ app.get(
             foreignField: "_id",
             as: "insumoDB",
           })
-          .unwind({path: "$insumoDB"})
+          .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
           .addFields({
             categoriaDB: "$insumoDB.categoria",
             insumoDB: "$insumoDB.nombre",
@@ -420,8 +459,16 @@ app.get(
             _id: {$concat: ["$areaDB", "-", "$insumoDB"]},
             total_transferencia_out: "$total",
           })
-          .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1});
+          .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1})
+          .exec();
       }
+
+      // Esperar que se concluyan las consultas a la BD
+      [entregasDB, descartesDB, transferenciaOutDB] = await Promise.all([
+        entregasDB,
+        descartesDB,
+        transferenciaOutDB,
+      ]);
 
       // INTEGRAR EGRESOS
       // ENTREGAS

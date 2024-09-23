@@ -56,7 +56,7 @@ configSchema.pre("findOneAndUpdate", function (next) {
 });
 
 configSchema.plugin(uniqueValidator, {
-  message: "Valor repetido ({VALUE}), debe ser único.",
+  message: "Ya existe. Valor repetido: '{VALUE}'.",
 });
 
 module.exports = mongoose.model("Config", configSchema);

@@ -90,7 +90,7 @@ areaSchema.pre("findOneAndUpdate", function (next) {
   next();
 });
 
-areaSchema.plugin(uniqueValidator, {message: "{PATH} valor repetido, debe de ser único."});
+areaSchema.plugin(uniqueValidator, {message: "Ya existe. Valor repetido: '{VALUE}'."});
 
 module.exports = mongoose.connections[1].model("Area", areaSchema);
 module.exports = mongoose.model("Area", areaSchema);

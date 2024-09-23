@@ -121,6 +121,8 @@ HistorialAntropometriaSchema.virtual("IMC").get(function () {
   // Rojo = Obesidad (IMC >30)
 });
 
-HistorialAntropometriaSchema.plugin(uniqueValidator, {message: "{PATH} debe de ser único."});
+HistorialAntropometriaSchema.plugin(uniqueValidator, {
+  message: "Ya existe. Valor repetido: '{VALUE}'.",
+});
 
 module.exports = mongoose.model("HistorialAntropometria", HistorialAntropometriaSchema);
