@@ -238,9 +238,12 @@ app.get(
           origen: 1,
           fecha: 1,
           paciente: 1,
+          tipo_doc: 1,
+          documento: 1,
           ps_paciente: 1,
           ps_nombreC: 1,
-          ps_doc_responsable: 1,
+          ps_fecha_nacimiento: 1,
+          doc_responsable: 1,
           edad_valor: 1,
           edad_unidad: 1,
           sexo: 1,
@@ -262,7 +265,7 @@ app.get(
         })
         .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
         .addFields({
-          insumoDB: {$ifNull: ["$insumoDB.nombre", "$vacunaName"]},
+          insumoDB: {$ifNull: ["$insumoDB.nombre", {$toString: "$insumo"}, "$vacunaName"]},
         })
         // agrupar para reporte
         .group({
@@ -284,7 +287,10 @@ app.get(
           //            "Masculinos",
           //            "Femeninos",
           sexo: {$first: "$sexo"},
-          ps_doc_responsable: {$first: "$ps_doc_responsable"},
+          tipo_doc: {$first: "$tipo_doc"},
+          documento: {$first: "$documento"},
+          ps_fecha_nacimiento: {$first: "$ps_fecha_nacimiento"},
+          doc_responsable: {$first: "$doc_responsable"},
           vacunacionesDB: {
             $push: {
               vacuna: {$concat: [{$ifNull: ["$insumoDB", "Sin Dato"]}, " - ", "$dosis"]},
@@ -340,7 +346,7 @@ app.get(
         })
         .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
         .addFields({
-          areaDB: "$areaDB.area",
+          areaDB: {$ifNull: ["$areaDB.area", {$toString: "$area"}]},
         })
         // paciente;
         .lookup({
@@ -357,29 +363,24 @@ app.get(
               {
                 $concat: ["$pacienteDB.apellido", ", ", "$pacienteDB.nombre"],
               },
-              "$paciente",
+              {$toString: "$paciente"},
             ],
           },
           pacienteDocDB: {
             $ifNull: [
               {
+                $concat: ["$tipo_doc", " ", "$documento"],
+              },
+              {
                 $concat: ["$pacienteDB.tipo_doc", " ", "$pacienteDB.documento"],
               },
               {
-                $ifNull: [
-                  {
-                    $concat: ["Resp ", "$pacienteDB.doc_responsable"],
-                  },
-                  {
-                    $ifNull: [
-                      {
-                        $concat: ["Resp ", "$ps_doc_responsable"],
-                      },
-                      "$vacio",
-                    ],
-                  },
-                ],
+                $concat: ["Resp ", "$doc_responsable"],
               },
+              {
+                $concat: ["Resp ", "$pacienteDB.doc_responsable"],
+              },
+              "$vacio",
             ],
           },
           pacienteDireccionDB: {
@@ -390,8 +391,12 @@ app.get(
               "$vacio",
             ],
           },
-          pacienteTelefonoDB: "$pacienteDB.telefono",
-          pacienteFec_nacDB: "$pacienteDB.fec_nac",
+          pacienteTelefonoDB: {
+            $ifNull: ["$pacienteDB.telefono", "$pacienteDB.telefono_alt", "$vacio"],
+          },
+          pacienteFec_nacDB: {
+            $ifNull: ["$pacienteDB.fec_nac", "$ps_fecha_nacimiento", "$vacio"],
+          },
           sexo: {$ifNull: ["$sexo", "$pacienteDB.sexo"]},
           ...opcionalesPopulatePaciente,
         })
@@ -435,7 +440,7 @@ app.get(
           })
           .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
           .addFields({
-            insumoDB: {$ifNull: ["$insumoDB.nombre", "$vacunaName"]},
+            insumoDB: {$ifNull: ["$insumoDB.nombre", {$toString: "$insumo"}, "$vacunaName"]},
           })
           .group({
             _id: null,
@@ -593,7 +598,9 @@ app.get(
                 }
                 // ordenar keys del objeto para cuando se itera
                 totales.vacunaciones = Object.fromEntries(
-                  Object.entries(totales.vacunaciones).sort((a, b) => a[0].localeCompare(b[0]))
+                  Object.entries(totales.vacunaciones).sort((a, b) =>
+                    (a[0] ?? "").localeCompare(b[0] ?? "")
+                  )
                 );
                 break;
 

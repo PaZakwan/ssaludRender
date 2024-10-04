@@ -369,7 +369,7 @@ const PacienteFormat = async ({json, totales, line, logFile, csvErrors, csvFix})
       advertencia += ` email Validation (${json.email}).`;
     }
     // dir_calle
-    if (json.dir_calle) {
+    if (json.dir_calle && json.dir_calle.trim()) {
       json.dir_calle = capitalize(json.dir_calle.trim());
     }
     // dir_numero // si no es un numero lo pasa a dir_descripcion
@@ -383,13 +383,26 @@ const PacienteFormat = async ({json, totales, line, logFile, csvErrors, csvFix})
       delete json.dir_numero;
     }
     // direccion
-    if (json.direccion) {
-      json.dir_descripcion = `${json.direccion}. ${json.dir_descripcion}`;
+    if (json.direccion && json.direccion.trim()) {
+      // quitar espacios iniciales, finales e intermedios ademas de capitalizar el contenido
+      json.direccion = capitalize(json.direccion.trim());
+      // separar la cadena por espacios
+      json.direccion = json.direccion.split(" ");
+      // si el ultimo elemento del array es un numero sacarlo y pasarlo a dir_numero si es que no existe dir_numero
+      if (isFinite(json.direccion[json.direccion.length - 1])) {
+        if (json.dir_numero) {
+          json.direccion.pop();
+        } else {
+          json.dir_numero = json.direccion.pop();
+        }
+      }
+      // y el resto dejar en dir_calle si es que no existe dir_calle
+      json.dir_calle = json.dir_calle ?? json.direccion.join(" ");
       delete json.direccion;
     }
     // dir_descripcion
-    if (json.dir_descripcion) {
-      json.dir_descripcion = trim_between(json.dir_descripcion);
+    if (json.dir_descripcion && json.dir_descripcion.trim()) {
+      json.dir_descripcion = trim_between(json.dir_descripcion.trim());
     }
 
     if (json.IdPS) {

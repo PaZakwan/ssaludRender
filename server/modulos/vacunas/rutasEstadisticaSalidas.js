@@ -183,28 +183,24 @@ app.get(
                 {
                   $concat: [{$ifNull: ["$ps_nombreC", ""]}, " (", "$ps_paciente", ")"],
                 },
+                {$toString: "$paciente"},
               ],
             },
             pacienteDocDB: {
               $ifNull: [
                 {
+                  $concat: ["$tipo_doc", " ", "$documento"],
+                },
+                {
                   $concat: ["$pacienteDB.tipo_doc", " ", "$pacienteDB.documento"],
                 },
                 {
-                  $ifNull: [
-                    {
-                      $concat: ["Resp ", "$pacienteDB.doc_responsable"],
-                    },
-                    {
-                      $ifNull: [
-                        {
-                          $concat: ["Resp ", "$ps_doc_responsable"],
-                        },
-                        "$vacio",
-                      ],
-                    },
-                  ],
+                  $concat: ["Resp ", "$doc_responsable"],
                 },
+                {
+                  $concat: ["Resp ", "$pacienteDB.doc_responsable"],
+                },
+                "$vacio",
               ],
             },
             pacienteOSocDB: "$pacienteDB.oSocial",
@@ -231,7 +227,7 @@ app.get(
           })
           .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
           .addFields({
-            areaDB: "$areaDB.area",
+            areaDB: {$ifNull: ["$areaDB.area", {$toString: "$area"}]},
           })
           .lookup({
             from: "VacunaInsumos",
@@ -241,8 +237,8 @@ app.get(
           })
           .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
           .addFields({
-            categoriaDB: "$insumoDB.categoria",
-            insumoDB: {$ifNull: ["$insumoDB.nombre", "$insumo"]},
+            insumoDB: {$ifNull: ["$insumoDB.nombre", {$toString: "$insumo"}]},
+            categoriaDB: {$ifNull: ["$insumoDB.categoria", "$vacio"]},
           })
           .addFields({
             _id: {$concat: ["$areaDB", "-", "$insumoDB"]},
@@ -338,7 +334,7 @@ app.get(
           })
           .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
           .addFields({
-            areaDB: "$areaDB.area",
+            areaDB: {$ifNull: ["$areaDB.area", {$toString: "$area"}]},
           })
           .lookup({
             from: "VacunaInsumos",
@@ -348,8 +344,8 @@ app.get(
           })
           .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
           .addFields({
-            categoriaDB: "$insumoDB.categoria",
-            insumoDB: "$insumoDB.nombre",
+            insumoDB: {$ifNull: ["$insumoDB.nombre", {$toString: "$insumo"}]},
+            categoriaDB: {$ifNull: ["$insumoDB.categoria", "$vacio"]},
           })
           .addFields({
             _id: {$concat: ["$areaDB", "-", "$insumoDB"]},
@@ -389,7 +385,7 @@ app.get(
           })
           .unwind({path: "$destinoDB", preserveNullAndEmptyArrays: true})
           .addFields({
-            destinoDB: "$destinoDB.area",
+            destinoDB: {$ifNull: ["$destinoDB.area", {$toString: "$destino"}]},
           })
           // descomprimir
           .unwind({path: "$insumos", preserveNullAndEmptyArrays: true})
@@ -422,7 +418,7 @@ app.get(
           })
           .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
           .addFields({
-            areaDB: "$areaDB.area",
+            areaDB: {$ifNull: ["$areaDB.area", {$toString: "$area"}]},
           })
           .lookup({
             from: "VacunaInsumos",
@@ -432,8 +428,8 @@ app.get(
           })
           .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
           .addFields({
-            categoriaDB: "$insumoDB.categoria",
-            insumoDB: "$insumoDB.nombre",
+            insumoDB: {$ifNull: ["$insumoDB.nombre", {$toString: "$insumo"}]},
+            categoriaDB: {$ifNull: ["$insumoDB.categoria", "$vacio"]},
           })
           .addFields({
             _id: {$concat: ["$areaDB", "-", "$insumoDB"]},

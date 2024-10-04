@@ -125,7 +125,7 @@ app.get(
         })
         .unwind({path: "$origenDB", preserveNullAndEmptyArrays: true})
         .addFields({
-          origenDB: "$origenDB.area",
+          origenDB: {$ifNull: ["$origenDB.area", {$toString: "$origen"}]},
         })
         .lookup({
           from: "VacunaInsumos",
@@ -135,8 +135,8 @@ app.get(
         })
         .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
         .addFields({
-          categoriaDB: "$insumoDB.categoria",
-          insumoDB: "$insumoDB.nombre",
+          insumoDB: {$ifNull: ["$insumoDB.nombre", {$toString: "$insumo"}]},
+          categoriaDB: {$ifNull: ["$insumoDB.categoria", "$vacio"]},
         });
 
       return res.status(200).json({

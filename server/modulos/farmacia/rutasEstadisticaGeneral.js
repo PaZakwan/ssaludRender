@@ -174,7 +174,7 @@ app.get(
         })
         .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
         .addFields({
-          areaDB: "$areaDB.area",
+          areaDB: {$ifNull: ["$areaDB.area", {$toString: "$area"}]},
         })
         .lookup({
           from: "Insumos",
@@ -184,8 +184,8 @@ app.get(
         })
         .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
         .addFields({
-          categoriaDB: "$insumoDB.categoria",
-          insumoDB: "$insumoDB.nombre",
+          insumoDB: {$ifNull: ["$insumoDB.nombre", {$toString: "$insumo"}]},
+          categoriaDB: {$ifNull: ["$insumoDB.categoria", "$vacio"]},
         })
         .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1})
         .exec();
@@ -232,7 +232,7 @@ app.get(
         })
         .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
         .addFields({
-          areaDB: "$areaDB.area",
+          areaDB: {$ifNull: ["$areaDB.area", {$toString: "$area"}]},
         })
         .lookup({
           from: "Insumos",
@@ -242,8 +242,8 @@ app.get(
         })
         .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
         .addFields({
-          categoriaDB: "$insumoDB.categoria",
-          insumoDB: "$insumoDB.nombre",
+          insumoDB: {$ifNull: ["$insumoDB.nombre", {$toString: "$insumo"}]},
+          categoriaDB: {$ifNull: ["$insumoDB.categoria", "$vacio"]},
         })
         .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1})
         .exec();
@@ -275,7 +275,7 @@ app.get(
         })
         .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
         .addFields({
-          areaDB: "$areaDB.area",
+          areaDB: {$ifNull: ["$areaDB.area", {$toString: "$area"}]},
         })
         .lookup({
           from: "Insumos",
@@ -285,8 +285,8 @@ app.get(
         })
         .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
         .addFields({
-          categoriaDB: "$insumoDB.categoria",
-          insumoDB: "$insumoDB.nombre",
+          insumoDB: {$ifNull: ["$insumoDB.nombre", {$toString: "$insumo"}]},
+          categoriaDB: {$ifNull: ["$insumoDB.categoria", "$vacio"]},
         })
         .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1})
         .exec();
@@ -339,7 +339,7 @@ app.get(
         })
         .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
         .addFields({
-          areaDB: "$areaDB.area",
+          areaDB: {$ifNull: ["$areaDB.area", {$toString: "$area"}]},
         })
         .lookup({
           from: "Insumos",
@@ -349,8 +349,8 @@ app.get(
         })
         .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
         .addFields({
-          categoriaDB: "$insumoDB.categoria",
-          insumoDB: "$insumoDB.nombre",
+          insumoDB: {$ifNull: ["$insumoDB.nombre", {$toString: "$insumo"}]},
+          categoriaDB: {$ifNull: ["$insumoDB.categoria", "$vacio"]},
         })
         .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1})
         .exec();
@@ -412,7 +412,7 @@ app.get(
         })
         .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
         .addFields({
-          areaDB: "$areaDB.area",
+          areaDB: {$ifNull: ["$areaDB.area", {$toString: "$area"}]},
         })
         .lookup({
           from: "Insumos",
@@ -422,8 +422,8 @@ app.get(
         })
         .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
         .addFields({
-          categoriaDB: "$insumoDB.categoria",
-          insumoDB: "$insumoDB.nombre",
+          insumoDB: {$ifNull: ["$insumoDB.nombre", {$toString: "$insumo"}]},
+          categoriaDB: {$ifNull: ["$insumoDB.categoria", "$vacio"]},
         })
         .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1})
         .exec();
@@ -482,7 +482,7 @@ app.get(
         })
         .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
         .addFields({
-          areaDB: "$areaDB.area",
+          areaDB: {$ifNull: ["$areaDB.area", {$toString: "$area"}]},
         })
         .lookup({
           from: "Insumos",
@@ -492,8 +492,8 @@ app.get(
         })
         .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
         .addFields({
-          categoriaDB: "$insumoDB.categoria",
-          insumoDB: "$insumoDB.nombre",
+          insumoDB: {$ifNull: ["$insumoDB.nombre", {$toString: "$insumo"}]},
+          categoriaDB: {$ifNull: ["$insumoDB.categoria", "$vacio"]},
         })
         .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1})
         .exec();
@@ -540,7 +540,7 @@ app.get(
         })
         .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
         .addFields({
-          areaDB: "$areaDB.area",
+          areaDB: {$ifNull: ["$areaDB.area", {$toString: "$area"}]},
         })
         .lookup({
           from: "Insumos",
@@ -550,8 +550,8 @@ app.get(
         })
         .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
         .addFields({
-          categoriaDB: "$insumoDB.categoria",
-          insumoDB: "$insumoDB.nombre",
+          insumoDB: {$ifNull: ["$insumoDB.nombre", {$toString: "$insumo"}]},
+          categoriaDB: {$ifNull: ["$insumoDB.categoria", "$vacio"]},
         })
         .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1})
         .exec();
@@ -604,7 +604,7 @@ app.get(
         })
         .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
         .addFields({
-          areaDB: "$areaDB.area",
+          areaDB: {$ifNull: ["$areaDB.area", {$toString: "$area"}]},
         })
         .lookup({
           from: "Insumos",
@@ -614,8 +614,8 @@ app.get(
         })
         .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
         .addFields({
-          categoriaDB: "$insumoDB.categoria",
-          insumoDB: "$insumoDB.nombre",
+          insumoDB: {$ifNull: ["$insumoDB.nombre", {$toString: "$insumo"}]},
+          categoriaDB: {$ifNull: ["$insumoDB.categoria", "$vacio"]},
         })
         .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1})
         .exec();
@@ -651,9 +651,9 @@ app.get(
       // b.price - a.price para comparar numeros
       reporte.sort(
         (a, b) =>
-          a.areaDB.localeCompare(b.areaDB) ||
-          a.categoriaDB.localeCompare(b.categoriaDB) ||
-          a.insumoDB.localeCompare(b.insumoDB)
+          (a.areaDB ?? "").localeCompare(b.areaDB ?? "") ||
+          (a.categoriaDB ?? "").localeCompare(b.categoriaDB ?? "") ||
+          (a.insumoDB ?? "").localeCompare(b.insumoDB ?? "")
       );
 
       return res.status(200).json({

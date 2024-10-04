@@ -94,7 +94,7 @@ app.get(
             as: "paciente",
           },
         },
-        {$unwind: "$paciente"},
+        {$unwind: "$paciente", preserveNullAndEmptyArrays: true},
         // Edicion del output
         {
           $project: {
@@ -268,7 +268,7 @@ app.get(
             as: "paciente",
           },
         },
-        {$unwind: "$paciente"},
+        {$unwind: "$paciente", preserveNullAndEmptyArrays: true},
         // Edicion del output
         {
           $project: {
@@ -484,7 +484,7 @@ app.get(
             as: "paciente",
           },
         },
-        {$unwind: "$paciente"},
+        {$unwind: "$paciente", preserveNullAndEmptyArrays: true},
         // Edicion del output
         {
           $project: {
@@ -722,7 +722,7 @@ app.get(
             as: "paciente",
           },
         },
-        {$unwind: "$paciente"},
+        {$unwind: "$paciente", preserveNullAndEmptyArrays: true},
         // Edicion del output
         {
           $project: {
@@ -847,7 +847,7 @@ app.get(
             as: "paciente",
           },
         },
-        {$unwind: "$paciente"},
+        {$unwind: "$paciente", preserveNullAndEmptyArrays: true},
         // Edicion del output
         {
           $project: {

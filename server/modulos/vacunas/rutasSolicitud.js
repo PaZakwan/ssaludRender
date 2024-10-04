@@ -227,7 +227,7 @@ app.get(
         })
         .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
         .addFields({
-          areaDB: "$areaDB.area",
+          areaDB: {$ifNull: ["$areaDB.area", {$toString: "$area"}]},
         })
         .lookup({
           from: "VacunaInsumos",
@@ -237,8 +237,8 @@ app.get(
         })
         .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
         .addFields({
-          categoriaDB: "$insumoDB.categoria",
-          insumoDB: "$insumoDB.nombre",
+          insumoDB: {$ifNull: ["$insumoDB.nombre", {$toString: "$insumo"}]},
+          categoriaDB: {$ifNull: ["$insumoDB.categoria", "$vacio"]},
         })
         .addFields({
           _id: {$concat: ["$areaDB", "-", "$insumoDB"]},
@@ -365,7 +365,7 @@ app.get(
         })
         .unwind({path: "$origenDB", preserveNullAndEmptyArrays: true})
         .addFields({
-          origenDB: "$origenDB.area",
+          origenDB: {$ifNull: ["$origenDB.area", {$toString: "$origen"}]},
         })
         .lookup({
           from: "areas",
@@ -376,7 +376,7 @@ app.get(
         // para mantener los que no tienen destino
         .unwind({path: "$destinoDB", preserveNullAndEmptyArrays: true})
         .addFields({
-          destinoDB: "$destinoDB.area",
+          destinoDB: {$ifNull: ["$destinoDB.area", {$toString: "$destino"}]},
           id_time: {
             $substr: [
               {

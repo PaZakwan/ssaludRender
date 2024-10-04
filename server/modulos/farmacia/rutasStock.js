@@ -311,7 +311,7 @@ app.get(
         })
         .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
         .addFields({
-          areaDB: "$areaDB.area",
+          areaDB: {$ifNull: ["$areaDB.area", {$toString: "$area"}]},
         })
         .lookup({
           from: "Insumos",
@@ -321,8 +321,8 @@ app.get(
         })
         .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
         .addFields({
-          categoriaDB: "$insumoDB.categoria",
-          insumoDB: "$insumoDB.nombre",
+          insumoDB: {$ifNull: ["$insumoDB.nombre", {$toString: "$insumo"}]},
+          categoriaDB: {$ifNull: ["$insumoDB.categoria", "$vacio"]},
         })
         .addFields({
           _id: {$concat: ["$areaDB", "-", "$insumoDB"]},
@@ -411,15 +411,15 @@ app.get(
       let porExpirar = new Date(new Date().setDate(hoy.getDate() + 90));
 
       let insumoSelect = {
-        insumoDB: "$insumoDB.nombre",
-        insumoCategoriaDB: "$insumoDB.categoria",
+        insumoDB: {$ifNull: ["$insumoDB.nombre", {$toString: "$insumo"}]},
+        insumoCategoriaDB: {$ifNull: ["$insumoDB.categoria", "$vacio"]},
       };
       if (req.query.insumoSelect) {
         if (JSON.parse(req.query.insumoSelect)?.dosis) {
-          insumoSelect.dosisDB = "$insumoDB.dosis_posibles";
+          insumoSelect.dosisDB = {$ifNull: ["$insumoDB.dosis_posibles", "$vacio"]};
         }
         if (JSON.parse(req.query.insumoSelect)?.condiciones) {
-          insumoSelect.condicionesDB = "$insumoDB.condiciones";
+          insumoSelect.condicionesDB = {$ifNull: ["$insumoDB.condiciones", "$vacio"]};
         }
       }
 
@@ -468,7 +468,7 @@ app.get(
         })
         .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
         .addFields({
-          areaDB: "$areaDB.area",
+          areaDB: {$ifNull: ["$areaDB.area", {$toString: "$area"}]},
         })
         .lookup({
           from: "Insumos",
@@ -496,7 +496,7 @@ app.get(
       if (req.query.categoria !== "null" && stockDB.length > 0) {
         let categoria = JSON.parse(req.query.categoria);
         stockDB = stockDB.filter((insumo) =>
-          categoria.includes(insumo.insumoCategoriaDB.toString())
+          categoria.includes(insumo.insumoCategoriaDB?.toString())
         );
       }
 
@@ -616,24 +616,6 @@ app.get(
         })
         .group({
           _id: {insumo: "$insumo"},
-          // subtotal_Otros: {
-          //   $sum: {
-          //     $cond: [
-          //       {
-          //         $not: [
-          //           {
-          //             $in: [
-          //               "$procedencia",
-          //               ["Municipal", "Remediar", "SUMAR", "Region", "Nacion", "Donacion"],
-          //             ],
-          //           },
-          //         ],
-          //       },
-          //       "$cantidad",
-          //       0,
-          //     ],
-          //   },
-          // },
           subtotal_Municipal: {
             $sum: {
               $cond: [{$eq: ["$procedencia", "Municipal"]}, "$cantidad", 0],
@@ -690,11 +672,14 @@ app.get(
           foreignField: "_id",
           as: "insumoDB",
         })
+        .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
+        .addFields({
+          insumoDB: {$ifNull: ["$insumoDB.nombre", {$toString: "$_id.insumo"}]},
+          categoriaDB: {$ifNull: ["$insumoDB.categoria", "$vacio"]},
+        })
         .project({
           _id: 0,
         })
-        .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
-        .addFields({categoriaDB: "$insumoDB.categoria", insumoDB: "$insumoDB.nombre"})
         .sort({categoriaDB: 1, insumoDB: 1});
 
       return res.status(200).json({

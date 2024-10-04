@@ -136,7 +136,7 @@ app.get(
         })
         .unwind({path: "$origenDB", preserveNullAndEmptyArrays: true})
         .addFields({
-          origenDB: "$origenDB.area",
+          origenDB: {$ifNull: ["$origenDB.area", {$toString: "$origen"}]},
         })
         .lookup({
           from: "pacientes",
@@ -150,30 +150,6 @@ app.get(
           preserveNullAndEmptyArrays: true,
         })
         .addFields({
-          pacienteDocDB: {
-            $ifNull: [
-              {
-                $concat: ["$tipo_doc", " ", "$documento"],
-              },
-              {
-                $ifNull: [
-                  {
-                    $concat: ["$pacienteDB.tipo_doc", " ", "$pacienteDB.documento"],
-                  },
-                  {
-                    $ifNull: [
-                      {
-                        $concat: ["Resp ", "$doc_responsable"],
-                      },
-                      {
-                        $concat: ["Resp ", "$pacienteDB.doc_responsable"],
-                      },
-                    ],
-                  },
-                ],
-              },
-            ],
-          },
           pacienteDB: {
             $ifNull: [
               {
@@ -182,6 +158,24 @@ app.get(
               {
                 $concat: [{$ifNull: ["$ps_nombreC", ""]}, " (", "$ps_paciente", ")"],
               },
+              {$toString: "$paciente"},
+            ],
+          },
+          pacienteDocDB: {
+            $ifNull: [
+              {
+                $concat: ["$tipo_doc", " ", "$documento"],
+              },
+              {
+                $concat: ["$pacienteDB.tipo_doc", " ", "$pacienteDB.documento"],
+              },
+              {
+                $concat: ["Resp ", "$doc_responsable"],
+              },
+              {
+                $concat: ["Resp ", "$pacienteDB.doc_responsable"],
+              },
+              "$vacio",
             ],
           },
         })
@@ -202,6 +196,7 @@ app.get(
                 $concat: ["$vacunadorDB.apellido", ", ", "$vacunadorDB.nombre"],
               },
               "$vacunadorName",
+              {$toString: "$vacunador"},
             ],
           },
         })
@@ -213,7 +208,7 @@ app.get(
         })
         .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
         .addFields({
-          insumoDB: {$ifNull: ["$insumoDB.nombre", "$vacunaName"]},
+          insumoDB: {$ifNull: ["$insumoDB.nombre", {$toString: "$insumo"}, "$vacunaName"]},
         });
 
       if (req.query.select === "lite") {

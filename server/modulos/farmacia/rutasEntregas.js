@@ -113,7 +113,7 @@ app.get(
         })
         .unwind({path: "$origenDB", preserveNullAndEmptyArrays: true})
         .addFields({
-          origenDB: "$origenDB.area",
+          origenDB: {$ifNull: ["$origenDB.area", {$toString: "$origen"}]},
         })
         .lookup({
           from: "pacientes",
@@ -127,6 +127,7 @@ app.get(
             $ifNull: [
               {$concat: ["$pacienteDB.apellido", ", ", "$pacienteDB.nombre"]},
               "$pacienteDB.ps_id",
+              {$toString: "$paciente"},
             ],
           },
           pacienteDocDB: {
@@ -135,17 +136,13 @@ app.get(
                 $concat: ["$pacienteDB.tipo_doc", " ", "$pacienteDB.documento"],
               },
               {
-                $ifNull: [
-                  {
-                    $concat: ["Resp ", "$pacienteDB.doc_responsable"],
-                  },
-                  "$vacio",
-                ],
+                $concat: ["Resp ", "$pacienteDB.doc_responsable"],
               },
+              "$vacio",
             ],
           },
           pacienteTelefonoDB: {
-            $ifNull: ["$pacienteDB.telefono", "$pacienteDB.telefono_alt"],
+            $ifNull: ["$pacienteDB.telefono", "$pacienteDB.telefono_alt", "$vacio"],
           },
         })
         .lookup({
@@ -156,8 +153,10 @@ app.get(
         })
         .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
         .addFields({
-          categoriaDB: "$insumoDB.categoria",
-          insumoDB: "$insumoDB.nombre",
+          insumoDB: {$ifNull: ["$insumoDB.nombre", {$toString: "$insumo"}]},
+          categoriaDB: {
+            $ifNull: ["$insumoDB.categoria", "$vacio"],
+          },
         });
 
       return res.status(200).json({

@@ -380,7 +380,7 @@ app.get(
           })
           .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
           .addFields({
-            areaDB: "$areaDB.area",
+            areaDB: {$ifNull: ["$areaDB.area", {$toString: "$area"}]},
           })
           .exec();
       }

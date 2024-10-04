@@ -1,13 +1,5 @@
 ## Known Issues (Problemas Conocidos)
 
-- Chromium:
-
-  - Descargar PDFs - (Error: Error de red) Usando el boton proporcionado por el navegador cuando previsualiza el PDF.
-    **Solucion Temporaria:** [Video en Youtube](https://www.youtube.com/watch?v=kRvcB-4OXak&list=PLqJxYXwAoKrQQB5dS2-LnIEUYpeswAmIq&index=8) o navegadores con otro motor como Firefox/Safari.
-    Informacion Tecnica: https://support.google.com/chrome/thread/47987652/failed-network-error-when-click-download-a-pdf-file-in-blob-url?hl=en
-    https://bugs.chromium.org/p/chromium/issues/detail?id=892133
-    https://bugs.chromium.org/p/chromium/issues/detail?id=1224027
-
 - Excels descargados:
 
   - El Formato y la extension del archivo no coinciden (.xls), abrir de todos modos.
@@ -18,6 +10,17 @@
 #### Unreleased - W.I.P. (Work in Progress)
 
 - Continuara... ToDo File ^.^
+
+### [1.7.20241004] - 2024-10-04
+
+- Improve a Sistema - \_id => Se mejoraron las relaciones entre colecciones de datos, cuando falta un documento de la relacion este podia generar errores.
+- Improve a Sistema - Pacientes => Upload el campo "dir_calle" y "dir_descripcion" ahora valida mejor si estan vacios.
+
+- Changed a Sistema - Pacientes => Upload el campo "direccion" ahora se analiza -> si tiene valores numericos como ultimo valor de su cadena lo agrega a dir_numero si es que no existe y el resto lo agrega a dir_calle si es que no existe, por lo tanto si los campors dir_calle y dir_numero existen el campo direccion no es tenido en cuenta.
+
+- Fix a Sistema - PDFs => Se soluciono el error (Error: Error de red) de usar el boton de descarga proporcionado por el navegador cuando se previsualizaba el PDF.
+
+- Changed a Farmacia - Reportes => El Reporte Detallado ahora tiene la fecha "Hasta" liberada para filtrar los movimientos (Ingresos/Egresos).
 
 ### [1.7.20240923] - 2024-09-23
 

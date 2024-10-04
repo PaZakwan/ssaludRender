@@ -192,7 +192,7 @@ app.get(
         })
         .unwind({path: "$destinoDB", preserveNullAndEmptyArrays: true})
         .addFields({
-          destinoDB: "$destinoDB.area",
+          destinoDB: {$ifNull: ["$destinoDB.area", {$toString: "$destino"}]},
         });
 
       // Transferencias Remitos (clearing)
@@ -279,15 +279,17 @@ app.get(
         })
         .unwind({path: "$insumos.insumoDB", preserveNullAndEmptyArrays: true})
         .addFields({
-          "insumos.insumoDB": "$insumos.insumoDB.nombre",
-          "insumos.categoriaDB": "$insumos.insumoDB.categoria",
-          "insumos.lote": {$ifNull: ["$insumos.lote", "$noRetornaNada"]},
+          "insumos.insumoDB": {
+            $ifNull: ["$insumos.insumoDB.nombre", {$toString: "$insumos.insumo"}],
+          },
+          "insumos.categoriaDB": {$ifNull: ["$insumos.insumoDB.categoria", "$vacio"]},
+          "insumos.lote": {$ifNull: ["$insumos.lote", "$vacio"]},
           "insumos.vencimiento": {
             $ifNull: [
               {
                 $dateToString: {format: "%Y-%m-%d", date: "$insumos.vencimiento"},
               },
-              "$noRetornaNada",
+              "$vacio",
             ],
           },
         })
@@ -308,7 +310,7 @@ app.get(
         })
         .unwind({path: "$destinoDB", preserveNullAndEmptyArrays: true})
         .addFields({
-          destinoDB: "$destinoDB.area",
+          destinoDB: {$ifNull: ["$destinoDB.area", {$toString: "$destino"}]},
         })
         .lookup({
           from: "areas",
@@ -318,7 +320,7 @@ app.get(
         })
         .unwind({path: "$origenDB", preserveNullAndEmptyArrays: true})
         .addFields({
-          origenDB: "$origenDB.area",
+          origenDB: {$ifNull: ["$origenDB.area", {$toString: "$origen"}]},
         })
         .sort({fecha: -1, _id: -1});
 
@@ -664,9 +666,11 @@ app.get(
         })
         .unwind({path: "$insumos.insumoDB", preserveNullAndEmptyArrays: true})
         .addFields({
-          "insumos.insumoDB": "$insumos.insumoDB.nombre",
-          "insumos.categoriaDB": "$insumos.insumoDB.categoria",
-          "insumos.lote": {$ifNull: ["$insumos.lote", "$noRetornaNada"]},
+          "insumos.insumoDB": {
+            $ifNull: ["$insumos.insumoDB.nombre", {$toString: "$insumos.insumo"}],
+          },
+          "insumos.categoriaDB": {$ifNull: ["$insumos.insumoDB.categoria", "$vacio"]},
+          "insumos.lote": {$ifNull: ["$insumos.lote", "$vacio"]},
         })
         .addFields({
           "insumos.expirado": {
@@ -710,7 +714,7 @@ app.get(
               {
                 $dateToString: {format: "%Y-%m-%d", date: "$insumos.vencimiento"},
               },
-              "$noRetornaNada",
+              "$vacio",
             ],
           },
         })
@@ -731,7 +735,7 @@ app.get(
         })
         .unwind({path: "$destinoDB", preserveNullAndEmptyArrays: true})
         .addFields({
-          destinoDB: "$destinoDB.area",
+          destinoDB: {$ifNull: ["$destinoDB.area", {$toString: "$destino"}]},
         })
         .lookup({
           from: "areas",
@@ -741,7 +745,7 @@ app.get(
         })
         .unwind({path: "$origenDB", preserveNullAndEmptyArrays: true})
         .addFields({
-          origenDB: "$origenDB.area",
+          origenDB: {$ifNull: ["$origenDB.area", {$toString: "$origen"}]},
         })
         .sort({fecha: -1, _id: -1});
 
@@ -1091,7 +1095,7 @@ app.get(
           })
           .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
           .addFields({
-            areaDB: "$areaDB.area",
+            areaDB: {$ifNull: ["$areaDB.area", {$toString: "$area"}]},
           })
           .lookup({
             from: "VacunaInsumos",
@@ -1101,8 +1105,8 @@ app.get(
           })
           .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
           .addFields({
-            categoriaDB: "$insumoDB.categoria",
-            insumoDB: "$insumoDB.nombre",
+            insumoDB: {$ifNull: ["$insumoDB.nombre", {$toString: "$insumo"}]},
+            categoriaDB: {$ifNull: ["$insumoDB.categoria", "$vacio"]},
           })
           .addFields({
             _id: {$concat: ["$areaDB", "-", "$insumoDB"]},
@@ -1153,7 +1157,7 @@ app.get(
           })
           .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
           .addFields({
-            areaDB: "$areaDB.area",
+            areaDB: {$ifNull: ["$areaDB.area", {$toString: "$area"}]},
           })
           .lookup({
             from: "VacunaInsumos",
@@ -1163,8 +1167,8 @@ app.get(
           })
           .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
           .addFields({
-            categoriaDB: "$insumoDB.categoria",
-            insumoDB: "$insumoDB.nombre",
+            insumoDB: {$ifNull: ["$insumoDB.nombre", {$toString: "$insumo"}]},
+            categoriaDB: {$ifNull: ["$insumoDB.categoria", "$vacio"]},
           })
           .addFields({
             _id: {$concat: ["$areaDB", "-", "$insumoDB"]},
