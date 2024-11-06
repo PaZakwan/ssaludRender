@@ -16,7 +16,6 @@ file_server/logs/*
 file_server/opciones/*
 
 # Ignora archivos
-package-lock.json
 public/static/config.json
 nodemon.json
 
