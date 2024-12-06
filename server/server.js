@@ -3,6 +3,7 @@ require("./config/config");
 // Variable global para la ruta donde corre el server
 const path = require("path");
 process.env.MAIN_FOLDER = path.resolve(__dirname);
+const {clgEvento, clgFalla} = require(process.env.MAIN_FOLDER + "/tools/console");
 
 // MONGO CONEXIONES DB
 const db_connection = require("./db_connection");
@@ -105,6 +106,14 @@ const loadRutasApi = () => {
         changelog,
       });
     });
+    // ToDo de la API
+    app.get("/api/system/ToDoList", async (req, res) => {
+      let ToDoList = await fs.promises.readFile(path.resolve(__dirname, "../ToDo.md"), "utf8");
+      return res.status(200).json({
+        ok: true,
+        ToDoList,
+      });
+    });
 
     // Si no encuentra la ruta responde con lo siguiente 404
     app.use((req, res, next) => {
@@ -118,13 +127,11 @@ const loadRutasApi = () => {
     });
 
     // Si ocurre algun error en la app 500
-    // app.get("/", (req, res) => {
-    //   let err = new Error("Testing - not found");
-    //   err.status = 404;
-    //   return next(err);
-    // });
     app.use((err, req, res, next) => {
-      console.error(err.stack);
+      clgFalla({
+        name: "RutasApi",
+        falla: err,
+      });
       return res.status(500).send({
         ok: false,
         err: {
@@ -134,7 +141,10 @@ const loadRutasApi = () => {
       });
     });
   } catch (error) {
-    console.error(`loadRutasApi CATCH => ${error.name}: ${error.message}.`);
+    clgFalla({
+      name: "loadRutasApi CATCH",
+      falla: error,
+    });
   }
 };
 
@@ -163,9 +173,10 @@ const webApiServerRun = async () => {
             // res.redirect(301, `https://${req.headers['host']}${req.url}`);
           })
           .listen(80, () => {
-            console.log(
-              `===== Servidor funcionando en: ${process.env.BASE_URL}:80 redirecciona al HTTPS 443 =====`
-            );
+            clgEvento({
+              name: "Servidor",
+              evento: `funcionando en ${process.env.BASE_URL}:80 redirecciona al HTTPS 443`,
+            });
           });
       }
 
@@ -185,7 +196,10 @@ const webApiServerRun = async () => {
     }
     return true;
   } catch (error) {
-    console.error(`webApiServerRun CATCH => ${error.name}: ${error.message}.`);
+    clgFalla({
+      name: "webApiServerRun CATCH",
+      falla: error,
+    });
     return false;
   }
 };
@@ -198,19 +212,28 @@ const startServer = async () => {
     // Carga las Rutas de la API.
     loadRutasApi();
     // Espera que se creen los modelos en las RUTAS
-    console.log(`===== ${timeNow()} <=> Creando Modelos de la BD =====`);
+    clgEvento({
+      name: "Base de Datos",
+      evento: `Creando Modelos`,
+    });
     if (process.env.NODE_ENV === "dev") {
       await new Promise((resolve) => setTimeout(resolve, 1 * 1000));
     } else {
       await new Promise((resolve) => setTimeout(resolve, 2 * 1000));
     }
     // Crea los INDEX de la BD.
-    console.log(`===== ${timeNow()} <=> Creando Indices de la BD =====`);
+    clgEvento({
+      name: "Base de Datos",
+      evento: `Creando Indices`,
+    });
     let index = await DB.syncIndexes({continueOnError: true});
     // {key : value} => {Modelo : Error}
     // console.log("index", index);
     // Espera que se Terminen de crear los index de la DB
-    console.log(`===== ${timeNow()} <=> Terminando de Crear los Indices de la BD =====`);
+    clgEvento({
+      name: "Base de Datos",
+      evento: `Terminando de Crear los Indices`,
+    });
     if (process.env.NODE_ENV === "dev") {
       await new Promise((resolve) => setTimeout(resolve, 1 * 1000));
     } else {
@@ -221,7 +244,10 @@ const startServer = async () => {
     // Levanta el Servidor.
     await webApiServerRun();
   } catch (error) {
-    console.error(`startServer CATCH => ${error.name}: ${error.message}.`);
+    clgFalla({
+      name: "startServer CATCH",
+      falla: error,
+    });
   }
 };
 
@@ -229,17 +255,10 @@ startServer();
 
 // funciones de msjs
 const mensajeBackend = function (BASE_URL, PORT) {
-  console.log(`${timeNow()} <=> Ejecutando Backend en: ${BASE_URL}:${PORT}`);
-};
-const timeNow = function () {
-  let ahora = new Date();
-  return `${ahora.getFullYear()}/${(ahora.getMonth() + 1).toString().padStart(2, 0)}/${ahora
-    .getDate()
-    .toString()
-    .padStart(2, 0)} - ${ahora.getHours().toString().padStart(2, 0)}:${ahora
-    .getMinutes()
-    .toString()
-    .padStart(2, 0)}`;
+  clgEvento({
+    name: "Server",
+    evento: `Funcionando en ${BASE_URL}:${PORT}`,
+  });
 };
 
 // +objectSetUnset        $set = {} $unset          como rutasInsumos VER reconstruir como isVacio()

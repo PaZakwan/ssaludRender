@@ -8,7 +8,7 @@ const errorMessage = function (res, error, statusTemp) {
   }
 
   if (process.env.NODE_ENV === "dev") {
-    console.log("##### errorMessage INI #####");
+    console.error("##### errorMessage INI #####");
     console.error("code: ", error.code);
     console.error("responseCode: ", error.responseCode);
     console.error("statusTemp: ", statusTemp);
@@ -17,7 +17,7 @@ const errorMessage = function (res, error, statusTemp) {
     console.error("type: ", error.type);
     console.error("arguments: ", error.arguments);
     console.error("errors: ", error.errors);
-    console.log("##### errorMessage END #####");
+    console.error("##### errorMessage END #####");
   }
   // Mongoose Errors
   if (error.name === "ValidationError") {

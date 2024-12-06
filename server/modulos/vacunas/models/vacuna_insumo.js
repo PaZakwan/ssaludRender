@@ -31,11 +31,18 @@ let VacunaInsumoSchema = new Schema(
       lowercase: true,
     },
 
-    unique_code: {
+    id_Nomivac: {
       type: String,
       trim: true,
       unique: true,
       sparse: true,
+      required: [
+        function () {
+          return this.categoria === "Vacuna" || this.getUpdate?.().$set?.categoria === "Vacuna";
+        },
+        // "El ID es necesario si categoria es Vacuna.",
+        "El ID del Nomivac de la Vacuna es necesario (CIPRES).",
+      ],
     },
 
     condiciones: {
@@ -75,6 +82,13 @@ let VacunaInsumoSchema = new Schema(
         },
       ],
       default: void 0,
+      required: [
+        function () {
+          return this.categoria === "Vacuna" || this.getUpdate?.().$set?.categoria === "Vacuna";
+        },
+        // "Las Dosis Posibles son requeridas si categoria es Vacuna.",
+        "Las Dosis Posibles de la Vacuna son necesarias (CIPRES).",
+      ],
     },
 
     estado: {

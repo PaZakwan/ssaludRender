@@ -290,7 +290,7 @@ app.get(
       // Obtener grupo etario de la vacuna
       let etarioDB = VacunaInsumo.findById(
         filtro.insumo,
-        "nombre grupo_etario dosis_posibles"
+        "nombre categoria grupo_etario dosis_posibles"
       ).exec();
       let grupo_etarioDB = {};
 
@@ -392,6 +392,11 @@ app.get(
         vacunasHeader,
         reporte,
       ]);
+
+      if (etarioDB.categoria !== "Vacuna") {
+        // ERROR el Insumo seleccionado no es una Vacuna
+        return errorMessage(res, {message: "El Insumo seleccionado no es una Vacuna."}, 400);
+      }
 
       // insumosDB -> [{"nombre"}]
       if (modelos?.pre) {

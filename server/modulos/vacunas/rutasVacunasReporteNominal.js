@@ -101,16 +101,18 @@ app.get(
           filtro.insumo.$in[index] = isObjectIdValid(insumo);
         });
         // Consulta a BD -> insumosDB "nombre"
-        if (modelos?.pre) {
-          insumosDB = VacunaInsumo.aggregate()
-            .collation({locale: "es", numericOrdering: true})
-            .match({_id: filtro.insumo})
-            .project({
-              _id: 0,
-              nombre: 1,
-            })
-            .sort({nombre: 1})
-            .exec();
+        insumosDB = await VacunaInsumo.aggregate()
+          .collation({locale: "es", numericOrdering: true})
+          .match({_id: filtro.insumo, categoria: "Vacuna"})
+          .project({
+            _id: 0,
+            nombre: 1,
+          })
+          .sort({nombre: 1})
+          .exec();
+        if (insumosDB.length === 0) {
+          // ERROR de los Insumos seleccionados no habian Vacunas
+          return errorMessage(res, {message: "No se seleccionaron Vacunas en los Insumos."}, 400);
         }
       }
       if (req.query.procedencias && req.query.procedencias !== "[]") {
@@ -459,12 +461,7 @@ app.get(
       }
 
       // Esperar que se concluyan las consultas a la BD
-      [reporte, vacunasHeader, insumosDB, areasDB] = await Promise.all([
-        reporte,
-        vacunasHeader,
-        insumosDB,
-        areasDB,
-      ]);
+      [reporte, vacunasHeader, areasDB] = await Promise.all([reporte, vacunasHeader, areasDB]);
 
       // Reporte raw -> TOTALES
       if (modelos?.pre) {
@@ -631,7 +628,7 @@ app.get(
       return res.status(200).json({
         ok: true,
         areasDB,
-        insumosDB,
+        insumosDB: modelos?.pre ? insumosDB : null,
         vacunasHeader: vacunasHeader?.[0]?.vacunasHeader,
         totales,
         reporte: modelos?.raw ? reporte : null,

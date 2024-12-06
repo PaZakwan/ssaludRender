@@ -8,7 +8,7 @@ const {verificaToken, verificaArrayPropValue} = require(process.env.MAIN_FOLDER 
 const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
 const {isObjectIdValid} = require(process.env.MAIN_FOLDER + "/tools/object");
 
-const modificarStockInc = require("./vacunaHelper");
+const {modificarStockInc} = require("./vacunaHelper");
 const VacunaStock = require("./models/vacuna_stock");
 const VacunaTransferencia = require("./models/vacuna_transferencia");
 const VacunaIngreso = require("./models/vacuna_ingreso");
@@ -636,12 +636,31 @@ app.get(
             {$project: {_id: 0, insumo: 1, cant_min: 1}},
           ],
         })
+        // Insumos
+        .unionWith({
+          coll: "VacunaInsumos",
+          pipeline: [
+            {
+              $match: filtro.insumo ? {_id: filtro.insumo} : {},
+            },
+            {
+              $project: {
+                _id: 0,
+                insumo: "$_id",
+                insumoDB: {$ifNull: ["$nombre", {$toString: "$_id"}]},
+                categoriaDB: {$ifNull: ["$categoria", "$vacio"]},
+              },
+            },
+          ],
+        })
         .group({
           _id: {insumo: "$insumo"},
           // agregar los contadores al agrupado
           ...objectSubtotal,
           total: {$sum: "$cantidad"},
           cant_min_prom: {$avg: "$cant_min"},
+          insumoDB: {$last: "$insumoDB"},
+          categoriaDB: {$last: "$categoriaDB"},
         })
         .addFields({
           // subtotal_Otros -> total - ["$subtotal_<prop>"]
@@ -653,17 +672,6 @@ app.get(
               },
             ],
           },
-        })
-        .lookup({
-          from: "VacunaInsumos",
-          localField: "_id.insumo",
-          foreignField: "_id",
-          as: "insumoDB",
-        })
-        .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
-        .addFields({
-          insumoDB: {$ifNull: ["$insumoDB.nombre", {$toString: "$_id.insumo"}]},
-          categoriaDB: {$ifNull: ["$insumoDB.categoria", "$vacio"]},
         })
         .project({
           _id: 0,

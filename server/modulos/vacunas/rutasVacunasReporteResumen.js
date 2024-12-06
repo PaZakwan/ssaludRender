@@ -134,8 +134,8 @@ app.get(
         });
       }
       // Consulta a BD -> insumosDB "nombre"
-      if (modelos?.pre && filtro.insumo) {
-        insumosDB = VacunaInsumo.aggregate()
+      if (filtro.insumo) {
+        insumosDB = await VacunaInsumo.aggregate()
           .collation({locale: "es", numericOrdering: true})
           .match({_id: filtro.insumo, categoria: "Vacuna"})
           .project({
@@ -144,6 +144,10 @@ app.get(
           })
           .sort({nombre: 1})
           .exec();
+        if (insumosDB.length === 0) {
+          // ERROR de los Insumos seleccionados no habian Vacunas
+          return errorMessage(res, {message: "No se seleccionaron Vacunas en los Insumos."}, 400);
+        }
       }
 
       // OPCIONALES
@@ -475,14 +479,12 @@ app.get(
       }
 
       // Esperar que se concluyan las consultas a la BD
-      [areasDB, insumosDB, vacunasHeader, vacunatorioAplicacionDB, vacunatorioPacienteDB] =
-        await Promise.all([
-          areasDB,
-          insumosDB,
-          vacunasHeader,
-          vacunatorioAplicacionDB,
-          vacunatorioPacienteDB,
-        ]);
+      [areasDB, vacunasHeader, vacunatorioAplicacionDB, vacunatorioPacienteDB] = await Promise.all([
+        areasDB,
+        vacunasHeader,
+        vacunatorioAplicacionDB,
+        vacunatorioPacienteDB,
+      ]);
 
       // format vacunasHeader
       // vacunasHeader -> [Total Pacientes - especiales(opcionalesProyect) - aplicaciones(vacunasHeader) - Dosis Totales]

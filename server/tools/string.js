@@ -114,5 +114,18 @@ const trim_between = (string) => {
   return string;
 };
 
+const checkIsValidJson = (string) => {
+  try {
+    let parsedJson = JSON.parse(string);
+    /** parsed JSON will not be undefined if it is parsed successfully because undefined is not a valid JSON */
+    return parsedJson;
+  } catch (err) {
+    // console.log("checkIsValidJson", err);
+    /** returning undefined because null, boolean, string, array or object is a valid JSON whereas undefined is invalid JSON  */
+    return undefined;
+  }
+};
+
 exports.capitalize = capitalize;
 exports.trim_between = trim_between;
+exports.checkIsValidJson = checkIsValidJson;

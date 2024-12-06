@@ -1,6 +1,7 @@
 {
   "json": {
     "insumo_procedencia": ["Region", "Historial", "Paciente", "Carga inicial"],
+    "insumo_categorias": ["Vacuna", "Otros"],
     "vacunas_condiciones": [
       "No Embarazada",
       "No Puerpera",

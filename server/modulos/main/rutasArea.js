@@ -20,10 +20,13 @@ let listaArea = [
   "direccion",
   "responsable",
   "oficina_nro",
+  "patrimonio",
   "unidad_atencion",
   "zona_us",
   "farmacia",
   "vacunatorio",
+  "SISA",
+  "RUPES",
   "estado",
 ];
 

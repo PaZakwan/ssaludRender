@@ -7,8 +7,9 @@ const {verificaToken, verificaArrayPropValue} = require(process.env.MAIN_FOLDER 
 const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
 const {isVacio, isObjectIdValid, dateUTC} = require(process.env.MAIN_FOLDER + "/tools/object");
 
-const modificarStockInc = require("./vacunaHelper");
+const {modificarStockInc} = require("./vacunaHelper");
 const VacunaAplicacion = require("./models/vacuna_aplicacion");
+const VacunaDescarte = require("./models/vacuna_descarte");
 
 const app = express();
 
@@ -297,6 +298,7 @@ app.put(
       // recorrer array de insumos
       for (const insumo of body.insumos) {
         let vacunacionesDB = null;
+        let descarteDB = null;
         let stockDB = null;
 
         if (body.No_Provista || insumo.No_Provista) {
@@ -314,24 +316,51 @@ app.put(
             type: "Modificar Stock",
           });
         } else {
-          // modifico stock sin error (guarda vacunacion)
-          vacunacionesDB = await new VacunaAplicacion({
-            ...body,
-            vacunaName: insumo.vacunaName,
-            procedencia: insumo.insumo?.procedencia ?? body.No_Provista,
-            insumo: insumo.insumo?.insumo ?? insumo.insumo?.id,
-            lote: insumo.insumo?.lote ?? insumo.lote,
-            vencimiento: insumo.insumo?.vencimiento ?? insumo.vencimiento,
-            dosis: insumo.dosis,
-            completa: insumo.completa ? true : undefined,
-            estrategia: insumo.estrategia,
-            retirado: body.No_Provista || insumo.No_Provista ? undefined : retiradoDate,
-          }).save();
-          if (vacunacionesDB === null) {
-            errors.push({
-              message: `${insumo.insumo?.insumoDB ?? insumo.vacunaName} - Guardar Vacunacion Error`,
-              type: "Guardar Vacunacion",
-            });
+          // modifico stock sin error
+          if (
+            body.No_Provista ||
+            insumo.No_Provista ||
+            insumo?.insumo?.insumoCategoriaDB === "Vacuna"
+          ) {
+            // (guarda vacunacion)
+            vacunacionesDB = await new VacunaAplicacion({
+              ...body,
+              vacunaName: insumo.vacunaName,
+              procedencia: insumo.insumo?.procedencia ?? body.No_Provista,
+              insumo: insumo.insumo?.insumo ?? insumo.insumo?.id,
+              lote: insumo.insumo?.lote ?? insumo.lote,
+              vencimiento: insumo.insumo?.vencimiento ?? insumo.vencimiento,
+              dosis: insumo.dosis,
+              completa: insumo.completa ? true : undefined,
+              estrategia: insumo.estrategia,
+              retirado: body.No_Provista || insumo.No_Provista ? undefined : retiradoDate,
+            }).save();
+            if (vacunacionesDB === null) {
+              errors.push({
+                message: `${
+                  insumo.insumo?.insumoDB ?? insumo.vacunaName
+                } - Guardar Vacunacion Error`,
+                type: "Guardar Vacunacion",
+              });
+            }
+          } else {
+            // (guardar descarte)
+            descarteDB = await new VacunaDescarte({
+              ...body,
+              insumo: insumo.insumo?.insumo,
+              procedencia: insumo.insumo?.procedencia,
+              lote: insumo.insumo?.lote,
+              vencimiento: insumo.insumo?.vencimiento,
+              retirado: retiradoDate,
+              motivo: "Utilizado",
+              cantidad: 1,
+            }).save();
+            if (descarteDB === null) {
+              errors.push({
+                message: `${insumo.insumo?.insumoDB} - Guardar Descarte Error`,
+                type: "Guardar Descarte",
+              });
+            }
           }
         }
       }

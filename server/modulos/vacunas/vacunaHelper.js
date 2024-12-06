@@ -73,4 +73,4 @@ const modificarStockInc = async (area, insumo, cantidad, resta) => {
   return stockDB;
 };
 
-module.exports = modificarStockInc;
+exports.modificarStockInc = modificarStockInc;

@@ -108,6 +108,7 @@ app.post(
             area: req.body.area_destino,
             ubicacion: req.body.ubicacion_destino,
             lugar: req.body.lugar_destino,
+            PC: req.body.PC_destino,
             funciona: req.body.funciona,
             usuario_verifico: req.usuario._id,
             fec_verifico: Date.now(),

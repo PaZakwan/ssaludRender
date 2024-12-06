@@ -1,4 +1,4 @@
-const {createReadStream, createWriteStream, unlinkSync} = require("fs");
+const {createReadStream, createWriteStream, unlinkSync, promises} = require("fs");
 const path = require("path");
 
 const languageEncoding = require("detect-file-encoding-and-language");
@@ -80,14 +80,23 @@ const deleteFile = ({fileName, fileExtension, route}) => {
 // ###############################
 // Guardar archivo...
 // ###############################
-const guardarFile = async ({fileName, fileExtension, route, content}) => {
+const guardarFile = async ({
+  fileName,
+  fileExtension,
+  route,
+  content,
+  // 'a' means appending / agregar :V
+  // 'w' Open file for writing. The file is created (if it does not exist) or truncated (if it exists)
+  flags = "a",
+  encoding = "utf8",
+}) => {
   // new Promise((resolve, reject) => {
   let ruta = path.resolve(process.env.MAIN_FOLDER, route) + `/${fileName}.${fileExtension}`;
 
   // create a write stream for the given rute
   let fsLog = createWriteStream(ruta, {
-    flags: "a", // 'a' means appending / agregar :V
-    encoding: "utf8",
+    flags,
+    encoding,
   });
   fsLog.on("error", (error) => {
     console.log(`guardarFile ${fileName}.${fileExtension}: Stream Write error: ${error.message}`);
@@ -98,6 +107,22 @@ const guardarFile = async ({fileName, fileExtension, route, content}) => {
   fsLog.write(content);
   fsLog.end();
   // });
+};
+
+// ###############################
+// Leer archivo...
+// ###############################
+const leerFile = async ({fileName, fileExtension, route, encoding = "utf8"}) => {
+  try {
+    let ruta = path.resolve(process.env.MAIN_FOLDER, route) + `/${fileName}.${fileExtension}`;
+    // leer
+    return await promises.readFile(ruta, encoding);
+  } catch (err) {
+    console.error(`leerFile Catch error: ${err}`);
+    return {
+      error: `leerFile - Catch: ${err}`,
+    };
+  }
 };
 
 // ###############################
@@ -291,6 +316,7 @@ exports.crearStreamFile = crearStreamFile;
 exports.guardarContentStream = guardarContentStream;
 exports.cerrarStreamFile = cerrarStreamFile;
 exports.guardarFile = guardarFile;
+exports.leerFile = leerFile;
 exports.deleteFile = deleteFile;
 
 exports.fileToJson = fileToJson;

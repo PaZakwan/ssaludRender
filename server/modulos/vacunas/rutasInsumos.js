@@ -23,7 +23,7 @@ let listaInsumo = [
   "nombre",
   "categoria",
   "descripcion",
-  "unique_code",
+  "id_Nomivac",
   "condiciones",
   "grupo_etario",
   "dosis_posibles",
@@ -52,9 +52,9 @@ app.get("/vacunas/insumo", [verificaToken], async (req, res) => {
             $regex: `(?i)${filtro.descripcion}`,
           };
         }
-        if (!!filtro.unique_code && typeof filtro.unique_code === "string") {
-          filtro.unique_code = {
-            $regex: `(?i)${filtro.unique_code}`,
+        if (!!filtro.id_Nomivac && typeof filtro.id_Nomivac === "string") {
+          filtro.id_Nomivac = {
+            $regex: `(?i)${filtro.id_Nomivac}`,
           };
         }
         if (!!filtro.categoria && typeof filtro.categoria === "string") {
@@ -157,14 +157,16 @@ app.put(
 
       // Verificar si hay aplicaciones con nombre similar y si existe aplicacion vincularla con el nuevo Insumo Vacuna.
       // VacunaAplicacion => insumo (objectID) / vacunaName (str) <=> VacunaInsumo => _id (objectID) / nombre (str)
-      await VacunaAplicacion.updateMany(
-        {vacunaName: insumoDB.nombre},
-        {$set: {insumo: insumoDB._id}, $unset: {vacunaName: 1}},
-        {
-          runValidators: true,
-          context: "query",
-        }
-      ).exec();
+      if (insumoDB.categoria === "Vacuna") {
+        await VacunaAplicacion.updateMany(
+          {vacunaName: insumoDB.nombre, insumo: {$exists: false}},
+          {$set: {insumo: insumoDB._id}},
+          {
+            runValidators: true,
+            context: "query",
+          }
+        ).exec();
+      }
 
       return res.status(201).json({
         ok: true,

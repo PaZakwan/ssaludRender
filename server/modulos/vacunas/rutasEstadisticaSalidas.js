@@ -349,6 +349,7 @@ app.get(
           })
           .addFields({
             _id: {$concat: ["$areaDB", "-", "$insumoDB"]},
+            total_nominal: "$subtotal_utilizado",
             total_descartes: "$total",
           })
           .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1});

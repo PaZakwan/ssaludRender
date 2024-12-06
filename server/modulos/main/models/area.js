@@ -45,6 +45,11 @@ let areaSchema = new Schema(
       type: String,
       trim: true,
     },
+    patrimonio: {
+      type: String,
+      lowercase: true,
+      trim: true,
+    },
     unidad_atencion: {
       type: String,
       lowercase: true,
@@ -59,6 +64,16 @@ let areaSchema = new Schema(
       trim: true,
     },
     vacunatorio: {
+      type: String,
+      lowercase: true,
+      trim: true,
+    },
+    SISA: {
+      type: String,
+      lowercase: true,
+      trim: true,
+    },
+    RUPES: {
       type: String,
       lowercase: true,
       trim: true,
