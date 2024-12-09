@@ -109,6 +109,8 @@ db.getCollection("InsumoEntregas").aggregate([
 - [ ] Actualizar - Vue-Cli => Vue-Cli -> Vite -> [Migrate](https://vueschool.io/articles/vuejs-tutorials/how-to-migrate-from-vue-cli-to-vite/)
 
 - [ ] ‼️ Vacunas - Aplicaciones => Detallado y No Detallado (como Entregas de Farmacias) en formatos -> PDF / csv (Excel).
+- [ ] ‼️ Vacunas - Aplicaciones -> LINKEAR APLICACIONES SIN PACIENTE ID, buscar doc_responsable, ps_nombreC, ps_fecha_nacimiento y ps_paciente(id).
+- [ ] ‼️ Vacunas - Aplicaciones Upload -> buscar paciente ID con el del PS (json.ps_paciente) (PARA LAS PERSONAS SIN DOCUMENTO PERO SI CON RESPONSABLE ¡?¡?) Y ACTUALIZAR TIEMPOS ESTIMADOS DEL FRONT.
 
 - [~] Farmacia - Reportes -> Insumos seleccionados en filtro, si no hay mostrar con stock 0 (al momento si no hay y esta en el filtro no lo muestra). FALTA GENERAL DETALLADO Y STOCK (USAR EL IF PARA NO CARGAR TOOOODOS LOS INSUMOS CUANDO NO SE SELECCIONAN)
 - [ ] Farmacia/Vacunas -> Unificar Filtros en (Back! y Front?)

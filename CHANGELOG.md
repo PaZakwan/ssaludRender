@@ -27,6 +27,10 @@
 
 ---
 
+### [1.7.20241209] - 2024-12-09
+
+- 🩹 Fixed a Bromatologia - PDFs => Se soluciono error generado por la actualizacion de la libreria que genera los PDF, ahora usa el generador de PDF de Tools/pdf-base.
+
 ### [1.7.20241206] - 2024-12-06
 
 - 🩹 Fixed a Sistema - PDFs => Se soluciono el error de usar el boton de impresion proporcionado por el navegador Firefox cuando se previsualizaba el PDF.
