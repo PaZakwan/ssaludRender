@@ -469,7 +469,18 @@ const PacienteFormat = async ({json, totales, line, logFile, csvErrors, csvFix})
 
     return {json, totales};
   } catch (error) {
-    return {json, totales, error};
+    guardarCSV({
+      streamFile: csvErrors,
+      json,
+      line,
+      error: `Catch ${error}.`,
+    });
+    guardarContentStream({
+      streamFile: logFile,
+      content: `\nFila Excel: ${line}, Error: Catch ${error}.`,
+    });
+    totales.errores += 1;
+    return {json, totales, error, return: true};
   }
 };
 
@@ -543,7 +554,8 @@ const savePacientesUnHilo = async ({documentos, totales, line, logFile, csvError
               tipo_doc: element.err.op.tipo_doc,
               documento: element.err.op.documento,
             },
-            {$addToSet: {ps_id: {$each: element.err.op.ps_id}}}
+            {$addToSet: {ps_id: {$each: element.err.op.ps_id}}},
+            {new: true, lean: true}
           ).exec();
           totales["errores-exist"] += 1;
         } else {
@@ -694,6 +706,8 @@ app.post(
           json = json.dato;
           json.usuario_modifico = isObjectIdValid(req.usuario._id);
           json.createdAt = new Date();
+          json.updatedAt = new Date();
+          json["__v"] = 0;
           json.estado = true;
 
           // Validar datos (Manipulando json para luego actualizar la BD)

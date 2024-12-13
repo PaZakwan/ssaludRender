@@ -30,6 +30,7 @@
 ### [1.7.20241209] - 2024-12-09
 
 - 🩹 Fixed a Bromatologia - PDFs => Se soluciono error generado por la actualizacion de la libreria que genera los PDF, ahora usa el generador de PDF de Tools/pdf-base.
+- 📈 Improved a Vacunatorio - Upload => Ahora tiene en cuenta los pacientes sin documento pero si con documento de un responsable, sin aumentar mucho el tiempo de carga.
 
 ### [1.7.20241206] - 2024-12-06
 

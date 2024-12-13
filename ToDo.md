@@ -77,7 +77,7 @@ $ npm list -g --depth 0
 ---
 
 ```js
-// Consulta cantidad de cargas por Hora Durante el 2024
+// Consulta la cantidad de Entregas de Medicamentos segun la Hora Durante el 2024
 db.getCollection("InsumoEntregas").aggregate([
   {$match: {retirado: {$gte: new Date(2024, 1, 1), $lt: new Date(2025, 1, 1)}}},
   {
@@ -100,6 +100,45 @@ db.getCollection("InsumoEntregas").aggregate([
     },
   },
 ]);
+
+// Consulta para correcion de Aplicaciones de Vacunas con fechas de Aplicacion improbables.
+db.getCollection('VacunaAplicaciones').find({
+  ps_id : {$exists: true},
+  $or : [
+    {fecha: {$gte: new Date()}},
+    {fecha: {$lte: ISODate("1900-01-01T00:00:00.000Z")}},
+  ]
+},
+{
+  fecha_aplicacion: { $dateToString: { format: "%Y-%m-%d", date: "$fecha" }},
+  fecha_nacimiento: { $dateToString: { format: "%Y-%m-%d", date: "$ps_fecha_nacimiento" }},
+  tipo_doc: "$tipo_doc",
+  documento: "$documento",
+  apelido_nombre: "$ps_nombreC",
+  _id:0
+})
+.sort({fecha:-1, fecha_nacimiento:-1, _id:1})
+
+// Consulta para correcion de Pacientes con fechas de Nacimiento improbables.
+db.getCollection('pacientes').find({
+  $or : [
+    {fec_nac: {$gte: new Date().toISOString().substr(0,10)}},
+    {fec_nac: {$lte: "1900-01-01"}}
+  ]
+},
+{
+  fecha_nacimiento: "$fec_nac",
+  tipo_doc: "$tipo_doc",
+  documento: "$documento",
+  apellido: "$apellido",
+  nombre: "$nombre",
+  documento_responsable: "$doc_responsable",
+  _id:0
+})
+.sort({fecha:-1, fecha_nacimiento:-1, _id:1})
+
+// Exportar desde Robo3T agregar a las consultas "toArray" y cambiar vista para copiar como json.
+.toArray()
 ``` -->
 
 ### En Progreso - W.I.P. (Work in Progress)
@@ -109,8 +148,11 @@ db.getCollection("InsumoEntregas").aggregate([
 - [ ] Actualizar - Vue-Cli => Vue-Cli -> Vite -> [Migrate](https://vueschool.io/articles/vuejs-tutorials/how-to-migrate-from-vue-cli-to-vite/)
 
 - [ ] ‼️ Vacunas - Aplicaciones => Detallado y No Detallado (como Entregas de Farmacias) en formatos -> PDF / csv (Excel).
-- [ ] ‼️ Vacunas - Aplicaciones -> LINKEAR APLICACIONES SIN PACIENTE ID, buscar doc_responsable, ps_nombreC, ps_fecha_nacimiento y ps_paciente(id).
-- [ ] ‼️ Vacunas - Aplicaciones Upload -> buscar paciente ID con el del PS (json.ps_paciente) (PARA LAS PERSONAS SIN DOCUMENTO PERO SI CON RESPONSABLE ¡?¡?) Y ACTUALIZAR TIEMPOS ESTIMADOS DEL FRONT.
+- [ ] ‼️ Vacunas - Aplicaciones -> SCRIPT LINKEAR APLICACIONES
+      SIN-> paciente (PACIENTE ID) y documento,
+      CON-> ps_paciente(id), doc_responsable.
+      db.getCollection('VacunaAplicaciones').find({paciente:{$exists:0},documento:{$exists:0},ps_paciente:{$exists:1},doc_responsable:{$exists:1}}) -> buscar con ps_paciente en Pacientes ps_id -> si existe actualizar Aplicacion.
+      each -> find and save
 
 - [~] Farmacia - Reportes -> Insumos seleccionados en filtro, si no hay mostrar con stock 0 (al momento si no hay y esta en el filtro no lo muestra). FALTA GENERAL DETALLADO Y STOCK (USAR EL IF PARA NO CARGAR TOOOODOS LOS INSUMOS CUANDO NO SE SELECCIONAN)
 - [ ] Farmacia/Vacunas -> Unificar Filtros en (Back! y Front?)

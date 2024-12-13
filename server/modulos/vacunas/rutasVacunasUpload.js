@@ -515,56 +515,51 @@ const VacunacionFormat = async ({
       }
     }
 
-    // ############### VER ###############
-    // buscar "paciente" con -> paciente / (tipo_doc - documento) / ps_paciente (IdPersona)
-
+    // #### select
     // primero reviso que tengo y que no de la persona Paciente
     if (json.IdPersona) {
       json.ps_paciente = json.ps_paciente ?? json.IdPersona;
       delete json.IdPersona;
     }
-    // crear select en base a los datos que podrian faltar.
-    let selectPaciente = "";
-    if (json.sexo || json.Sexo) {
-      json.sexo = json.sexo ?? json.Sexo;
-      delete json.Sexo;
-      switch (json.sexo.toLowerCase()) {
-        case "f":
-        case "femenino":
-          json.sexo = "Femenino";
-          break;
-        case "m":
-        case "masculino":
-          json.sexo = "Masculino";
-          break;
-
-        default:
-          errores += ` sexo (${json.sexo}).`;
-      }
-    } else {
-      selectPaciente = "sexo";
+    if (json.DNIResponsable) {
+      json.doc_responsable = json.doc_responsable ?? json.DNIResponsable;
+      delete json.DNIResponsable;
+    }
+    if (json.doc_responsable == 0) {
+      delete json.doc_responsable;
     }
 
-    let filtroPaciente = false;
-    // primero json.paciente
+    // crear select en base a los datos que podrian faltar.
+    let selectPaciente = {};
+    // paciente (_id)
     if (json.paciente) {
       if (isObjectIdValid(json.paciente)) {
         // si es id guardarlo
         json.paciente = isObjectIdValid(json.paciente);
-        // falta alguna prop -> filtro para busqueda
-        if (selectPaciente) {
-          filtroPaciente = {_id: json.paciente};
-        }
       } else {
-        // error si es id incorrecto
-        errores += ` paciente ID no Valido (${json.paciente}).`;
+        // advertencia si es id incorrecto
+        advertencia += ` paciente ID no Valido (${json.paciente}).`;
+        selectPaciente["_id"] = 1;
+        delete json.paciente;
       }
+    } else {
+      selectPaciente["_id"] = 1;
     }
-    // segundo ver json.documento(tipo_doc) o json.ps_paciente
-    else {
-      selectPaciente = "_id " + selectPaciente;
-      // tipo_doc (default "DNI" o seguir)
-      let tipo_doc_bien = true;
+    //  documento
+    if (json.documento) {
+      json.documento = json.documento.trim().toUpperCase();
+      if (json.documento == 0 || !/^[A-Z0-9]+$/.test(json.documento)) {
+        delete json.documento;
+        selectPaciente["documento"] = 1;
+      }
+    } else {
+      selectPaciente["documento"] = 1;
+    }
+    // tipo_doc (default "DNI")
+    if (!json.documento) {
+      delete json.tipo_doc;
+      selectPaciente["tipo_doc"] = 1;
+    } else {
       if (json.tipo_doc) {
         switch (json.tipo_doc) {
           case "DNI":
@@ -610,76 +605,108 @@ const VacunacionFormat = async ({
             break;
 
           default:
-            tipo_doc_bien = false;
+            json.tipo_doc = "DNI";
+            break;
         }
       } else {
         json.tipo_doc = "DNI";
       }
-      // revisando json.documento (si esta mal ni siquiera chequear y seguir con la otra opcion)
-      if (
-        tipo_doc_bien &&
-        json.documento &&
-        json.documento != 0 &&
-        /^[A-Z0-9]+$/.test(json.documento.trim().toUpperCase())
-      ) {
-        json.documento = json.documento.trim().toUpperCase();
-        // filtro para busqueda
+    }
+    // sexo
+    if (json.sexo || json.Sexo) {
+      json.sexo = json.sexo ?? json.Sexo;
+      delete json.Sexo;
+      switch (json.sexo.toLowerCase()) {
+        case "f":
+        case "femenino":
+          json.sexo = "Femenino";
+          break;
+        case "m":
+        case "masculino":
+          json.sexo = "Masculino";
+          break;
+
+        default:
+          errores += ` sexo (${json.sexo}).`;
+      }
+    } else {
+      selectPaciente["sexo"] = 1;
+    }
+
+    // #### filtro
+    // faltan datos
+    if (Object.keys(selectPaciente).length) {
+      // doc_responsable (opcional, solo lo busca si necesita algun dato del paciente).
+      if (!json.doc_responsable) {
+        selectPaciente["doc_responsable"] = 1;
+      }
+      // buscar "paciente" con -> paciente / (tipo_doc - documento) / ps_paciente (IdPersona)
+      let filtroPaciente = false;
+      // primero json.paciente
+      if (json.paciente) {
+        filtroPaciente = {_id: json.paciente};
+      }
+      // segundo ver json.documento (tipo_doc)
+      else if (json.documento) {
         filtroPaciente = {
           tipo_doc: json.tipo_doc,
           documento: json.documento,
         };
       }
-      // por ultimo json.ps_paciente
+      // por ultimo buscar con ps_paciente (IdPersona)
       else if (json.ps_paciente) {
-        // ############### VER ###############
-        // SI tarda mucho la carga quitar esto.
-        // filtro para busqueda
-        // filtroPaciente = {
-        //   ps_id: json.ps_paciente,
-        // };
-        // apellido nombre doc_responsable
+        // ESTO TARDA MUCHO!, NO ES UNA BUSQUEDA INDEXADA COMO EL DOCUMENTO (300s[5m] -> 2400s[40m]),
+        // POR ESO LE AGREGO OTRO CONDICIONAL, ES MAS PROBABLE QUE EXISTA PACIENTE CON DOC_RESPONSABLE.
+        if (json.doc_responsable) {
+          filtroPaciente = {
+            ps_id: json.ps_paciente,
+          };
+        }
       }
-      // sino error
+      // sino advertencia
       else {
-        errores += ` paciente Sin Datos (${
-          !tipo_doc_bien ? `${json.tipo_doc} / ${json.documento}` : "sin datos"
-        }).`;
+        advertencia += ` paciente Sin Datos (para buscar ID).`;
       }
-    }
-    // realizar busqueda con filtroPaciente y completar los selectPaciente)?
-    if (filtroPaciente && selectPaciente) {
-      selectPaciente = selectPaciente.trim();
-      let pacienteTemp = await mongoose.connections[0].models.Paciente.findOne(
-        filtroPaciente,
-        selectPaciente
-      ).exec();
 
-      if (pacienteTemp) {
-        selectPaciente.split(" ").forEach((element) => {
-          if (element) {
-            if (!pacienteTemp[element]) {
-              advertencia += ` valor de paciente.${element} Sin Dato.`;
-            } else if (element === "_id") {
-              json.paciente = pacienteTemp[element];
+      // #### find
+      // realizar busqueda con filtroPaciente
+      if (filtroPaciente) {
+        let pacienteTemp = await mongoose.connections[1].models.Paciente.findOne(
+          filtroPaciente,
+          selectPaciente
+        )
+          .lean()
+          .exec();
+
+        if (pacienteTemp) {
+          // completar datos del selectPaciente
+          Object.keys(selectPaciente).forEach((select) => {
+            if (!pacienteTemp[select]) {
+              if (select !== "doc_responsable") {
+                advertencia += ` valor de paciente.${select} Sin Dato.`;
+              }
+            } else if (select === "_id") {
+              json.paciente = pacienteTemp[select];
             } else {
-              json[element] = pacienteTemp[element];
+              json[select] = pacienteTemp[select];
             }
-          }
-        });
-      } else {
-        advertencia += ` paciente No Encontrado con ${JSON.stringify(
-          filtroPaciente
-        )}, quedaron datos sin completar (${selectPaciente}).`;
+          });
+        } else {
+          advertencia += ` paciente No Encontrado con ${JSON.stringify(
+            filtroPaciente
+          )}, quedaron datos sin completar (${JSON.stringify(selectPaciente)}).`;
+        }
       }
     }
 
-    // verificar si estan los datos sino -> error
+    // verificar si estan los datos Necesarios -> error
     if (!json.ps_paciente && !json.paciente) {
       // no existe ps_paciente y no existe paciente id.
       errores += ` paciente No Encontrado (no existe ps_paciente ni existe paciente[id]).`;
     }
 
-    // PS
+    // PS guardar ->
+    // ps_nombreC (Apellido, Nombre)
     if (json.Apellidos || json.Nombres) {
       json.ps_nombreC = `${json.Apellidos}, ${json.Nombres}`;
       if (!json.Apellidos || !json.Nombres) {
@@ -690,12 +717,7 @@ const VacunacionFormat = async ({
       delete json.Nombres;
     }
 
-    json.doc_responsable = json.ps_doc_responsable ?? json.doc_responsable;
-    delete json.ps_doc_responsable;
-    if (!json.doc_responsable) {
-      delete json.doc_responsable;
-    }
-
+    // ps_fecha_nacimiento
     json.ps_fecha_nacimiento = json.ps_fecha_nacimiento ?? json.FechaNac;
     delete json.FechaNac;
     if (!json.ps_fecha_nacimiento) {
@@ -933,7 +955,18 @@ const VacunacionFormat = async ({
 
     return {json, totales};
   } catch (error) {
-    return {json, totales, error};
+    guardarCSV({
+      streamFile: csvErrors,
+      json,
+      line,
+      error: `Catch ${error}.`,
+    });
+    guardarContentStream({
+      streamFile: logFile,
+      content: `\nFila Excel: ${line}, Error: Catch ${error}.`,
+    });
+    totales.errores += 1;
+    return {json, totales, error, return: true};
   }
 };
 
@@ -1124,6 +1157,7 @@ app.post(
           json = json.dato;
           json.usuario_creador = isObjectIdValid(req.usuario._id);
           json.createdAt = new Date();
+          json["__v"] = 0;
 
           // Validar datos (Manipulando json para luego actualizar la BD)
           let vacunacionTemp = await VacunacionFormat({
