@@ -21,7 +21,7 @@
     ver https://docs.sheetjs.com/docs/solutions/output/
     ‼️ SHEET https://docs.sheetjs.com/docs/
 - [ ] Dialogs - No se Cierran cuando caduca sesion o cuando se navega con "atras"/"adelante".
-- [ ] Home - Google Map Rechaza la conexion.
+- [x] Home - Google Map Rechaza la conexion, APIKEY algun dia cobrara por consultas... requiere tarjeta de credito.
   - Capaturar Imagen de Localizacion y redireccionar a Google...
 - [ ] Farmacia - Ingresos con muchas cargas, puede colgar el navegador (RAM).
   - Generar con lazy load para que no tarde en renderizar.. Requiere update de Vuetify..
@@ -160,6 +160,8 @@ db.getCollection('pacientes').find({
 
 - [ ] Farmacia/Vacunas - BUSCAR POR LOTE, en todos los buscadores | filtros.
 
+- [ ] Farmacia/Vacunas - BUSCAR TODO TIPO DE MOVIMIENTO POR LOTE. CONTROL CENTRAL.
+
 - [ ] Farmacia - Permisos -> Supervisores por area.
 
 - [ ] Sistema -> Notificar al Loguear si hay algun Mantenimiento Programado [1 semana](Dialog Informativo con fecha-hora).
@@ -282,7 +284,6 @@ db.getCollection("Insumos").deleteMany({categoria: "Vacuna"});
 
 ```bat
     (STOCK De US, similar a patrimonio insumos).
-    PSVACUNAS (consumo del Stock de la US Local).
 
     - VER -> Capacidad de verificación de stocks en un solo programa.
     - VER -> Precios Unidad y Total.
@@ -309,19 +310,19 @@ db.getCollection("Insumos").deleteMany({categoria: "Vacuna"});
             general admin [0/1] (Dios...)
         }
 
-    - [~](~)  Navegacion agregar y mostrar solo rutas permitidas.
-       ( )  Crear una Main Page con las opciones a la cual regresar y navegar.
+    - [X](X)  Navegacion agregar y mostrar solo rutas permitidas.
 
-    - [~](~)  Farmacia Stock
+    - [X](X)  Farmacia Stock
                 (stock, gestion, general stock, dios)
-                - [ ]( ) En base a los minimos, mostrar insumo en cantidad cero en caso de que no haya.
-                - [ ]( ) Filtrar solamente Vencidos/PorVencer, poco Stock (avisar).
-                - [X](X) Ver tema de colores del background, vencidos | porVencer (red (negrita-underline) | orange).
-                - [~](~) Ver tema de colores del background, Minimo | porLlegarMinimo (orange (negrita-underline) | yellow).
+                - [X](X) En base a los minimos, mostrar insumo en cantidad cero en caso de que no haya.
+                - [X](X) Filtrar solamente Vencidos/PorVencer, poco Stock (avisar).
+                - [X](X) Ver tema de colores del background, vencidos | porVencer (red (negrita) | orange).
+                - [X](X) Ver tema de colores del background, Minimo | porLlegarMinimo (Rosa (negrita) | no diferencia).
+                - [X](X) Ver tema de colores del background, en cero con Minimo (Fucsia (negrita)).
 
-    - [~](~)  Medicamento Entrega (consumidor final)
+    - [X](X)  Medicamento Entrega (consumidor final)
                 (entrega, dios)
-                ( ) Ver tema de pacientes (busqueda dinamica)...
+                (X) Ver tema de pacientes (busqueda dinamica por steps)...
 
     - [X](X)  Farmacia Egresos (ex Descarte)
                 (gestion, dios)
@@ -329,20 +330,20 @@ db.getCollection("Insumos").deleteMany({categoria: "Vacuna"});
     - [X](X)  Farmacia Solicitud
                 (gestion, dios)
 
-    - [~](~)  Farmacia Transferencia (Clearing)
+    - [X](X)  Farmacia Transferencia (Clearing)
                 (gestion, dios)
-                - [ ] Reporte Transferencia PDF (Total Origen / Destino)
+                - [X] Reporte Transferencia PDF (Total Origen / Destino)
 
-    - [~]( )  ‼️ Farmacia Opciones
+    - [~](~)  ‼️ Farmacia Opciones
                 (gestion, dios)
-                - [ ]( ) Similar a Insumo...
-                - [ ]( ) Minimos de Stock...
-                [?](?) Cantidad a Solicitar Standard... (Boton nuevo en Solicitud para cargar la plantilla)
+                - [X](X) Similar a Insumo...
+                - [X](X) Minimos de Stock...
+                [ ]( ) Cantidad a Solicitar Standard... (Boton nuevo en Solicitud para cargar la plantilla)
 
-    [?](?)  Farmacia Reportes (Vencimiento/Minimos o Estadistica)
+    [~](~)  Farmacia Reportes (Vencimiento/Minimos o Estadistica)
                 (gestion, general report, dios)
                 Similar a Hiclem Control.
-                - [ ] Estadistica => [Area]-[Medicamento] = + [Ingreso] +- [Clearing] ~ [Stock]
+                - [X] Estadistica => [Area]-[Medicamento] = + [Ingreso] +- [Clearing] ~ [Stock]
                     - [Entrega] - [Descarte] ~ [Solicitud]
                 - [ ] Vencimiento/Minimos => [Area]-[Medicamento] = [Cantidad]-[minimo_opciones]
                     - [Cantidad]-[vencimiento/por_vencer]
@@ -351,18 +352,16 @@ db.getCollection("Insumos").deleteMany({categoria: "Vacuna"});
             Lista de Pacientes incluidos en los programas
                 Datos Paciente
                 Insumo
-                Fecha de declaracion jurada(entrada al programa)
+                Fecha de declaracion jurada (entrada al programa)
                 Duracion del programa para avisar que necesita renovacion.
 
-    (X)  Stock Estadistica, subtotal por vencer / subtotal vencido / TOTAL.
-            - [ ] => color minimos.
-    (X)  Ingresos Estadistica, carga inicial / orden_compra / remito / TOTAL.
-    (X)  Egresos Estadistica, remito / entregas (dni) / descarte (motivo) / TOTAL.
-    (X)  Solicitudes Estadistica, Pendientes Rutina / Emergencia / Urgencia / TOTAL.
+    (X)  Stock Estadistica, subtotal Buenos / subtotal por vencer / subtotal vencido / TOTAL.
+    (X)  Ingresos Estadistica, carga propia (orden_compra, inicial) / clearing (remito interno) / TOTAL.
+    (X)  Egresos Estadistica, nominal (entregas)/ clearing (remito interno) / descarte (motivo utilizado, otros) / TOTAL.
+    (X)  Solicitudes Estadistica, Pendientes Rutina / Urgencia / Emergencia / TOTAL / Stock.
 
-    - [~](~)  Manual PDF (Actualizar).
-    - [ ]( )  VER TEMA DE INSUMOS EN LOTES, TEMA DE ENTREGA...
-    - [ ]( )  Lote, procedencia, fec venc, cantidad, ?? Laboratorio ??
+    - [X](X)  Manual PDF.
+              - [ ] Actualizar Video Tutorial...
 ```
 
 #### REUNION 2024-10-18

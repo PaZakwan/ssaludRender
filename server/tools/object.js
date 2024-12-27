@@ -88,10 +88,21 @@ const getDiferenciaDias = ({date, dateHasta = new Date().toISOString().slice(0, 
   }
 };
 
-const getEdad = ({date, onlyYear = true}) => {
+const getEdad = ({
+  date,
+  dateHasta = new Date().toISOString().slice(0, 10),
+  onlyYear = true,
+  onlyString = false,
+}) => {
+  if (!date) {
+    return "";
+  }
   try {
+    if (Object.prototype.toString.call(dateHasta) === "[object Date]" && !isNaN(dateHasta)) {
+      dateHasta = dateHasta.toISOString().slice(0, 10);
+    }
     let hoy = dateUTC({
-      date: new Date().toISOString().slice(0, 10),
+      date: dateHasta,
       hours: "00:00:00.000",
     });
     if (Object.prototype.toString.call(date) === "[object Date]" && !isNaN(date)) {
@@ -113,6 +124,9 @@ const getEdad = ({date, onlyYear = true}) => {
     }
 
     if (onlyYear) {
+      if (onlyString) {
+        return `${edad_years}a`;
+      }
       return `${edad_years}`;
     }
 
@@ -120,6 +134,12 @@ const getEdad = ({date, onlyYear = true}) => {
     // edad_weeks
     // edad_days
     let diferenciaDias = getDiferenciaDias({date, dateHasta: hoy.toISOString().slice(0, 10)});
+    if (onlyString) {
+      if (edad_years >= 1) {
+        return `${edad_years}a`;
+      }
+      return `${Math.round(diferenciaDias)}d`;
+    }
     return {
       edad_years,
       edad_months: Math.floor(diferenciaDias / 30.41), // 30.4375

@@ -27,6 +27,17 @@
 
 ---
 
+### [1.7.20241227] - 2024-12-27
+
+- 🩹 Fixed a Sistema - Maps => Fix link to Google Maps, imagen que redirecciona a google Maps, evita uso de APIKEY de Google.
+- 🚨 Changed a Sistema - Logos => Se actualizaron todos los logos del sistema incluidos los de los documentos PDF.
+
+- 🩹 Fixed a Vacunas - Aplicacion => El Calculo de edad en base a la fecha de aplicacion se corrigio, antes solo autocalculaba en base a la fecha actual...
+- 🚨 Changed a Vacunas - Aplicacion => Los campos de Historial Clinico General tienen en cuenta la edad del paciente, no siendo requeridos el completado de algunos.
+
+- 📈 Improved a Farmacia/Vacunatorio - Estadistica Salidas => Las Salidas no Detalladas se cargan mas rapidamente.
+- 🚨 Changed a Farmacia/Vacunatorio - Egresos => El PDF ahora muestra los Egresos Nominales, Utilizados, Clearing y Otro (Descartes con motivos diferentes a Utilizado), antes mostraba los vencido por separado los cuales ahora estan dentro de la categoria "Otro".
+
 ### [1.7.20241209] - 2024-12-09
 
 - 🩹 Fixed a Bromatologia - PDFs => Se soluciono error generado por la actualizacion de la libreria que genera los PDF, ahora usa el generador de PDF de Tools/pdf-base.

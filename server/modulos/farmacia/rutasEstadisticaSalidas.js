@@ -135,7 +135,7 @@ app.get(
         $exists: true,
       };
 
-      // Entregas
+      // Total Nominal - Entregas
       let entregasDB = [];
       if (modelos?.entr) {
         let detallado = modelos.entr.nd
@@ -156,39 +156,44 @@ app.get(
               },
             };
 
-        entregasDB = InsumoEntrega.aggregate()
-          .match(filtroIndividual)
-          .sort({fecha: 1, _id: 1})
-          .lookup({
-            from: "pacientes",
-            localField: "paciente",
-            foreignField: "_id",
-            as: "pacienteDB",
-          })
-          .unwind({path: "$pacienteDB", preserveNullAndEmptyArrays: true})
-          .addFields({
-            pacienteDB: {
-              $ifNull: [
-                {$concat: ["$pacienteDB.apellido", ", ", "$pacienteDB.nombre"]},
-                "$pacienteDB.ps_id",
-                {$toString: "$paciente"},
-              ],
-            },
-            pacienteDocDB: {
-              $ifNull: [
-                {
-                  $concat: ["$pacienteDB.tipo_doc", " ", "$pacienteDB.documento"],
-                },
-                {
-                  $concat: ["Resp ", "$pacienteDB.doc_responsable"],
-                },
-                "$vacio",
-              ],
-            },
-            pacienteTelefonoDB: {
-              $ifNull: ["$pacienteDB.telefono", "$pacienteDB.telefono_alt", "$vacio"],
-            },
-          })
+        entregasDB = InsumoEntrega.aggregate().match(filtroIndividual);
+
+        if (detallado !== null) {
+          entregasDB
+            .sort({fecha: 1, _id: 1})
+            .lookup({
+              from: "pacientes",
+              localField: "paciente",
+              foreignField: "_id",
+              as: "pacienteDB",
+            })
+            .unwind({path: "$pacienteDB", preserveNullAndEmptyArrays: true})
+            .addFields({
+              pacienteDB: {
+                $ifNull: [
+                  {$concat: ["$pacienteDB.apellido", ", ", "$pacienteDB.nombre"]},
+                  "$pacienteDB.ps_id",
+                  {$toString: "$paciente"},
+                ],
+              },
+              pacienteDocDB: {
+                $ifNull: [
+                  {
+                    $concat: ["$pacienteDB.tipo_doc", " ", "$pacienteDB.documento"],
+                  },
+                  {
+                    $concat: ["Resp ", "$pacienteDB.doc_responsable"],
+                  },
+                  "$vacio",
+                ],
+              },
+              pacienteTelefonoDB: {
+                $ifNull: ["$pacienteDB.telefono", "$pacienteDB.telefono_alt", "$vacio"],
+              },
+            });
+        }
+
+        entregasDB
           .group({
             ...{
               _id: {area: "$origen", insumo: "$insumo"},
@@ -268,7 +273,7 @@ app.get(
         entregasDB = entregasDB.exec();
       }
 
-      // Descartes
+      // Total Descartes - subtotal_utilizado - subtotal_otros
       let descartesDB = [];
       if (modelos?.desc) {
         let detallado = modelos.desc.nd
@@ -286,9 +291,12 @@ app.get(
               },
             };
 
-        descartesDB = FarmaciaDescarte.aggregate()
-          .match(filtroIndividual)
-          .sort({fecha: 1, _id: 1})
+        descartesDB = FarmaciaDescarte.aggregate().match(filtroIndividual);
+
+        if (detallado !== null) {
+          descartesDB.sort({fecha: 1, _id: 1});
+        }
+        descartesDB
           .group({
             ...{
               _id: {area: "$origen", insumo: "$insumo"},
@@ -304,17 +312,17 @@ app.get(
                   ],
                 },
               },
-              subtotal_vencido: {
-                $sum: {
-                  $cond: [
-                    {
-                      $eq: ["$motivo", "Vencimiento"],
-                    },
-                    "$cantidad",
-                    0,
-                  ],
-                },
-              },
+              // subtotal_vencido: {
+              //   $sum: {
+              //     $cond: [
+              //       {
+              //         $eq: ["$motivo", "Vencimiento"],
+              //       },
+              //       "$cantidad",
+              //       0,
+              //     ],
+              //   },
+              // },
               subtotal_otros: {
                 $sum: {
                   $cond: [
@@ -323,9 +331,9 @@ app.get(
                         {
                           $ne: ["$motivo", "Utilizado"],
                         },
-                        {
-                          $ne: ["$motivo", "Vencimiento"],
-                        },
+                        // {
+                        //   $ne: ["$motivo", "Vencimiento"],
+                        // },
                       ],
                     },
                     "$cantidad",
@@ -342,7 +350,7 @@ app.get(
             insumo: "$_id.insumo",
             total: 1,
             subtotal_utilizado: 1,
-            subtotal_vencido: 1,
+            // subtotal_vencido: 1,
             subtotal_otros: 1,
             detalle_descartes: 1,
           })
@@ -375,7 +383,7 @@ app.get(
           .exec();
       }
 
-      // Egresos Transferencias Remitos (clearing) retirados
+      // Total Transferencias Out - Remitos (clearing) retirados
       let transferenciaOutDB = [];
       if (modelos?.tran) {
         let detallado = modelos.tran.nd
@@ -394,20 +402,25 @@ app.get(
               },
             };
 
-        transferenciaOutDB = FarmaciaTransferencia.aggregate()
-          .match(filtro)
-          .sort({fecha: 1, _id: 1})
-          // buscar nombres de DestinosDB
-          .lookup({
-            from: "areas",
-            localField: "destino",
-            foreignField: "_id",
-            as: "destinoDB",
-          })
-          .unwind({path: "$destinoDB", preserveNullAndEmptyArrays: true})
-          .addFields({
-            destinoDB: {$ifNull: ["$destinoDB.area", {$toString: "$destino"}]},
-          })
+        transferenciaOutDB = FarmaciaTransferencia.aggregate().match(filtro);
+
+        if (detallado !== null) {
+          transferenciaOutDB
+            .sort({fecha: 1, _id: 1})
+            // buscar nombres de DestinosDB
+            .lookup({
+              from: "areas",
+              localField: "destino",
+              foreignField: "_id",
+              as: "destinoDB",
+            })
+            .unwind({path: "$destinoDB", preserveNullAndEmptyArrays: true})
+            .addFields({
+              destinoDB: {$ifNull: ["$destinoDB.area", {$toString: "$destino"}]},
+            });
+        }
+
+        transferenciaOutDB
           // descomprimir
           .unwind({path: "$insumos", preserveNullAndEmptyArrays: true})
           // encontrar retirados
@@ -508,6 +521,16 @@ app.get(
           }
         }
       }
+
+      // .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1});
+      // a.areaDB.localeCompare(b.areaDB) para comparar string
+      // b.price - a.price para comparar numeros
+      egresosDB.sort(
+        (a, b) =>
+          (a.areaDB ?? "").localeCompare(b.areaDB ?? "") ||
+          (a.categoriaDB ?? "").localeCompare(b.categoriaDB ?? "") ||
+          (a.insumoDB ?? "").localeCompare(b.insumoDB ?? "")
+      );
 
       return res.status(200).json({
         ok: true,

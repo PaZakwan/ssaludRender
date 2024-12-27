@@ -133,7 +133,7 @@ app.get(
         });
       }
 
-      // Vacuna Aplicaciones;
+      // Total Nominal - Vacunaciones
       let vacunacionesDB = [];
       if (modelos?.vac) {
         let detallado = {
@@ -160,51 +160,56 @@ app.get(
           };
         }
 
-        vacunacionesDB = await VacunaAplicacion.aggregate()
-          .match(filtroIndividual)
-          .sort({fecha: 1, _id: 1})
-          .lookup({
-            from: "pacientes",
-            localField: "paciente",
-            foreignField: "_id",
-            as: "pacienteDB",
-          })
-          .unwind({
-            path: "$pacienteDB",
-            // SI paciente no existe, return null en vez de no existir
-            preserveNullAndEmptyArrays: true,
-          })
-          .addFields({
-            pacienteDB: {
-              $ifNull: [
-                {
-                  $concat: ["$pacienteDB.apellido", ", ", "$pacienteDB.nombre"],
-                },
-                {
-                  $concat: [{$ifNull: ["$ps_nombreC", ""]}, " (", "$ps_paciente", ")"],
-                },
-                {$toString: "$paciente"},
-              ],
-            },
-            pacienteDocDB: {
-              $ifNull: [
-                {
-                  $concat: ["$tipo_doc", " ", "$documento"],
-                },
-                {
-                  $concat: ["$pacienteDB.tipo_doc", " ", "$pacienteDB.documento"],
-                },
-                {
-                  $concat: ["Resp ", "$doc_responsable"],
-                },
-                {
-                  $concat: ["Resp ", "$pacienteDB.doc_responsable"],
-                },
-                "$vacio",
-              ],
-            },
-            pacienteOSocDB: "$pacienteDB.oSocial",
-          })
+        vacunacionesDB = VacunaAplicacion.aggregate().match(filtroIndividual);
+
+        if (detallado !== null) {
+          vacunacionesDB
+            .sort({fecha: 1, _id: 1})
+            .lookup({
+              from: "pacientes",
+              localField: "paciente",
+              foreignField: "_id",
+              as: "pacienteDB",
+            })
+            .unwind({
+              path: "$pacienteDB",
+              // SI paciente no existe, return null en vez de no existir
+              preserveNullAndEmptyArrays: true,
+            })
+            .addFields({
+              pacienteDB: {
+                $ifNull: [
+                  {
+                    $concat: ["$pacienteDB.apellido", ", ", "$pacienteDB.nombre"],
+                  },
+                  {
+                    $concat: [{$ifNull: ["$ps_nombreC", ""]}, " (", "$ps_paciente", ")"],
+                  },
+                  {$toString: "$paciente"},
+                ],
+              },
+              pacienteDocDB: {
+                $ifNull: [
+                  {
+                    $concat: ["$tipo_doc", " ", "$documento"],
+                  },
+                  {
+                    $concat: ["$pacienteDB.tipo_doc", " ", "$pacienteDB.documento"],
+                  },
+                  {
+                    $concat: ["Resp ", "$doc_responsable"],
+                  },
+                  {
+                    $concat: ["Resp ", "$pacienteDB.doc_responsable"],
+                  },
+                  "$vacio",
+                ],
+              },
+              pacienteOSocDB: "$pacienteDB.oSocial",
+            });
+        }
+
+        vacunacionesDB
           .group({
             ...{
               _id: {area: "$origen", insumo: {$ifNull: ["$insumo", "$vacunaName"]}},
@@ -245,10 +250,11 @@ app.get(
             total_nominal: "$total",
             total_vacunaciones: "$total",
           })
-          .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1});
+          .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1})
+          .exec();
       }
 
-      // Descartes
+      // Total Descartes - subtotal_utilizado - subtotal_otros
       let descartesDB = [];
       if (modelos?.desc) {
         let detallado = modelos.desc.nd
@@ -266,9 +272,13 @@ app.get(
               },
             };
 
-        descartesDB = await VacunaDescarte.aggregate()
-          .match(filtroIndividual)
-          .sort({fecha: 1, _id: 1})
+        descartesDB = VacunaDescarte.aggregate().match(filtroIndividual);
+
+        if (detallado !== null) {
+          descartesDB.sort({fecha: 1, _id: 1});
+        }
+
+        descartesDB
           .group({
             ...{
               _id: {area: "$origen", insumo: "$insumo"},
@@ -284,17 +294,17 @@ app.get(
                   ],
                 },
               },
-              subtotal_vencido: {
-                $sum: {
-                  $cond: [
-                    {
-                      $eq: ["$motivo", "Vencimiento"],
-                    },
-                    "$cantidad",
-                    0,
-                  ],
-                },
-              },
+              // subtotal_vencido: {
+              //   $sum: {
+              //     $cond: [
+              //       {
+              //         $eq: ["$motivo", "Vencimiento"],
+              //       },
+              //       "$cantidad",
+              //       0,
+              //     ],
+              //   },
+              // },
               subtotal_otros: {
                 $sum: {
                   $cond: [
@@ -303,9 +313,9 @@ app.get(
                         {
                           $ne: ["$motivo", "Utilizado"],
                         },
-                        {
-                          $ne: ["$motivo", "Vencimiento"],
-                        },
+                        // {
+                        //   $ne: ["$motivo", "Vencimiento"],
+                        // },
                       ],
                     },
                     "$cantidad",
@@ -322,7 +332,7 @@ app.get(
             insumo: "$_id.insumo",
             total: 1,
             subtotal_utilizado: 1,
-            subtotal_vencido: 1,
+            // subtotal_vencido: 1,
             subtotal_otros: 1,
             detalle_descartes: 1,
           })
@@ -352,10 +362,11 @@ app.get(
             total_nominal: "$subtotal_utilizado",
             total_descartes: "$total",
           })
-          .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1});
+          .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1})
+          .exec();
       }
 
-      // Egresos Transferencias Remitos (clearing) retirados
+      // Total Transferencias Out - Remitos (clearing) retirados
       let transferenciaOutDB = [];
       if (modelos?.tran) {
         let detallado = modelos.tran.nd
@@ -374,20 +385,25 @@ app.get(
               },
             };
 
-        transferenciaOutDB = await VacunaTransferencia.aggregate()
-          .match(filtro)
-          .sort({fecha: 1, _id: 1})
-          // buscar nombres de DestinosDB
-          .lookup({
-            from: "areas",
-            localField: "destino",
-            foreignField: "_id",
-            as: "destinoDB",
-          })
-          .unwind({path: "$destinoDB", preserveNullAndEmptyArrays: true})
-          .addFields({
-            destinoDB: {$ifNull: ["$destinoDB.area", {$toString: "$destino"}]},
-          })
+        transferenciaOutDB = VacunaTransferencia.aggregate().match(filtro);
+
+        if (detallado !== null) {
+          transferenciaOutDB
+            .sort({fecha: 1, _id: 1})
+            // buscar nombres de DestinosDB
+            .lookup({
+              from: "areas",
+              localField: "destino",
+              foreignField: "_id",
+              as: "destinoDB",
+            })
+            .unwind({path: "$destinoDB", preserveNullAndEmptyArrays: true})
+            .addFields({
+              destinoDB: {$ifNull: ["$destinoDB.area", {$toString: "$destino"}]},
+            });
+        }
+
+        transferenciaOutDB
           // descomprimir
           .unwind({path: "$insumos", preserveNullAndEmptyArrays: true})
           // encontrar retirados
@@ -436,8 +452,16 @@ app.get(
             _id: {$concat: ["$areaDB", "-", "$insumoDB"]},
             total_transferencia_out: "$total",
           })
-          .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1});
+          .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1})
+          .exec();
       }
+
+      // Esperar que se concluyan las consultas a la BD
+      [vacunacionesDB, descartesDB, transferenciaOutDB] = await Promise.all([
+        vacunacionesDB,
+        descartesDB,
+        transferenciaOutDB,
+      ]);
 
       // INTEGRAR EGRESOS
       // VACUNACIONES
@@ -480,6 +504,16 @@ app.get(
           }
         }
       }
+
+      // .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1});
+      // a.areaDB.localeCompare(b.areaDB) para comparar string
+      // b.price - a.price para comparar numeros
+      egresosDB.sort(
+        (a, b) =>
+          (a.areaDB ?? "").localeCompare(b.areaDB ?? "") ||
+          (a.categoriaDB ?? "").localeCompare(b.categoriaDB ?? "") ||
+          (a.insumoDB ?? "").localeCompare(b.insumoDB ?? "")
+      );
 
       return res.status(200).json({
         ok: true,

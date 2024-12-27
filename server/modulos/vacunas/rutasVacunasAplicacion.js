@@ -154,10 +154,10 @@ app.get(
           pacienteDB: {
             $ifNull: [
               {
-                $concat: ["$pacienteDB.apellido", ", ", "$pacienteDB.nombre"],
+                $concat: [{$ifNull: ["$ps_nombreC", ""]}, " (PS ", "$ps_paciente", ")"],
               },
               {
-                $concat: [{$ifNull: ["$ps_nombreC", ""]}, " (", "$ps_paciente", ")"],
+                $concat: ["$pacienteDB.apellido", ", ", "$pacienteDB.nombre"],
               },
               {$toString: "$paciente"},
             ],
