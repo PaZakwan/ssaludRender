@@ -7,7 +7,7 @@ const {verificaToken, verificaArrayPropValue} = require(process.env.MAIN_FOLDER 
 const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
 const {isVacio, isObjectIdValid, dateUTC} = require(process.env.MAIN_FOLDER + "/tools/object");
 
-const modificarStockInc = require("./farmaciaHelper");
+const {modificarStockInc} = require("./farmaciaHelper");
 const InsumoEntrega = require("./models/insumo_entrega");
 
 const app = express();

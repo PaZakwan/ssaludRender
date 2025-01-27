@@ -136,24 +136,40 @@ app.get(
       // Total Nominal - Vacunaciones
       let vacunacionesDB = [];
       if (modelos?.vac) {
-        let detallado = {
-          detalle_vacunaciones: {
-            $push: {
-              fecha: {$dateToString: {format: "%Y-%m-%d", date: "$fecha"}},
-              pacienteDB: "$pacienteDB",
-              pacienteDocDB: "$pacienteDocDB",
-              pacienteOSocDB: "$pacienteOSocDB",
-              oSocial: "$oSocial",
-              procedencia: "$procedencia",
-              cantidad: "$cantidad",
-              lote: "$lote",
-              vencimiento: {$dateToString: {format: "%Y-%m-%d", date: "$vencimiento"}},
-              dosis: "$dosis",
-            },
-          },
-        };
-        if (modelos.vac.nd) {
-          detallado = null;
+        let detallado = modelos.vac.nd
+          ? null
+          : {
+              detalle_vacunaciones: {
+                $push: {
+                  fecha: {$dateToString: {format: "%Y-%m-%d", date: "$fecha"}},
+                  pacienteDB: "$pacienteDB",
+                  pacienteDocDB: "$pacienteDocDB",
+                  pacienteSexoDB: "$pacienteSexoDB",
+                  pacienteTelefonoDB: "$pacienteTelefonoDB",
+
+                  edad_valor: "$edad_valor",
+                  edad_unidad: "$edad_unidad",
+                  oSocial: "$oSocial",
+                  embarazada_semana: "$embarazada_semana",
+                  puerpera: "$puerpera",
+                  prematuro: "$prematuro",
+                  peso_nacer_menor_2500: "$peso_nacer_menor_2500",
+                  peso_nacer_mayor_3800: "$peso_nacer_mayor_3800",
+                  inmunodeprimida: "$inmunodeprimida",
+                  fuma: "$fuma",
+                  riesgo: "$riesgo",
+                  personal_salud: "$personal_salud",
+                  personal_esencial: "$personal_esencial",
+
+                  procedencia: "$procedencia",
+                  lote: "$lote",
+                  vencimiento: {$dateToString: {format: "%Y-%m-%d", date: "$vencimiento"}},
+                  dosis: "$dosis",
+                },
+              },
+            };
+
+        if (modelos.vac.stk) {
           // no tiene en cuenta las aplicaciones que no salieron de stock.. (como las de procedencia "Paciente" e "Historial")
           filtroIndividual.retirado = {
             $exists: true,
@@ -205,7 +221,12 @@ app.get(
                   "$vacio",
                 ],
               },
-              pacienteOSocDB: "$pacienteDB.oSocial",
+              pacienteSexoDB: {
+                $ifNull: ["$sexo", "$pacienteDB.sexo", "$vacio"],
+              },
+              pacienteTelefonoDB: {
+                $ifNull: ["$pacienteDB.telefono", "$pacienteDB.telefono_alt", "$vacio"],
+              },
             });
         }
 
@@ -243,15 +264,72 @@ app.get(
           .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
           .addFields({
             insumoDB: {$ifNull: ["$insumoDB.nombre", {$toString: "$insumo"}]},
-            categoriaDB: {$ifNull: ["$insumoDB.categoria", "$vacio"]},
+            categoriaDB: {$ifNull: ["$insumoDB.categoria", "Vacuna"]},
           })
           .addFields({
             _id: {$concat: ["$areaDB", "-", "$insumoDB"]},
             total_nominal: "$total",
             total_vacunaciones: "$total",
           })
-          .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1})
-          .exec();
+          .sort({areaDB: 1, insumoDB: 1});
+
+        // Excel detallado
+        if (modelos.vac.ex && !modelos.vac.nd) {
+          vacunacionesDB
+            // borrar props
+            .project({
+              total: 0,
+              total_nominal: 0,
+              total_vacunaciones: 0,
+              area: 0,
+              insumo: 0,
+            })
+            .unwind({path: "$detalle_vacunaciones", preserveNullAndEmptyArrays: true})
+            .addFields({
+              fecha: {$ifNull: ["$detalle_vacunaciones.fecha", "$noRetornaNada"]},
+              pacienteDB: {$ifNull: ["$detalle_vacunaciones.pacienteDB", "$noRetornaNada"]},
+              pacienteDocDB: {$ifNull: ["$detalle_vacunaciones.pacienteDocDB", "$noRetornaNada"]},
+              pacienteSexoDB: {$ifNull: ["$detalle_vacunaciones.pacienteSexoDB", "$noRetornaNada"]},
+              pacienteTelefonoDB: {
+                $ifNull: ["$detalle_vacunaciones.pacienteTelefonoDB", "$noRetornaNada"],
+              },
+
+              edad_valor: {$ifNull: ["$detalle_vacunaciones.edad_valor", "$noRetornaNada"]},
+              edad_unidad: {$ifNull: ["$detalle_vacunaciones.edad_unidad", "$noRetornaNada"]},
+              oSocial: {$ifNull: ["$detalle_vacunaciones.oSocial", "$noRetornaNada"]},
+              embarazada_semana: {
+                $ifNull: ["$detalle_vacunaciones.embarazada_semana", "$noRetornaNada"],
+              },
+              puerpera: {$ifNull: ["$detalle_vacunaciones.puerpera", "$noRetornaNada"]},
+              prematuro: {$ifNull: ["$detalle_vacunaciones.prematuro", "$noRetornaNada"]},
+              peso_nacer_menor_2500: {
+                $ifNull: ["$detalle_vacunaciones.peso_nacer_menor_2500", "$noRetornaNada"],
+              },
+              peso_nacer_mayor_3800: {
+                $ifNull: ["$detalle_vacunaciones.peso_nacer_mayor_3800", "$noRetornaNada"],
+              },
+              inmunodeprimida: {
+                $ifNull: ["$detalle_vacunaciones.inmunodeprimida", "$noRetornaNada"],
+              },
+              fuma: {$ifNull: ["$detalle_vacunaciones.fuma", "$noRetornaNada"]},
+              riesgo: {$ifNull: ["$detalle_vacunaciones.riesgo", "$noRetornaNada"]},
+              personal_salud: {$ifNull: ["$detalle_vacunaciones.personal_salud", "$noRetornaNada"]},
+              personal_esencial: {
+                $ifNull: ["$detalle_vacunaciones.personal_esencial", "$noRetornaNada"],
+              },
+
+              procedencia: {$ifNull: ["$detalle_vacunaciones.procedencia", "$noRetornaNada"]},
+              lote: {$ifNull: ["$detalle_vacunaciones.lote", "$noRetornaNada"]},
+              vencimiento: {$ifNull: ["$detalle_vacunaciones.vencimiento", "$noRetornaNada"]},
+              dosis: {$ifNull: ["$detalle_vacunaciones.dosis", "$noRetornaNada"]},
+            })
+            // borrar detalle
+            .project({
+              detalle_vacunaciones: 0,
+            });
+        }
+
+        vacunacionesDB = vacunacionesDB.exec();
       }
 
       // Total Descartes - subtotal_utilizado - subtotal_otros

@@ -8,7 +8,7 @@ const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
 const {isVacio, objectSetUnset, isObjectIdValid, sumarProps, dateUTC} = require(process.env
   .MAIN_FOLDER + "/tools/object");
 
-// const modificarStockInc = require("./farmaciaHelper");
+// const {modificarStockInc} = require("./farmaciaHelper");
 const FarmaciaTransferencia = require("./models/farmacia_transferencia");
 const FarmaciaIngreso = require("./models/farmacia_ingreso");
 

@@ -27,6 +27,23 @@
 
 ---
 
+### [1.7.20250127] - 2025-01-27
+
+- ✨ Added a Sistema - Cliente => Revisa la version del Cliente cada 10 min, notifica si hay una nueva version y recomienda recargar pagina para actualizar.
+- 📈 Improved a Sistema - v-tooltip => Se les agrego el close-delay="0".
+- 📈 Improved a Sistema - getEdad => Ahora puede calcular con la opcion "formatString" la edad completa entre dos fechas (años, meses y dias), ademas de que interpreta el rango de fechas seleccionadas (mide de menor a mayor).
+
+- ✨ Added a Vacunas - Aplicacion => Al momento de aplicar ahora muestra la Edad completa del paciente (años, meses y dias), asi como tambien los dias y semanas cumplidas.
+- ✨ Added a Vacunas - Aplicacion => Ahora se puede Exportar Nominal o Totales en formato PDF o Exel.
+- ✨ Added a Vacunas - Stock => Se agrego posibilidad de exportar en formato xls.
+- 📈 Improved a Vacunas - Reportes => El reporte de "Stock Movimientos" ahora muestra el filtro utilizado y los insumos cuyo stock es 0.
+- 📈 Improved a Vacunas - Stock => Los reportes de stock (general/detallado) ahora muestran el filtro utilizado y los insumos cuyo stock son 0.
+- 🚨 Changed a Vacunas - Stock => PDF de STOCK subtotales "por Vencer/Vencidos" -> "Vencidos/Buenos".
+
+- ✨ Added a Farmacia - Entregas => Se agrego una nueva columna con el "Sexo" del paciente al reporte de Entregas Nominal formato Excel.
+- 📈 Improved a Farmacia - Reportes => El reporte de "General Detallado" ahora muestra el filtro utilizado y los insumos cuyo stock es 0.
+- 📈 Improved a Farmacia - Stock => Los reportes de stock (general/detallado) ahora muestran el filtro utilizado y los insumos cuyo stock son 0.
+
 ### [1.7.20241227] - 2024-12-27
 
 - 🩹 Fixed a Sistema - Maps => Fix link to Google Maps, imagen que redirecciona a google Maps, evita uso de APIKEY de Google.

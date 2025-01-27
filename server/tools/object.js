@@ -92,7 +92,7 @@ const getEdad = ({
   date,
   dateHasta = new Date().toISOString().slice(0, 10),
   onlyYear = true,
-  onlyString = false,
+  formatString = false,
 }) => {
   if (!date) {
     return "";
@@ -101,53 +101,71 @@ const getEdad = ({
     if (Object.prototype.toString.call(dateHasta) === "[object Date]" && !isNaN(dateHasta)) {
       dateHasta = dateHasta.toISOString().slice(0, 10);
     }
-    let hoy = dateUTC({
+    let hasta = dateUTC({
       date: dateHasta,
       hours: "00:00:00.000",
     });
     if (Object.prototype.toString.call(date) === "[object Date]" && !isNaN(date)) {
       date = date.toISOString().slice(0, 10);
     }
-    let fec_nac = dateUTC({
+    let desde = dateUTC({
       date: date,
       hours: "00:00:00.000",
     });
-    if (fec_nac.error) {
-      return {dato: {date, onlyYear}, error: `getEdad fec_nac: ${fec_nac.error}`};
+    if (desde.error) {
+      return {
+        dato: {date, dateHasta, onlyYear, formatString},
+        error: `getEdad desde: ${desde.error}`,
+      };
     }
-    // edad_years
-    let edad_years = hoy.getUTCFullYear() - fec_nac.getUTCFullYear();
-    let mes = hoy.getUTCMonth() - fec_nac.getUTCMonth();
+    // corregir fechas invertidas..
+    if (desde > hasta) {
+      let temp = desde;
+      desde = hasta;
+      hasta = temp;
+    }
 
-    if (mes < 0 || (mes === 0 && hoy.getUTCDate() < fec_nac.getUTCDate())) {
+    // edad_years
+    let edad_years = hasta.getUTCFullYear() - desde.getUTCFullYear();
+    let mes_diff = hasta.getUTCMonth() - desde.getUTCMonth();
+
+    if (mes_diff < 0 || (mes_diff === 0 && hasta.getUTCDate() < desde.getUTCDate())) {
       edad_years--;
     }
 
     if (onlyYear) {
-      if (onlyString) {
+      if (formatString) {
         return `${edad_years}a`;
       }
       return `${edad_years}`;
     }
-
-    // edad_months
-    // edad_weeks
-    // edad_days
-    let diferenciaDias = getDiferenciaDias({date, dateHasta: hoy.toISOString().slice(0, 10)});
-    if (onlyString) {
-      if (edad_years >= 1) {
-        return `${edad_years}a`;
+    // mes_diff / dias_diff
+    mes_diff = mes_diff < 0 ? 12 + mes_diff : mes_diff;
+    let dias_diff = hasta.getUTCDate() - desde.getUTCDate();
+    if (hasta.getUTCDate() < desde.getUTCDate()) {
+      if (mes_diff === 0) {
+        mes_diff = 11;
+      } else {
+        mes_diff -= 1;
       }
-      return `${Math.round(diferenciaDias)}d`;
+      let mesAntes = new Date(hasta);
+      mesAntes.setUTCDate(0);
+      dias_diff += mesAntes.getUTCDate();
     }
+
+    let edad_days = getDiferenciaDias({
+      date: desde.toISOString().slice(0, 10),
+      dateHasta: hasta.toISOString().slice(0, 10),
+    });
     return {
       edad_years,
-      edad_months: Math.floor(diferenciaDias / 30.41), // 30.4375
-      edad_weeks: Math.floor(diferenciaDias / 7),
-      edad_days: Math.round(diferenciaDias),
+      edad_months: edad_years * 12 + mes_diff,
+      edad_weeks: Math.floor(edad_days / 7),
+      edad_days: Math.round(edad_days),
+      formatString: formatString ? `${edad_years}a ${mes_diff}m ${dias_diff}d` : null,
     };
   } catch (error) {
-    return {dato: {date, onlyYear}, error};
+    return {dato: {date, dateHasta, onlyYear, formatString}, error};
   }
 };
 
@@ -583,27 +601,32 @@ const valorInMatriz = ({valor, matriz}) => {
   }
 };
 
-const arrayFromSumarPropsInArrays = ({
+const arrayFromSumarPropsInArrays = async ({
   arrays,
   compare = (a, b) => {
     a === b;
   },
+  nullArrays = true,
 }) => {
   try {
     if (Array.isArray(arrays)) {
       let respuesta = [];
       // recorrer arrays para ir integrando y sumando.
-      arrays.forEach((elementArray, index) => {
-        if (Array.isArray(elementArray)) {
+      for (let ArrayIndex = 0; ArrayIndex < arrays.length; ArrayIndex++) {
+        // si es una promesa entonces esperar que se resuelva
+        if (typeof arrays[ArrayIndex]?.then === "function") {
+          arrays[ArrayIndex] = await arrays[ArrayIndex].exec();
+        }
+        if (Array.isArray(arrays[ArrayIndex])) {
           // recorrer contenido del array
-          elementArray.forEach((elementItem) => {
-            // buscar si ya existe en la respuesta
+          for (let elementIndex = 0; elementIndex < arrays[ArrayIndex].length; elementIndex++) {
+            // buscar si el elemento del array ya existe en la respuesta
             let respuestaIndex = respuesta.findIndex((respuestaItem) =>
-              compare(elementItem, respuestaItem)
+              compare(arrays[ArrayIndex][elementIndex], respuestaItem)
             );
             // sumar props de los items que existen
             if (respuestaIndex !== -1) {
-              tempObj = sumarProps(elementItem, respuesta[respuestaIndex]);
+              let tempObj = sumarProps(arrays[ArrayIndex][elementIndex], respuesta[respuestaIndex]);
               if (!tempObj.error) {
                 respuesta[respuestaIndex] = tempObj;
               } else {
@@ -612,19 +635,28 @@ const arrayFromSumarPropsInArrays = ({
             }
             // agregar items del array a la respuesta si no existe
             else {
-              respuesta.push(elementItem);
+              respuesta.push(arrays[ArrayIndex][elementIndex]);
             }
-          });
+            if (nullArrays) {
+              arrays[ArrayIndex][elementIndex] = null;
+            }
+          }
         } else {
           return {
             dato: {arrays, compare, respuesta},
-            error: `uno de los arrays no es un array, index ${index}`,
+            error: `Uno de los arrays no es un array, index ${ArrayIndex}`,
           };
         }
-      });
+        if (nullArrays) {
+          arrays[ArrayIndex] = null;
+        }
+      }
+      if (nullArrays) {
+        arrays = null;
+      }
       return respuesta;
     } else {
-      return {dato: {arrays, compare}, error: "arrays no es un array"};
+      return {dato: {arrays, compare}, error: "Arrays no es un array"};
     }
   } catch (error) {
     return {dato: {arrays, compare}, error};

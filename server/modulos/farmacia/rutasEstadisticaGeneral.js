@@ -6,6 +6,8 @@ const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
 const {isObjectIdValid, dateUTC, arrayFromSumarPropsInArrays} = require(process.env.MAIN_FOLDER +
   "/tools/object");
 
+const Area = require(process.env.MAIN_FOLDER + "/modulos/main/models/area");
+const FarmaciaInsumo = require("./models/insumo");
 const FarmaciaStock = require("./models/farmacia_stock");
 const FarmaciaSolicitud = require("./models/farmacia_solicitud");
 const FarmaciaOpcion = require("./models/farmacia_opciones");
@@ -164,31 +166,7 @@ app.get(
           area: "$_id.area",
           insumo: "$_id.insumo",
           total_stock: 1,
-        })
-        // populate area - insumo.
-        .lookup({
-          from: "areas",
-          localField: "area",
-          foreignField: "_id",
-          as: "areaDB",
-        })
-        .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
-        .addFields({
-          areaDB: {$ifNull: ["$areaDB.area", {$toString: "$area"}]},
-        })
-        .lookup({
-          from: "Insumos",
-          localField: "insumo",
-          foreignField: "_id",
-          as: "insumoDB",
-        })
-        .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
-        .addFields({
-          insumoDB: {$ifNull: ["$insumoDB.nombre", {$toString: "$insumo"}]},
-          categoriaDB: {$ifNull: ["$insumoDB.categoria", "$vacio"]},
-        })
-        .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1})
-        .exec();
+        });
 
       let solicitudes = FarmaciaSolicitud.aggregate()
         .match({
@@ -222,31 +200,7 @@ app.get(
           area: "$_id.area",
           insumo: "$_id.insumo",
           total_solicitado: 1,
-        })
-        // populate area - insumo.
-        .lookup({
-          from: "areas",
-          localField: "area",
-          foreignField: "_id",
-          as: "areaDB",
-        })
-        .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
-        .addFields({
-          areaDB: {$ifNull: ["$areaDB.area", {$toString: "$area"}]},
-        })
-        .lookup({
-          from: "Insumos",
-          localField: "insumo",
-          foreignField: "_id",
-          as: "insumoDB",
-        })
-        .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
-        .addFields({
-          insumoDB: {$ifNull: ["$insumoDB.nombre", {$toString: "$insumo"}]},
-          categoriaDB: {$ifNull: ["$insumoDB.categoria", "$vacio"]},
-        })
-        .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1})
-        .exec();
+        });
 
       let minimos = FarmaciaOpcion.aggregate()
         .match(filtroMinimos)
@@ -265,31 +219,7 @@ app.get(
           area: 1,
           insumo: 1,
           cant_min: {$cond: [{$eq: ["$cant_min", 0]}, "$noRetornaNada", "$cant_min"]},
-        })
-        // populate area - insumo.
-        .lookup({
-          from: "areas",
-          localField: "area",
-          foreignField: "_id",
-          as: "areaDB",
-        })
-        .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
-        .addFields({
-          areaDB: {$ifNull: ["$areaDB.area", {$toString: "$area"}]},
-        })
-        .lookup({
-          from: "Insumos",
-          localField: "insumo",
-          foreignField: "_id",
-          as: "insumoDB",
-        })
-        .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
-        .addFields({
-          insumoDB: {$ifNull: ["$insumoDB.nombre", {$toString: "$insumo"}]},
-          categoriaDB: {$ifNull: ["$insumoDB.categoria", "$vacio"]},
-        })
-        .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1})
-        .exec();
+        });
 
       // ingreso segun insumo.retirado (timezone)
       let ingresos = FarmaciaIngreso.aggregate()
@@ -329,31 +259,7 @@ app.get(
           insumo: "$_id.insumo",
           ingreso: 1,
           total_ingreso: "$ingreso",
-        })
-        // populate area - insumo.
-        .lookup({
-          from: "areas",
-          localField: "area",
-          foreignField: "_id",
-          as: "areaDB",
-        })
-        .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
-        .addFields({
-          areaDB: {$ifNull: ["$areaDB.area", {$toString: "$area"}]},
-        })
-        .lookup({
-          from: "Insumos",
-          localField: "insumo",
-          foreignField: "_id",
-          as: "insumoDB",
-        })
-        .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
-        .addFields({
-          insumoDB: {$ifNull: ["$insumoDB.nombre", {$toString: "$insumo"}]},
-          categoriaDB: {$ifNull: ["$insumoDB.categoria", "$vacio"]},
-        })
-        .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1})
-        .exec();
+        });
 
       // transferenciaIn segun insumo.retirado (timezone) y haya sido recibido
       let transferenciaIn = FarmaciaTransferencia.aggregate()
@@ -402,31 +308,7 @@ app.get(
           insumo: "$_id.insumo",
           transferenciaIn: 1,
           total_ingreso: "$transferenciaIn",
-        })
-        // populate area - insumo.
-        .lookup({
-          from: "areas",
-          localField: "area",
-          foreignField: "_id",
-          as: "areaDB",
-        })
-        .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
-        .addFields({
-          areaDB: {$ifNull: ["$areaDB.area", {$toString: "$area"}]},
-        })
-        .lookup({
-          from: "Insumos",
-          localField: "insumo",
-          foreignField: "_id",
-          as: "insumoDB",
-        })
-        .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
-        .addFields({
-          insumoDB: {$ifNull: ["$insumoDB.nombre", {$toString: "$insumo"}]},
-          categoriaDB: {$ifNull: ["$insumoDB.categoria", "$vacio"]},
-        })
-        .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1})
-        .exec();
+        });
 
       // transferenciaOut segun insumo.retirado (timezone)
       let transferenciaOut = FarmaciaTransferencia.aggregate()
@@ -472,31 +354,7 @@ app.get(
           insumo: "$_id.insumo",
           transferenciaOut: 1,
           egreso_otros: "$transferenciaOut",
-        })
-        // populate area - insumo.
-        .lookup({
-          from: "areas",
-          localField: "area",
-          foreignField: "_id",
-          as: "areaDB",
-        })
-        .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
-        .addFields({
-          areaDB: {$ifNull: ["$areaDB.area", {$toString: "$area"}]},
-        })
-        .lookup({
-          from: "Insumos",
-          localField: "insumo",
-          foreignField: "_id",
-          as: "insumoDB",
-        })
-        .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
-        .addFields({
-          insumoDB: {$ifNull: ["$insumoDB.nombre", {$toString: "$insumo"}]},
-          categoriaDB: {$ifNull: ["$insumoDB.categoria", "$vacio"]},
-        })
-        .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1})
-        .exec();
+        });
 
       // entregas/descartes segun fecha(no timezone) y existe retirado.
       let entregas = InsumoEntrega.aggregate()
@@ -530,31 +388,7 @@ app.get(
           insumo: "$_id.insumo",
           entregas: 1,
           egreso_consumido: "$entregas",
-        })
-        // populate area - insumo.
-        .lookup({
-          from: "areas",
-          localField: "area",
-          foreignField: "_id",
-          as: "areaDB",
-        })
-        .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
-        .addFields({
-          areaDB: {$ifNull: ["$areaDB.area", {$toString: "$area"}]},
-        })
-        .lookup({
-          from: "Insumos",
-          localField: "insumo",
-          foreignField: "_id",
-          as: "insumoDB",
-        })
-        .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
-        .addFields({
-          insumoDB: {$ifNull: ["$insumoDB.nombre", {$toString: "$insumo"}]},
-          categoriaDB: {$ifNull: ["$insumoDB.categoria", "$vacio"]},
-        })
-        .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1})
-        .exec();
+        });
 
       // entregas/descartes segun fecha(no timezone) y existe retirado.
       let descartes = FarmaciaDescarte.aggregate()
@@ -594,35 +428,225 @@ app.get(
           descartes_otros: 1,
           egreso_consumido: "$descartes_consumido",
           egreso_otros: "$descartes_otros",
-        })
-        // populate area - insumo.
-        .lookup({
-          from: "areas",
-          localField: "area",
-          foreignField: "_id",
-          as: "areaDB",
-        })
-        .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
-        .addFields({
-          areaDB: {$ifNull: ["$areaDB.area", {$toString: "$area"}]},
-        })
-        .lookup({
-          from: "Insumos",
-          localField: "insumo",
-          foreignField: "_id",
-          as: "insumoDB",
-        })
-        .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
-        .addFields({
-          insumoDB: {$ifNull: ["$insumoDB.nombre", {$toString: "$insumo"}]},
-          categoriaDB: {$ifNull: ["$insumoDB.categoria", "$vacio"]},
-        })
-        .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1})
-        .exec();
+        });
+
+      // PREPARANDO REPORTE
+      let reporte = [];
+
+      // si hay filtro en insumo -> area-insumo mostrar en 0
+      if (filtroIndividual.insumo) {
+        let [areaDB, insumosDB] = await Promise.all([
+          Area.find(
+            req.query.areas
+              ? {
+                  _id: JSON.parse(req.query.areas),
+                }
+              : {farmacia: true}
+          ).exec(),
+          FarmaciaInsumo.find({_id: JSON.parse(req.query.insumos)}).exec(),
+        ]);
+        areaDB.forEach((area) => {
+          insumosDB.forEach((insumo) => {
+            reporte.push({
+              _id: `${area._id}-${insumo._id}`,
+              areaDB: area.area ?? area._id,
+              categoriaDB: insumo.categoria,
+              insumoDB: insumo.nombre ?? insumo._id,
+            });
+          });
+        });
+      }
+      // populate area - insumo. areaDB / categoriaDB / insumoDB
+      else {
+        stock
+          .lookup({
+            from: "areas",
+            localField: "area",
+            foreignField: "_id",
+            as: "areaDB",
+          })
+          .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
+          .addFields({
+            areaDB: {$ifNull: ["$areaDB.area", {$toString: "$area"}]},
+          })
+          .lookup({
+            from: "Insumos",
+            localField: "insumo",
+            foreignField: "_id",
+            as: "insumoDB",
+          })
+          .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
+          .addFields({
+            insumoDB: {$ifNull: ["$insumoDB.nombre", {$toString: "$insumo"}]},
+            categoriaDB: {$ifNull: ["$insumoDB.categoria", "$vacio"]},
+          });
+
+        solicitudes
+          .lookup({
+            from: "areas",
+            localField: "area",
+            foreignField: "_id",
+            as: "areaDB",
+          })
+          .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
+          .addFields({
+            areaDB: {$ifNull: ["$areaDB.area", {$toString: "$area"}]},
+          })
+          .lookup({
+            from: "Insumos",
+            localField: "insumo",
+            foreignField: "_id",
+            as: "insumoDB",
+          })
+          .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
+          .addFields({
+            insumoDB: {$ifNull: ["$insumoDB.nombre", {$toString: "$insumo"}]},
+            categoriaDB: {$ifNull: ["$insumoDB.categoria", "$vacio"]},
+          });
+
+        minimos
+          .lookup({
+            from: "areas",
+            localField: "area",
+            foreignField: "_id",
+            as: "areaDB",
+          })
+          .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
+          .addFields({
+            areaDB: {$ifNull: ["$areaDB.area", {$toString: "$area"}]},
+          })
+          .lookup({
+            from: "Insumos",
+            localField: "insumo",
+            foreignField: "_id",
+            as: "insumoDB",
+          })
+          .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
+          .addFields({
+            insumoDB: {$ifNull: ["$insumoDB.nombre", {$toString: "$insumo"}]},
+            categoriaDB: {$ifNull: ["$insumoDB.categoria", "$vacio"]},
+          });
+
+        ingresos
+          .lookup({
+            from: "areas",
+            localField: "area",
+            foreignField: "_id",
+            as: "areaDB",
+          })
+          .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
+          .addFields({
+            areaDB: {$ifNull: ["$areaDB.area", {$toString: "$area"}]},
+          })
+          .lookup({
+            from: "Insumos",
+            localField: "insumo",
+            foreignField: "_id",
+            as: "insumoDB",
+          })
+          .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
+          .addFields({
+            insumoDB: {$ifNull: ["$insumoDB.nombre", {$toString: "$insumo"}]},
+            categoriaDB: {$ifNull: ["$insumoDB.categoria", "$vacio"]},
+          });
+
+        transferenciaIn
+          .lookup({
+            from: "areas",
+            localField: "area",
+            foreignField: "_id",
+            as: "areaDB",
+          })
+          .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
+          .addFields({
+            areaDB: {$ifNull: ["$areaDB.area", {$toString: "$area"}]},
+          })
+          .lookup({
+            from: "Insumos",
+            localField: "insumo",
+            foreignField: "_id",
+            as: "insumoDB",
+          })
+          .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
+          .addFields({
+            insumoDB: {$ifNull: ["$insumoDB.nombre", {$toString: "$insumo"}]},
+            categoriaDB: {$ifNull: ["$insumoDB.categoria", "$vacio"]},
+          });
+
+        transferenciaOut
+          .lookup({
+            from: "areas",
+            localField: "area",
+            foreignField: "_id",
+            as: "areaDB",
+          })
+          .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
+          .addFields({
+            areaDB: {$ifNull: ["$areaDB.area", {$toString: "$area"}]},
+          })
+          .lookup({
+            from: "Insumos",
+            localField: "insumo",
+            foreignField: "_id",
+            as: "insumoDB",
+          })
+          .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
+          .addFields({
+            insumoDB: {$ifNull: ["$insumoDB.nombre", {$toString: "$insumo"}]},
+            categoriaDB: {$ifNull: ["$insumoDB.categoria", "$vacio"]},
+          });
+
+        entregas
+          .lookup({
+            from: "areas",
+            localField: "area",
+            foreignField: "_id",
+            as: "areaDB",
+          })
+          .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
+          .addFields({
+            areaDB: {$ifNull: ["$areaDB.area", {$toString: "$area"}]},
+          })
+          .lookup({
+            from: "Insumos",
+            localField: "insumo",
+            foreignField: "_id",
+            as: "insumoDB",
+          })
+          .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
+          .addFields({
+            insumoDB: {$ifNull: ["$insumoDB.nombre", {$toString: "$insumo"}]},
+            categoriaDB: {$ifNull: ["$insumoDB.categoria", "$vacio"]},
+          });
+
+        descartes
+          .lookup({
+            from: "areas",
+            localField: "area",
+            foreignField: "_id",
+            as: "areaDB",
+          })
+          .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
+          .addFields({
+            areaDB: {$ifNull: ["$areaDB.area", {$toString: "$area"}]},
+          })
+          .lookup({
+            from: "Insumos",
+            localField: "insumo",
+            foreignField: "_id",
+            as: "insumoDB",
+          })
+          .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
+          .addFields({
+            insumoDB: {$ifNull: ["$insumoDB.nombre", {$toString: "$insumo"}]},
+            categoriaDB: {$ifNull: ["$insumoDB.categoria", "$vacio"]},
+          });
+      }
 
       // Ejecutar todas las solicitudes y sumar objetos
-      let reporte = arrayFromSumarPropsInArrays({
-        arrays: await Promise.all([
+      reporte = await arrayFromSumarPropsInArrays({
+        arrays: [
+          reporte,
           stock,
           solicitudes,
           minimos,
@@ -631,20 +655,17 @@ app.get(
           transferenciaOut,
           entregas,
           descartes,
-        ]),
+        ],
         compare: (a, b) => a._id === b._id,
       });
 
-      // resetear arrays para liberar memoria)?)?
-      stock = [];
-      solicitudes = [];
-      minimos = [];
-      ingresos = [];
-      transferenciaIn = [];
-      transferenciaOut = [];
-      entregas = [];
-      descartes = [];
-      // Si hay problemas de memoria.. ir arrayFromSumarPropsInArrays uno por uno.. con un solo array temporal)?)?
+      if (reporte.error) {
+        return errorMessage(
+          res,
+          {name: "Reporte.arrayFromSumarPropsInArrays", message: reporte.error},
+          500
+        );
+      }
 
       // .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1});
       // a.areaDB.localeCompare(b.areaDB) para comparar string

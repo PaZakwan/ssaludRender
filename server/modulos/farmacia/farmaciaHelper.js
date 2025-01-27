@@ -35,7 +35,7 @@ const modificarStockInc = async (area, insumo, cantidad, resta) => {
   stockDB = await FarmaciaStock.findOne(filtro).exec();
 
   if (resta) {
-    if (stockDB && stockDB.cantidad > cantidad) {
+    if (stockDB?.cantidad > cantidad) {
       // si existe y la cantidad es adecuada quita cantidad en "area"
       stockDB = await FarmaciaStock.findOneAndUpdate(
         filtro,
@@ -45,7 +45,7 @@ const modificarStockInc = async (area, insumo, cantidad, resta) => {
           runValidators: true,
         }
       ).exec();
-    } else if (stockDB && stockDB.cantidad == cantidad) {
+    } else if (stockDB?.cantidad == cantidad) {
       // si existe y la cantidad son iguales la borra del "area"
       stockDB = await FarmaciaStock.findOneAndDelete(filtro).exec();
     } else {
@@ -73,4 +73,4 @@ const modificarStockInc = async (area, insumo, cantidad, resta) => {
   return stockDB;
 };
 
-module.exports = modificarStockInc;
+exports.modificarStockInc = modificarStockInc;

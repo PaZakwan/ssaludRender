@@ -6,9 +6,12 @@ const _pick = require("lodash/pick");
 const {verificaToken, verificaArrayPropValue} = require(process.env.MAIN_FOLDER +
   "/middlewares/autenticacion");
 const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
-const {isObjectIdValid} = require(process.env.MAIN_FOLDER + "/tools/object");
+const {isObjectIdValid, arrayFromSumarPropsInArrays} = require(process.env.MAIN_FOLDER +
+  "/tools/object");
 
 const {modificarStockInc} = require("./vacunaHelper");
+const Area = require(process.env.MAIN_FOLDER + "/modulos/main/models/area");
+const VacunaInsumo = require("./models/vacuna_insumo");
 const VacunaStock = require("./models/vacuna_stock");
 const VacunaTransferencia = require("./models/vacuna_transferencia");
 const VacunaIngreso = require("./models/vacuna_ingreso");
@@ -235,13 +238,13 @@ app.get(
           expirado: {
             $cond: [
               {$not: ["$vencimiento"]},
-              false,
+              "$noRetornaNada",
               {
                 $cond: [
                   {
                     $gt: ["$vencimiento", hoy],
                   },
-                  false,
+                  "$noRetornaNada",
                   true,
                 ],
               },
@@ -252,13 +255,13 @@ app.get(
           porExpirar: {
             $cond: [
               {$or: [{$not: ["$vencimiento"]}, "$expirado"]},
-              false,
+              "$noRetornaNada",
               {
                 $cond: [
                   {
                     $gt: ["$vencimiento", porExpirar],
                   },
-                  false,
+                  "$noRetornaNada",
                   true,
                 ],
               },
@@ -289,7 +292,17 @@ app.get(
           ...detallado,
         })
         .project({
-          _id: 0,
+          _id: {
+            $concat: [
+              {
+                $toString: "$_id.area",
+              },
+              "-",
+              {
+                $toString: "$_id.insumo",
+              },
+            ],
+          },
           area: "$_id.area",
           insumo: "$_id.insumo",
           total: 1,
@@ -297,35 +310,102 @@ app.get(
           total_porExpirar: 1,
           detalle: 1,
           cant_min: {$cond: [{$eq: ["$cant_min", 0]}, "$noRetornaNada", "$cant_min"]},
-        })
-        .lookup({
-          from: "areas",
-          localField: "area",
-          foreignField: "_id",
-          as: "areaDB",
-        })
-        .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
-        .addFields({
-          areaDB: {$ifNull: ["$areaDB.area", {$toString: "$area"}]},
-        })
-        .lookup({
-          from: "VacunaInsumos",
-          localField: "insumo",
-          foreignField: "_id",
-          as: "insumoDB",
-        })
-        .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
-        .addFields({
-          insumoDB: {$ifNull: ["$insumoDB.nombre", {$toString: "$insumo"}]},
-          categoriaDB: {$ifNull: ["$insumoDB.categoria", "$vacio"]},
-        })
-        .addFields({
-          _id: {$concat: ["$areaDB", "-", "$insumoDB"]},
-        })
-        .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1});
+          total_buenos: {$subtract: ["$total", "$total_expirado"]},
+        });
+
+      // PREPARANDO RESPUESTA
+      let respuesta = [];
+
+      // si hay filtro en insumo -> area-insumo mostrar en 0
+      if (filtro.insumo) {
+        let [areaDB, insumosDB] = await Promise.all([
+          Area.find(
+            req.query.areas
+              ? {
+                  _id: JSON.parse(req.query.areas),
+                }
+              : {vacunatorio: true}
+          ).exec(),
+          VacunaInsumo.find({_id: JSON.parse(req.query.insumos)}).exec(),
+        ]);
+        areaDB.forEach((area) => {
+          insumosDB.forEach((insumo) => {
+            respuesta.push(
+              // Excel detallado
+              req.query.ex && !req.query.nd
+                ? {
+                    _id: `${area._id}-${insumo._id}`,
+                    areaDB: area.area ?? area._id,
+                    categoriaDB: insumo.categoria,
+                    insumoDB: insumo.nombre ?? insumo._id,
+                    cantidad: 0,
+                  }
+                : {
+                    _id: `${area._id}-${insumo._id}`,
+                    areaDB: area.area ?? area._id,
+                    categoriaDB: insumo.categoria,
+                    insumoDB: insumo.nombre ?? insumo._id,
+                    total: 0,
+                    total_expirado: 0,
+                    total_porExpirar: 0,
+                    detalle: [],
+                    total_buenos: 0,
+                  }
+            );
+          });
+        });
+      } else {
+        // populate area - insumo. areaDB / categoriaDB / insumoDB
+        stockDB
+          .lookup({
+            from: "areas",
+            localField: "area",
+            foreignField: "_id",
+            as: "areaDB",
+          })
+          .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
+          .addFields({
+            areaDB: {$ifNull: ["$areaDB.area", {$toString: "$area"}]},
+          })
+          .lookup({
+            from: "VacunaInsumos",
+            localField: "insumo",
+            foreignField: "_id",
+            as: "insumoDB",
+          })
+          .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
+          .addFields({
+            insumoDB: {$ifNull: ["$insumoDB.nombre", {$toString: "$insumo"}]},
+            categoriaDB: {$ifNull: ["$insumoDB.categoria", "$vacio"]},
+          });
+      }
 
       // Excel detallado
       if (req.query.ex && !req.query.nd) {
+        if (filtro.insumo) {
+          stockDB
+            .lookup({
+              from: "areas",
+              localField: "area",
+              foreignField: "_id",
+              as: "areaDB",
+            })
+            .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
+            .addFields({
+              areaDB: {$ifNull: ["$areaDB.area", {$toString: "$area"}]},
+            })
+            .lookup({
+              from: "VacunaInsumos",
+              localField: "insumo",
+              foreignField: "_id",
+              as: "insumoDB",
+            })
+            .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
+            .addFields({
+              insumoDB: {$ifNull: ["$insumoDB.nombre", {$toString: "$insumo"}]},
+              categoriaDB: {$ifNull: ["$insumoDB.categoria", "$vacio"]},
+            });
+        }
         stockDB
           .unwind({path: "$detalle", preserveNullAndEmptyArrays: true})
           .addFields({
@@ -351,11 +431,37 @@ app.get(
           });
       }
 
-      stockDB = await stockDB.exec();
+      // Ejecutar todas las solicitudes y sumar objetos
+      respuesta = await arrayFromSumarPropsInArrays({
+        arrays: [respuesta, stockDB],
+        compare:
+          // Excel detallado, solo suma cuando el objeto es el mismo ID y alguno tiene cantidad 0
+          req.query.ex && !req.query.nd
+            ? (a, b) => a._id === b._id && (b.cantidad === 0 || a.cantidad === 0)
+            : (a, b) => a._id === b._id,
+      });
+
+      if (respuesta.error) {
+        return errorMessage(
+          res,
+          {name: "Stock.arrayFromSumarPropsInArrays", message: respuesta.error},
+          500
+        );
+      }
+
+      // .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1});
+      // a.areaDB.localeCompare(b.areaDB) para comparar string
+      // b.price - a.price para comparar numeros
+      respuesta.sort(
+        (a, b) =>
+          (a.areaDB ?? "").localeCompare(b.areaDB ?? "") ||
+          (a.categoriaDB ?? "").localeCompare(b.categoriaDB ?? "") ||
+          (a.insumoDB ?? "").localeCompare(b.insumoDB ?? "")
+      );
 
       return res.status(200).json({
         ok: true,
-        stock: stockDB,
+        stock: respuesta,
       });
     } catch (err) {
       return errorMessage(res, err, err.code);
@@ -423,13 +529,13 @@ app.get(
           expirado: {
             $cond: [
               {$not: ["$vencimiento"]},
-              false,
+              "$noRetornaNada",
               {
                 $cond: [
                   {
                     $gt: ["$vencimiento", hoy],
                   },
-                  false,
+                  "$noRetornaNada",
                   true,
                 ],
               },
@@ -440,13 +546,13 @@ app.get(
           porExpirar: {
             $cond: [
               {$or: [{$not: ["$vencimiento"]}, "$expirado"]},
-              false,
+              "$noRetornaNada",
               {
                 $cond: [
                   {
                     $gt: ["$vencimiento", porExpirar],
                   },
-                  false,
+                  "$noRetornaNada",
                   true,
                 ],
               },

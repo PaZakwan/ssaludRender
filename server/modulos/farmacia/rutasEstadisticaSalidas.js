@@ -146,6 +146,7 @@ app.get(
                   fecha: {$dateToString: {format: "%Y-%m-%d", date: "$fecha"}},
                   pacienteDB: "$pacienteDB",
                   pacienteDocDB: "$pacienteDocDB",
+                  pacienteSexoDB: "$pacienteSexoDB",
                   pacienteTelefonoDB: "$pacienteTelefonoDB",
                   oSocial: "$oSocial",
                   procedencia: "$procedencia",
@@ -186,6 +187,9 @@ app.get(
                   },
                   "$vacio",
                 ],
+              },
+              pacienteSexoDB: {
+                $ifNull: ["$pacienteDB.sexo", "$vacio"],
               },
               pacienteTelefonoDB: {
                 $ifNull: ["$pacienteDB.telefono", "$pacienteDB.telefono_alt", "$vacio"],
@@ -252,6 +256,7 @@ app.get(
               fecha: {$ifNull: ["$detalle_entregas.fecha", "$noRetornaNada"]},
               pacienteDB: {$ifNull: ["$detalle_entregas.pacienteDB", "$noRetornaNada"]},
               pacienteDocDB: {$ifNull: ["$detalle_entregas.pacienteDocDB", "$noRetornaNada"]},
+              pacienteSexoDB: {$ifNull: ["$detalle_entregas.pacienteSexoDB", "$noRetornaNada"]},
               pacienteTelefonoDB: {
                 $ifNull: ["$detalle_entregas.pacienteTelefonoDB", "$noRetornaNada"],
               },

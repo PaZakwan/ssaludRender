@@ -147,16 +147,16 @@ db.getCollection('pacientes').find({
 
 - [ ] Actualizar - Vue-Cli => Vue-Cli -> Vite -> [Migrate](https://vueschool.io/articles/vuejs-tutorials/how-to-migrate-from-vue-cli-to-vite/)
 
-- [ ] ‼️ Vacunas - Aplicaciones => Detallado y No Detallado (como Entregas de Farmacias) en formatos -> PDF / csv (Excel).
+- [ ] ‼️ Vacunas - Aplicaciones -> Apartado para MODIFICAR APLICACION RAW... ASIGNAR A NUEVO PACIENTE Y MODIFICAR CAMPOS (BORRAR).
+
 - [ ] ‼️ Vacunas - Aplicaciones -> SCRIPT LINKEAR APLICACIONES
       SIN-> paciente (PACIENTE ID) y documento,
       CON-> ps_paciente(id), doc_responsable.
       db.getCollection('VacunaAplicaciones').find({paciente:{$exists:0},documento:{$exists:0},ps_paciente:{$exists:1},doc_responsable:{$exists:1}}) -> buscar con ps_paciente en Pacientes ps_id -> si existe actualizar Aplicacion.
       each -> find and save
 
-- [~] Farmacia - Reportes -> Insumos seleccionados en filtro, si no hay mostrar con stock 0 (al momento si no hay y esta en el filtro no lo muestra). FALTA GENERAL DETALLADO Y STOCK (USAR EL IF PARA NO CARGAR TOOOODOS LOS INSUMOS CUANDO NO SE SELECCIONAN)
 - [ ] Farmacia/Vacunas -> Unificar Filtros en (Back! y Front?)
-- [ ] Farmacia/Vacunas -> Mostrar filtros utilizados para los reportes, areaName/insumoName/Procedencia.
+- [~] Farmacia/Vacunas -> Mostrar filtros utilizados para los reportes, areaName/insumoName/Procedencia.
 
 - [ ] Farmacia/Vacunas - BUSCAR POR LOTE, en todos los buscadores | filtros.
 
@@ -173,16 +173,13 @@ db.getCollection('pacientes').find({
 ### En Progreso Secundario
 
 - BACK
-  1. [ ] Revisar y borrar lodash => \_pick , \_merge.
+  1. [ ] Revisar y borrar libreria lodash => \_pick , \_merge. [youmightnotneed lodash](https://youmightnotneed.com/lodash)
   1. [ ] ‼️ Independizar y crear script para generar los ssl certificated for ip intranet.
          [SSL LOCAL](https://deliciousbrains.com/ssl-certificate-authority-for-local-https-development/)
          [generate-a-self-signed-SSL](https://stackoverflow.com/questions/10175812/how-to-generate-a-self-signed-ssl-certificate-using-openssl?answertab=trending#tab-top)
          [How SSL LOCAL](https://www.section.io/engineering-education/how-to-get-ssl-https-for-localhost/)
 - FRONT
-  1. [ ] Revisar y borrar lodash => get , merge, clonedeep -> structuredClone({... , ...}).
-  1. [~] Revisar => v-tooltip -> close-delay="0".
-  1. [~] Revisar => Dialogs -> Aggregar Draggeable donde corresponda.
-  1. [~] Revisar => Dialogs -> Draggable/Resize Windows.
+  1. [ ] Revisar y borrar libreria lodash => get , merge, clonedeep -> structuredClone({... , ...}). [youmightnotneed lodash](https://youmightnotneed.com/lodash)
 
 ### Vacunas
 
@@ -271,6 +268,8 @@ db.getCollection("Insumos").deleteMany({categoria: "Vacuna"});
 
 22. [ ] Plan de Contingencia, Stock en StandBy (Remito). Quitar de stock momentaneamente. Destino que cuidara los insumos.
 
+- [ ] Vacunas - Reportes -> Agregar filtro Edades (años), para sacar reporte nominal agrupado por edad.
+
 - [ ] VACUNAS - MIGRACION => Vacunaciones sin paciente ID pero con tipo_doc y documento, luego buscar si existe paciente y linkearlo.
 - [ ] VACUNAS - MIGRACION => Vacunaciones sin paciente ID posibilidad de seleccionar paciente para linkearlo.
 
@@ -319,6 +318,8 @@ db.getCollection("Insumos").deleteMany({categoria: "Vacuna"});
                 - [X](X) Ver tema de colores del background, vencidos | porVencer (red (negrita) | orange).
                 - [X](X) Ver tema de colores del background, Minimo | porLlegarMinimo (Rosa (negrita) | no diferencia).
                 - [X](X) Ver tema de colores del background, en cero con Minimo (Fucsia (negrita)).
+                - [X] Reporte - Vencimiento/Minimos => [Area]-[Medicamento] = [Cantidad]-[minimo_opciones]
+                    - [Cantidad]-[vencimiento/por_vencer]
 
     - [X](X)  Medicamento Entrega (consumidor final)
                 (entrega, dios)
@@ -340,13 +341,12 @@ db.getCollection("Insumos").deleteMany({categoria: "Vacuna"});
                 - [X](X) Minimos de Stock...
                 [ ]( ) Cantidad a Solicitar Standard... (Boton nuevo en Solicitud para cargar la plantilla)
 
-    [~](~)  Farmacia Reportes (Vencimiento/Minimos o Estadistica)
+    [X](X)  Farmacia Reportes (Vencimiento/Minimos o Estadistica)
                 (gestion, general report, dios)
                 Similar a Hiclem Control.
                 - [X] Estadistica => [Area]-[Medicamento] = + [Ingreso] +- [Clearing] ~ [Stock]
                     - [Entrega] - [Descarte] ~ [Solicitud]
-                - [ ] Vencimiento/Minimos => [Area]-[Medicamento] = [Cantidad]-[minimo_opciones]
-                    - [Cantidad]-[vencimiento/por_vencer]
+                - [X] Stock Total del Sistema => [Medicamento] = [Procedencia-Cantidad]-[Total]
 
     - [~]( )  Farmacia Solicitud Consolidados (cada programa tiene una planilla) Para provincia
             Lista de Pacientes incluidos en los programas

@@ -232,7 +232,7 @@ pacienteSchema.virtual("edad").get(function () {
     // edad_weeks: "",
     // edad_days: "",
     if (!!this.fec_nac) {
-      return getEdad({date: this.fec_nac, onlyYear: false});
+      return getEdad({date: this.fec_nac, onlyYear: false, formatString: true});
     }
     return undefined;
   } catch (error) {
