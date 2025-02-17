@@ -27,6 +27,16 @@
 
 ---
 
+### [1.7.20250217] - 2025-02-17
+
+- 🩹 Fixed a HICLEM - Peso => El peso al nacer guardado previamente no se mostraba correctamente seleccionado en segunda carga.
+- 🚨 Changed a HICLEM - Antecedentes => "Diabetes (DM)" -> "Diabetes Tipo 1 (DM1)", "Diabetes Tipo 2 (DM2)".
+
+- ✨ Added a Farmacia - Entregas => Nuevo "paso" al realizar Entregas de medicacion que solicita la carga de datos para el Historial Clinico de la persona (HICLEM).
+- ✨ Added a Farmacia - Entregas => Los Excels de Entregas Nominales (Detallados) ahora tienen las columnas del Historial Clinico de la persona (HICLEM).
+
+- 🩹 Fixed a Patrimonio - Insumos => Entregas permitia entregar cualquier cantidad del insumo cuando el stock estaba en 0, ahora tiene en cuenta la cantidad 0 al igual que cuando habia insumos que no dejaba realizar entregas que superaran el stock; ademas Ingresos permitia ingresar insumos con cantidad en 0 lo cual no tenia sentido, ya solucionado.
+
 ### [1.7.20250127] - 2025-01-27
 
 - ✨ Added a Sistema - Cliente => Revisa la version del Cliente cada 10 min, notifica si hay una nueva version y recomienda recargar pagina para actualizar.

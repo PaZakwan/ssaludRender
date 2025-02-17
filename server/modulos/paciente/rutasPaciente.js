@@ -3,12 +3,15 @@ const axios = require("axios");
 
 const _pick = require("lodash/pick");
 
-const {verificaToken} = require(process.env.MAIN_FOLDER + "/middlewares/autenticacion");
+const {verificaToken, verificaArrayPropValue} = require(process.env.MAIN_FOLDER +
+  "/middlewares/autenticacion");
 const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
 const {isVacio, objectSetUnset, isObjectIdValid} = require(process.env.MAIN_FOLDER +
   "/tools/object");
 const {capitalize} = require(process.env.MAIN_FOLDER + "/tools/string");
 const Paciente = require("./models/paciente");
+
+// Para Borrar donde se usa ref: "Paciente"
 
 const app = express();
 
@@ -46,21 +49,44 @@ let listaPaciente = [
 ];
 
 const verificaPacienteLectura = (req, res, next) => {
-  let usuario = req.usuario;
-  if (
-    usuario.tuberculosis > 0 ||
-    usuario.turnero > 0 ||
-    usuario.historial_clinico > 0 ||
-    usuario.farmacia?.general?.reportes ||
-    usuario.farmacia?.general?.admin ||
-    usuario.farmacia?.entregas?.length > 0 ||
-    usuario.vacunas?.gestion?.length > 0 ||
-    usuario.vacunas?.lectura?.length > 0 ||
-    usuario.vacunas?.general?.gestion ||
-    usuario.vacunas?.general?.lectura
-  ) {
-    return next();
-  } else {
+  try {
+    if (
+      req.usuario.farmacia?.entregas?.length > 0 ||
+      req.usuario.farmacia?.general?.reportes ||
+      req.usuario.farmacia?.general?.admin ||
+      req.usuario.vacunas?.gestion?.length > 0 ||
+      req.usuario.vacunas?.lectura?.length > 0 ||
+      req.usuario.vacunas?.general?.gestion ||
+      req.usuario.vacunas?.general?.lectura ||
+      req.usuario.historial_clinico > 0 ||
+      req.usuario.turnero > 0 ||
+      req.usuario.tuberculosis > 0
+    ) {
+      return next();
+    } else {
+      return errorMessage(res, {message: "Actividad no autorizada."}, 403);
+    }
+  } catch (error) {
+    return errorMessage(res, {message: "Actividad no autorizada."}, 403);
+  }
+};
+
+const verificaPacienteEdit = (req, res, next) => {
+  try {
+    if (
+      req.usuario.farmacia?.entregas?.length > 0 ||
+      req.usuario.farmacia?.general?.admin ||
+      req.usuario.vacunas?.gestion?.length > 0 ||
+      req.usuario.vacunas?.general?.gestion ||
+      req.usuario.historial_clinico > 1 ||
+      req.usuario.turnero > 1 ||
+      req.usuario.tuberculosis > 1
+    ) {
+      return next();
+    } else {
+      return errorMessage(res, {message: "Actividad no autorizada."}, 403);
+    }
+  } catch (error) {
     return errorMessage(res, {message: "Actividad no autorizada."}, 403);
   }
 };
@@ -72,26 +98,6 @@ const verificaPacienteAdmin = (usuario) => {
       usuario.turnero === 3 ||
       usuario.historial_clinico === 3 ||
       usuario.farmacia?.general?.admin
-    ) {
-      return true;
-    } else {
-      return false;
-    }
-  } catch (error) {
-    return false;
-  }
-};
-
-const verificaPacienteEdit = (usuario) => {
-  try {
-    if (
-      usuario.tuberculosis > 1 ||
-      usuario.turnero > 1 ||
-      usuario.historial_clinico > 1 ||
-      usuario.farmacia?.general?.admin ||
-      usuario.farmacia?.entregas?.length >= 1 ||
-      usuario.vacunas?.gestion?.length > 0 ||
-      usuario.vacunas?.general?.gestion
     ) {
       return true;
     } else {
@@ -400,12 +406,8 @@ app.get("/paciente/buscar", [verificaToken, verificaPacienteLectura], async (req
 // ============================
 // Registrar Paciente
 // ============================
-app.post("/paciente", [verificaToken, verificaPacienteLectura], async (req, res) => {
+app.post("/paciente", [verificaToken, verificaPacienteEdit], async (req, res) => {
   try {
-    if (!verificaPacienteEdit(req.usuario)) {
-      return errorMessage(res, {message: "Actividad no autorizada."}, 403);
-    }
-
     let listaPacienteCrear = listaPaciente.slice();
 
     let body = isVacio({
@@ -435,12 +437,8 @@ app.post("/paciente", [verificaToken, verificaPacienteLectura], async (req, res)
 // ============================
 // Modificar Paciente por id
 // ============================
-app.put("/paciente/:id", [verificaToken, verificaPacienteLectura], async (req, res) => {
+app.put("/paciente/:id", [verificaToken, verificaPacienteEdit], async (req, res) => {
   try {
-    if (!verificaPacienteEdit(req.usuario)) {
-      return errorMessage(res, {message: "Actividad no autorizada."}, 403);
-    }
-
     if (!req.params.id) {
       return errorMessage(res, {message: "Falta información para proceder."}, 412);
     }
@@ -546,22 +544,82 @@ app.put(
 );
 
 // ============================
-// "Borrar" edita estado a false del Paciente por id
+// Borrar Paciente por id si no se utilizo
 // ============================
 // ============================
 // XXXXXX  Desarrollar  XXXXXXX
+// UTILIZAR verificacionArray En todo PACIENTES -> crear const [] de edit y lectura
+// ELIMINAR RUTAS QUE NO SE USAN...
 // ============================
+// app.delete(
+//   "/paciente/:id",
+//   [
+//     verificaToken,
+//     (req, res, next) => {
+//       req.verificacionArray = [{prop: "vacunas.config", value: 1}];
+//       next();
+//     },
+//     verificaArrayPropValue,
+//   ],
+//   async (req, res) => {
+//     try {
+//       // VacunaIngreso;
+//       let insumoBorrado = await VacunaIngreso.findOne({"insumos.insumo": req.params.id}).exec();
+//       if (insumoBorrado) {
+//         return errorMessage(res, {message: "Insumo Utilizado (Ingreso), no borrable."}, 412);
+//       }
+//       // VacunaConfig;
+//       insumoBorrado = await VacunaConfig.findOne({insumo: req.params.id}).exec();
+//       if (insumoBorrado) {
+//         return errorMessage(res, {message: "Insumo Utilizado (Config), no borrable."}, 412);
+//       }
+//       // VacunaSolicitud;
+//       insumoBorrado = await VacunaSolicitud.findOne({"insumos.insumo": req.params.id}).exec();
+//       if (insumoBorrado) {
+//         return errorMessage(res, {message: "Insumo Utilizado (Solicitud), no borrable."}, 412);
+//       }
+//       // VacunaStock;
+//       insumoBorrado = await VacunaStock.findOne({insumo: req.params.id}).exec();
+//       if (insumoBorrado) {
+//         return errorMessage(res, {message: "Insumo Utilizado (Stock), no borrable."}, 412);
+//       }
+//       // VacunaTransferencia;
+//       insumoBorrado = await VacunaTransferencia.findOne({"insumos.insumo": req.params.id}).exec();
+//       if (insumoBorrado) {
+//         return errorMessage(res, {message: "Insumo Utilizado (Transferencia), no borrable."}, 412);
+//       }
+//       // VacunaAplicacion;
+//       insumoBorrado = await VacunaAplicacion.findOne({insumo: req.params.id}).exec();
+//       if (insumoBorrado) {
+//         return errorMessage(res, {message: "Insumo Utilizado (Aplicacion), no borrable."}, 412);
+//       }
+//       // VacunaDescarte;
+//       insumoBorrado = await VacunaDescarte.findOne({insumo: req.params.id}).exec();
+//       if (insumoBorrado) {
+//         return errorMessage(res, {message: "Insumo Utilizado (Descarte), no borrable."}, 412);
+//       }
+
+//       insumoBorrado = await VacunaInsumo.findOneAndDelete({_id: req.params.id}).exec();
+//       if (!insumoBorrado) {
+//         return errorMessage(res, {message: "Insumo no encontrado."}, 404);
+//       }
+
+//       return res.status(200).json({
+//         ok: true,
+//         insumoBorrado,
+//       });
+//     } catch (err) {
+//       return errorMessage(res, err, err.code);
+//     }
+//   }
+// );
 
 // ============================
 // Buscar en RENAPER
 // ============================
 let RENAPER = {tkn: "", date: ""};
-app.get("/paciente/renaper/buscar", [verificaToken, verificaPacienteLectura], async (req, res) => {
+app.get("/paciente/renaper/buscar", [verificaToken, verificaPacienteEdit], async (req, res) => {
   try {
-    // verificar que pueda modificar pacientes
-    if (!verificaPacienteEdit(req.usuario)) {
-      return errorMessage(res, {message: "Actividad no autorizada."}, 403);
-    }
     // return errorMessage(res, {message: "El sistema no tiene usuario de RENAPER."}, 444);
     // verificar que el sistema cuanta con la APIKEY del renaper
     // process.env.RENAPER_USR;

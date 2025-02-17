@@ -33,84 +33,95 @@ let listaInsumo = [
 // ============================
 // Mostrar Insumo segun filtros
 // ============================
-app.get("/vacunas/insumo", [verificaToken], async (req, res) => {
-  try {
-    let filtro = req.query.filtro || "todos";
-    if (filtro !== "todos") {
-      try {
-        filtro = JSON.parse(filtro);
-        if (filtro !== "todos" && typeof filtro !== "object") {
+app.get(
+  "/vacunas/insumo",
+  [
+    verificaToken,
+    (req, res, next) => {
+      req.verificacionArray = [{prop: "vacunas"}];
+      next();
+    },
+    verificaArrayPropValue,
+  ],
+  async (req, res) => {
+    try {
+      let filtro = req.query.filtro || "todos";
+      if (filtro !== "todos") {
+        try {
+          filtro = JSON.parse(filtro);
+          if (filtro !== "todos" && typeof filtro !== "object") {
+            return errorMessage(res, {message: "El dato de Filtro no es valido."}, 400);
+          }
+          if (!!filtro.nombre && typeof filtro.nombre === "string") {
+            filtro.nombre = {
+              $regex: `(?i)${filtro.nombre}`,
+            };
+          }
+          if (!!filtro.descripcion && typeof filtro.descripcion === "string") {
+            filtro.descripcion = {
+              $regex: `(?i)${filtro.descripcion}`,
+            };
+          }
+          if (!!filtro.id_Nomivac && typeof filtro.id_Nomivac === "string") {
+            filtro.id_Nomivac = {
+              $regex: `(?i)${filtro.id_Nomivac}`,
+            };
+          }
+          if (!!filtro.categoria && typeof filtro.categoria === "string") {
+            filtro.categoria = {
+              $regex: `(?i)${filtro.categoria}`,
+            };
+          }
+        } catch (error) {
           return errorMessage(res, {message: "El dato de Filtro no es valido."}, 400);
         }
-        if (!!filtro.nombre && typeof filtro.nombre === "string") {
-          filtro.nombre = {
-            $regex: `(?i)${filtro.nombre}`,
-          };
-        }
-        if (!!filtro.descripcion && typeof filtro.descripcion === "string") {
-          filtro.descripcion = {
-            $regex: `(?i)${filtro.descripcion}`,
-          };
-        }
-        if (!!filtro.id_Nomivac && typeof filtro.id_Nomivac === "string") {
-          filtro.id_Nomivac = {
-            $regex: `(?i)${filtro.id_Nomivac}`,
-          };
-        }
-        if (!!filtro.categoria && typeof filtro.categoria === "string") {
-          filtro.categoria = {
-            $regex: `(?i)${filtro.categoria}`,
-          };
-        }
-      } catch (error) {
-        return errorMessage(res, {message: "El dato de Filtro no es valido."}, 400);
+      } else {
+        filtro = {};
       }
-    } else {
-      filtro = {};
+
+      let select = req.query.select || "";
+      try {
+        select = select.toString();
+      } catch (error) {
+        return errorMessage(res, {message: "El dato de Select no es valido."}, 400);
+      }
+
+      let orden = req.query.orden || JSON.stringify({nombre: 1});
+      try {
+        orden = JSON.parse(orden);
+      } catch (error) {
+        return errorMessage(res, {message: "El dato para Ordenar no es valido."}, 400);
+      }
+
+      let limite = req.query.limite || 0;
+      try {
+        limite = Number(limite);
+      } catch (error) {
+        return errorMessage(res, {message: "El dato para Limite no es valido."}, 400);
+      }
+
+      let insumos = null;
+
+      if (req.usuario.role !== "ADMIN_ROLE") {
+        filtro.estado = true;
+      }
+
+      insumos = await VacunaInsumo.find(filtro)
+        .collation({locale: "es", numericOrdering: true})
+        .select(select)
+        .sort(orden)
+        .limit(limite)
+        .exec();
+
+      return res.status(200).json({
+        ok: true,
+        insumos,
+      });
+    } catch (err) {
+      return errorMessage(res, err, err.code);
     }
-
-    let select = req.query.select || "";
-    try {
-      select = select.toString();
-    } catch (error) {
-      return errorMessage(res, {message: "El dato de Select no es valido."}, 400);
-    }
-
-    let orden = req.query.orden || JSON.stringify({nombre: 1});
-    try {
-      orden = JSON.parse(orden);
-    } catch (error) {
-      return errorMessage(res, {message: "El dato para Ordenar no es valido."}, 400);
-    }
-
-    let limite = req.query.limite || 0;
-    try {
-      limite = Number(limite);
-    } catch (error) {
-      return errorMessage(res, {message: "El dato para Limite no es valido."}, 400);
-    }
-
-    let insumos = null;
-
-    if (req.usuario.role !== "ADMIN_ROLE") {
-      filtro.estado = true;
-    }
-
-    insumos = await VacunaInsumo.find(filtro)
-      .collation({locale: "es", numericOrdering: true})
-      .select(select)
-      .sort(orden)
-      .limit(limite)
-      .exec();
-
-    return res.status(200).json({
-      ok: true,
-      insumos,
-    });
-  } catch (err) {
-    return errorMessage(res, err, err.code);
   }
-});
+);
 
 // ============================
 // Modificar Insumo o crearlo en caso de no existir

@@ -204,7 +204,7 @@ const PacienteFormat = async ({json, totales, line, logFile, csvErrors, csvFix})
   try {
     let errores = "";
     let advertencia = "";
-    // documento o doc_responsable REQUERIDO
+    // documento o doc_responsable REQUERIDO UPLOAD
     if (json.documento) {
       json.documento = json.documento.trim().toUpperCase();
       if (json.documento == 0) {
@@ -225,7 +225,7 @@ const PacienteFormat = async ({json, totales, line, logFile, csvErrors, csvFix})
       errores += ` documento / doc_responsable Sin Dato.`;
     }
 
-    // apellido REQUERIDO BD
+    // apellido REQUERIDO
     if (json.apellido) {
       json.apellido = json.apellido.trim().replaceAll(/[_\-]/g, " ").replaceAll(/[.]/g, "");
       json.apellido = capitalize(json.apellido);
@@ -235,7 +235,7 @@ const PacienteFormat = async ({json, totales, line, logFile, csvErrors, csvFix})
     } else {
       errores += ` apellido Sin Dato.`;
     }
-    // nombre REQUERIDO BD
+    // nombre REQUERIDO
     if (json.nombre) {
       json.nombre = json.nombre.trim().replaceAll(/[_\-]/gi, " ").replaceAll(/[.]/g, "");
       json.nombre = capitalize(json.nombre);
@@ -302,7 +302,7 @@ const PacienteFormat = async ({json, totales, line, logFile, csvErrors, csvFix})
       }
     }
 
-    // fec_nac REQUERIDO BD
+    // fec_nac REQUERIDO
     if (json.fec_nac) {
       if (!isDateValid(json.fec_nac)) {
         errores += ` fec_nac (${json.fec_nac}) [YYYY-MM-DD].`;
@@ -311,7 +311,7 @@ const PacienteFormat = async ({json, totales, line, logFile, csvErrors, csvFix})
       errores += " fec_nac Sin Dato.";
     }
 
-    // sexo REQUERIDO BD
+    // sexo REQUERIDO
     if (json.sexo) {
       switch (json.sexo.toLowerCase()) {
         case "f":
@@ -420,16 +420,17 @@ const PacienteFormat = async ({json, totales, line, logFile, csvErrors, csvFix})
       });
       totales.advertencias += 1;
     }
+
+    let existe = null;
     if (errores) {
-      // errores-fixable => documento-apellido-nombre.. o apellido/nombre con numero.
-      // fec_nac, dir_localidad o dir_calle/dir_numero
+      // errores-fixable => documento.. o apellido/nombre con numero (posible documento cargado en campo incorrecto).
+      // fix req -> documento, apellido, nombre, fec_nac, sexo, dir_localidad (BD)
       if (
-        (json.documento && json.documento != 0) ||
+        json.documento ||
         (!json.documento && (/\d/.test(json.apellido) || /\d/.test(json.nombre)))
       ) {
         // buscar en la BD si ya esta cargada esa persona, si esta cargada no agregar a fixable y agregarle el ps_id.
-        let existe = null;
-        if (json.documento && json.documento != 0) {
+        if (json.documento) {
           existe = await mongoose.connections[1].models.Paciente.findOneAndUpdate(
             {
               tipo_doc: json.tipo_doc,
@@ -438,8 +439,15 @@ const PacienteFormat = async ({json, totales, line, logFile, csvErrors, csvFix})
             {$addToSet: {ps_id: {$each: json.ps_id}}},
             {new: true, lean: true}
           ).exec();
+        } else {
+          existe = await mongoose.connections[1].models.Paciente.findOne({
+            ps_id: json.ps_id,
+          }).exec();
         }
         if (existe) {
+          errores += ` Persona ya existente en el sistema, debe ser unico (${
+            existe.documento ?? existe.ps_id
+          }).`;
           totales["errores-exist"] += 1;
         } else {
           guardarCSV({
@@ -465,6 +473,41 @@ const PacienteFormat = async ({json, totales, line, logFile, csvErrors, csvFix})
       });
       totales.errores += 1;
       return {json, totales, return: true};
+    }
+    // VER CASO DE QUE DOCUMENTO NO EXISTE Y DOCUMENTO DE RESPONSABLE SI... (Evitar DOBLE CARGA)
+    if (!json.documento && json.doc_responsable) {
+      existe = await mongoose.connections[1].models.Paciente.findOneAndUpdate(
+        {
+          doc_responsable: json.doc_responsable,
+          apellido: json.apellido,
+          nombre: json.nombre,
+          fec_nac: json.fec_nac,
+          sexo: json.sexo,
+        },
+        {$addToSet: {ps_id: {$each: json.ps_id}}},
+        {new: true, lean: true}
+      ).exec();
+
+      if (existe) {
+        errores += ` Persona ya existente en el sistema, debe ser unico (${
+          existe.documento ?? existe.ps_id
+        }).`;
+        totales["errores-exist"] += 1;
+
+        guardarCSV({
+          streamFile: csvErrors,
+          json,
+          line,
+          error: errores,
+          advertencia,
+        });
+        guardarContentStream({
+          streamFile: logFile,
+          content: `\nFila Excel: ${line}, Error:${errores}`,
+        });
+        totales.errores += 1;
+        return {json, totales, return: true};
+      }
     }
 
     return {json, totales};
@@ -762,7 +805,7 @@ app.post(
         streamFile: logFile,
         content: `\n\nTotales:\r\n\t⚠ Errores: ${totales.errores}.\r\n\t\t• Fixables: ${totales["errores-fix"]}.\r\n\t\t◙ Ya cargado: ${totales["errores-exist"]}.\r\n\tⓘ Advertencias: ${totales.advertencias}.\r\n\t☺ Exitosos: ${totales.exitosos}.\r\n\nAdevertencias: Pueden ser documentos nuevos que se cargaron sin algun dato de los Recomendados (violeta)`,
       });
-      return res.json({
+      return res.status(200).json({
         ok: true,
         data: {totales},
         respuesta: "Subida Exitosa.",

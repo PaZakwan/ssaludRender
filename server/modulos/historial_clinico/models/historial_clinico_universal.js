@@ -66,7 +66,8 @@ let HistorialClinicoUniversalSchema = new Schema(
         type: String,
         enum: {
           values: [
-            "Diabetes (DM)",
+            "Diabetes Tipo 1 (DM1)",
+            "Diabetes Tipo 2 (DM2)",
             "Dislipidemia (DSP)",
             "Enfermedad Celíaca",
             "Hipertensión Arterial (HTA)",

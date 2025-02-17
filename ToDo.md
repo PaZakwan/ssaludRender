@@ -103,7 +103,7 @@ db.getCollection("InsumoEntregas").aggregate([
 
 // Consulta para correcion de Aplicaciones de Vacunas con fechas de Aplicacion improbables.
 db.getCollection('VacunaAplicaciones').find({
-  ps_id : {$exists: true},
+  ps_id : {$exists: 1},
   $or : [
     {fecha: {$gte: new Date()}},
     {fecha: {$lte: ISODate("1900-01-01T00:00:00.000Z")}},
@@ -117,7 +117,7 @@ db.getCollection('VacunaAplicaciones').find({
   apelido_nombre: "$ps_nombreC",
   _id:0
 })
-.sort({fecha:-1, fecha_nacimiento:-1, _id:1})
+.sort({fecha:-1, ps_fecha_nacimiento:-1, _id:1})
 
 // Consulta para correcion de Pacientes con fechas de Nacimiento improbables.
 db.getCollection('pacientes').find({
@@ -135,7 +135,95 @@ db.getCollection('pacientes').find({
   documento_responsable: "$doc_responsable",
   _id:0
 })
-.sort({fecha:-1, fecha_nacimiento:-1, _id:1})
+.sort({fec_nac:-1, doc_responsable:-1, _id:1})
+
+// Consulta para agrupar Pacientes con mismo Responsable.
+db.getCollection("pacientes").aggregate([
+  {$match: { doc_responsable:{$exists: 1} } },
+  {
+    $sort: {
+      fec_nac: -1,
+      _id: 1,
+    },
+  },
+  {
+    $group: {
+      _id: "$doc_responsable",
+      aCargoDe: {
+        $push: "$$ROOT",
+      },
+      totalCargo: {$sum: 1},
+    },
+  },
+  {$match: { totalCargo:{$gt: 1} } },
+  {
+    $sort: {
+      totalCargo: 1,
+      _id: 1,
+    },
+  }
+  // { $count: "totalResponsables" }
+],{allowDiskUse:true});
+
+// Consulta para agrupar Pacientes con mismo ps_id.
+db.getCollection("pacientes").aggregate([
+  { $match: { ps_id:{$exists: 1} } },
+  {
+    $sort: {
+      fec_nac: -1,
+      _id: 1,
+    },
+  },
+  { $unwind: { path: "$ps_id" } },
+  { $match: { ps_id:{$ne: "salud_adulto"} } },
+  {
+    $group: {
+      _id: "$ps_id",
+      mismoPS: {
+        $push: "$$ROOT",
+      },
+      repetido: {$sum: 1},
+    },
+  },
+  { $match: { repetido:{$gt: 1} } },
+  {
+    $sort: {
+      repetido: -1,
+      _id: 1,
+    },
+  },
+  // { $count: "psRepetidos" }
+],{allowDiskUse:true});
+
+// Consulta para agrupar Pacientes (sin Documento) con mismo ps_id y fec_nac. (Se cargaron por duplicado?)
+db.getCollection("pacientes").aggregate([
+  { $match: { documento:{$exists: 0}, ps_id:{$exists: 1} } },
+  {
+    $sort: {
+      _id: 1,
+    },
+  },
+  { $unwind: { path: "$ps_id" } },
+  { $match: { ps_id:{$ne: "salud_adulto"} } },
+  {
+    $group: {
+      _id: {ps_id: "$ps_id",fec_nac:"$fec_nac"},
+      mismoPS: {
+        $push: "$$ROOT",
+      },
+      repetido: {$sum: 1},
+    },
+  },
+  { $match: { repetido:{$gt: 1} } },
+  { $addFields: { ps_id: "$_id.ps_id" ,fec_nac: "$_id.fec_nac"}},
+  {
+    $sort: {
+      repetido: -1,
+      "_id.ps_id": 1,
+    },
+  },
+  //{ $count: "psRepetidosNoDocumento" }
+],{allowDiskUse:true});
 
 // Exportar desde Robo3T agregar a las consultas "toArray" y cambiar vista para copiar como json.
 .toArray()
@@ -147,7 +235,47 @@ db.getCollection('pacientes').find({
 
 - [ ] Actualizar - Vue-Cli => Vue-Cli -> Vite -> [Migrate](https://vueschool.io/articles/vuejs-tutorials/how-to-migrate-from-vue-cli-to-vite/)
 
+- [ ] ‼️ PACIENTE - LIMPIAR BD -> el campo prematuro, peso_nacer_menor_2500... dicen -> "VERDADERO" (MIGRAR HICLEM).
+
+```js
+db.getCollection("pacientes")
+  .find({$or: [{prematuro: "VERDADERO"}, {peso_nacer_menor_2500: "VERDADERO"}]})
+  .forEach(function (doc) {
+    let set = {};
+    if (doc.prematuro) {
+      set.prematuro = true;
+    }
+    if (doc.peso_nacer_menor_2500) {
+      set.peso_nacer_menor_2500 = true;
+    }
+    db.getCollection("HistorialClinico").updateOne(
+      {paciente: doc._id},
+      {$set: {updatedAt: new Date(), ...set}},
+      {upsert: true}
+    );
+    db.getCollection("pacientes").updateOne(
+      {_id: doc._id},
+      {$set: {updatedAt: new Date()}, $unset: set}
+    );
+  });
+```
+
+- [ ] ‼️ Historial - Diabetes (DM) -> Diabetes Tipo 1 (DM1) + Diabetes Tipo 2 (DM2)!!!
+
+```js
+// "Diabetes (DM)" -> Quitar del array
+db.getCollection("HistorialClinico").updateMany(
+  {},
+  {$pull: {antecedentes_patologicos: "Diabetes (DM)"}}
+);
+```
+
+- [ ] ‼️ PACIENTE - Duplicado BD -> sin documento pero si Responsable se carga nuevamente)? VER!!!
+
 - [ ] ‼️ Vacunas - Aplicaciones -> Apartado para MODIFICAR APLICACION RAW... ASIGNAR A NUEVO PACIENTE Y MODIFICAR CAMPOS (BORRAR).
+- [ ] ‼️ PACIENTE - UNIFICACION -> Apartado para UNIR/BORRAR... ASIGNAR A UN PACIENTE, las id del otro (Aplicaciones/Entregas/Hiclem) y luego borrarlo.
+- [ ] ‼️ PACIENTE - Borrar -> En Dialog opcion para BORRAR... comprobar que su id no haya sido usado en el sistema
+      (Tuberculosis, HICLEM, Vacunas Aplicaciones, Farmacia Entregas, Turnos (VER BUSCAR/EMITIR -> CORREGIR/INHABILITAR MUCHOS PACIENTES...)).
 
 - [ ] ‼️ Vacunas - Aplicaciones -> SCRIPT LINKEAR APLICACIONES
       SIN-> paciente (PACIENTE ID) y documento,
@@ -156,7 +284,6 @@ db.getCollection('pacientes').find({
       each -> find and save
 
 - [ ] Farmacia/Vacunas -> Unificar Filtros en (Back! y Front?)
-- [~] Farmacia/Vacunas -> Mostrar filtros utilizados para los reportes, areaName/insumoName/Procedencia.
 
 - [ ] Farmacia/Vacunas - BUSCAR POR LOTE, en todos los buscadores | filtros.
 
@@ -366,7 +493,7 @@ db.getCollection("Insumos").deleteMany({categoria: "Vacuna"});
 
 #### REUNION 2024-10-18
 
-- [ ] HICLEM - Patologia -> Diabetes Tipo I y Diabetes Tipo II (excluyente lo que se les medica).
+- [x] HICLEM - Patologia -> Diabetes Tipo I y Diabetes Tipo II (excluyente lo que se les medica).
 - [ ] HICLEM - Patologia -> Si Patologia es Diabetes Solicitar fecha de ddjj.
 - [ ] Paciente - Alta -> Fecha fallecimiento.
 - [ ] Egreso -> Categoria Medicacion no permitir egreso con motivo Utilizado.

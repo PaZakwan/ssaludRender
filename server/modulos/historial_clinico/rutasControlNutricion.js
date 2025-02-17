@@ -966,7 +966,12 @@ app.get(
               {
                 $and: [
                   {$isArray: "$antecedentes_patologicos"},
-                  {$in: ["Diabetes (DM)", "$antecedentes_patologicos"]},
+                  {
+                    $or: [
+                      {$in: ["Diabetes Tipo 1 (DM1)", "$antecedentes_patologicos"]},
+                      {$in: ["Diabetes Tipo 2 (DM2)", "$antecedentes_patologicos"]},
+                    ],
+                  },
                 ],
               },
               1,

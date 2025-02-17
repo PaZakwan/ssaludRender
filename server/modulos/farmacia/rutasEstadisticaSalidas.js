@@ -138,28 +138,12 @@ app.get(
       // Total Nominal - Entregas
       let entregasDB = [];
       if (modelos?.entr) {
-        let detallado = modelos.entr.nd
-          ? null
-          : {
-              detalle_entregas: {
-                $push: {
-                  fecha: {$dateToString: {format: "%Y-%m-%d", date: "$fecha"}},
-                  pacienteDB: "$pacienteDB",
-                  pacienteDocDB: "$pacienteDocDB",
-                  pacienteSexoDB: "$pacienteSexoDB",
-                  pacienteTelefonoDB: "$pacienteTelefonoDB",
-                  oSocial: "$oSocial",
-                  procedencia: "$procedencia",
-                  cantidad: "$cantidad",
-                  lote: "$lote",
-                  vencimiento: {$dateToString: {format: "%Y-%m-%d", date: "$vencimiento"}},
-                },
-              },
-            };
-
+        let detallado = null;
         entregasDB = InsumoEntrega.aggregate().match(filtroIndividual);
 
-        if (detallado !== null) {
+        // Detallado
+        if (!modelos.entr.nd) {
+          // Paciente
           entregasDB
             .sort({fecha: 1, _id: 1})
             .lookup({
@@ -195,6 +179,193 @@ app.get(
                 $ifNull: ["$pacienteDB.telefono", "$pacienteDB.telefono_alt", "$vacio"],
               },
             });
+
+          // Excel Detallado
+          if (modelos.entr.ex) {
+            // HICLEM
+            entregasDB
+              .lookup({
+                from: "HistorialClinico",
+                localField: "paciente",
+                foreignField: "paciente",
+                as: "HistorialClinicoDB",
+              })
+              .unwind({path: "$HistorialClinicoDB", preserveNullAndEmptyArrays: true})
+              .addFields({
+                prematuroDB: {$ifNull: ["$HistorialClinicoDB.prematuro", "$vacio"]},
+                peso_nacer_menor_2500DB: {
+                  $ifNull: ["$HistorialClinicoDB.peso_nacer_menor_2500", "$vacio"],
+                },
+                peso_nacer_mayor_3800DB: {
+                  $ifNull: ["$HistorialClinicoDB.peso_nacer_mayor_3800", "$vacio"],
+                },
+                inmunodeprimidaDB: {$ifNull: ["$HistorialClinicoDB.inmunodeprimida", "$vacio"]},
+                fumaDB: {$ifNull: ["$HistorialClinicoDB.fuma", "$vacio"]},
+                riesgoDB: {$ifNull: ["$HistorialClinicoDB.riesgo", "$vacio"]},
+                embarazada_semanaDB: {$ifNull: ["$HistorialClinicoDB.embarazada_semana", "$vacio"]},
+                puerperaDB: {$ifNull: ["$HistorialClinicoDB.puerpera", "$vacio"]},
+                personal_saludDB: {$ifNull: ["$HistorialClinicoDB.personal_salud", "$vacio"]},
+                personal_esencialDB: {$ifNull: ["$HistorialClinicoDB.personal_esencial", "$vacio"]},
+                // antecedentes_patologicos
+                diabetes1DB: {
+                  $cond: [
+                    {
+                      $and: [
+                        {$isArray: "$HistorialClinicoDB.antecedentes_patologicos"},
+                        {
+                          $in: [
+                            "Diabetes Tipo 1 (DM1)",
+                            "$HistorialClinicoDB.antecedentes_patologicos",
+                          ],
+                        },
+                      ],
+                    },
+                    "si",
+                    "$vacio",
+                  ],
+                },
+                diabetes2DB: {
+                  $cond: [
+                    {
+                      $and: [
+                        {$isArray: "$HistorialClinicoDB.antecedentes_patologicos"},
+                        {
+                          $in: [
+                            "Diabetes Tipo 2 (DM2)",
+                            "$HistorialClinicoDB.antecedentes_patologicos",
+                          ],
+                        },
+                      ],
+                    },
+                    "si",
+                    "$vacio",
+                  ],
+                },
+                dislipidemiaDB: {
+                  $cond: [
+                    {
+                      $and: [
+                        {$isArray: "$HistorialClinicoDB.antecedentes_patologicos"},
+                        {
+                          $in: [
+                            "Dislipidemia (DSP)",
+                            "$HistorialClinicoDB.antecedentes_patologicos",
+                          ],
+                        },
+                      ],
+                    },
+                    "si",
+                    "$vacio",
+                  ],
+                },
+                celiacaDB: {
+                  $cond: [
+                    {
+                      $and: [
+                        {$isArray: "$HistorialClinicoDB.antecedentes_patologicos"},
+                        {
+                          $in: [
+                            "Enfermedad Celíaca",
+                            "$HistorialClinicoDB.antecedentes_patologicos",
+                          ],
+                        },
+                      ],
+                    },
+                    "si",
+                    "$vacio",
+                  ],
+                },
+                hipertensionDB: {
+                  $cond: [
+                    {
+                      $and: [
+                        {$isArray: "$HistorialClinicoDB.antecedentes_patologicos"},
+                        {
+                          $in: [
+                            "Hipertensión Arterial (HTA)",
+                            "$HistorialClinicoDB.antecedentes_patologicos",
+                          ],
+                        },
+                      ],
+                    },
+                    "si",
+                    "$vacio",
+                  ],
+                },
+                insuficiencia_renalDB: {
+                  $cond: [
+                    {
+                      $and: [
+                        {$isArray: "$HistorialClinicoDB.antecedentes_patologicos"},
+                        {
+                          $in: [
+                            "Insuficiencia Renal Crónica",
+                            "$HistorialClinicoDB.antecedentes_patologicos",
+                          ],
+                        },
+                      ],
+                    },
+                    "si",
+                    "$vacio",
+                  ],
+                },
+              })
+              // borrar HistorialClinicoDB
+              .project({
+                HistorialClinicoDB: 0,
+              });
+
+            detallado = {
+              detalle_entregas: {
+                $push: {
+                  fecha: {$dateToString: {format: "%Y-%m-%d", date: "$fecha"}},
+                  pacienteDB: "$pacienteDB",
+                  pacienteDocDB: "$pacienteDocDB",
+                  pacienteSexoDB: "$pacienteSexoDB",
+                  pacienteTelefonoDB: "$pacienteTelefonoDB",
+                  oSocial: "$oSocial",
+                  procedencia: "$procedencia",
+                  cantidad: "$cantidad",
+                  lote: "$lote",
+                  vencimiento: {$dateToString: {format: "%Y-%m-%d", date: "$vencimiento"}},
+                  // HICLEM
+                  prematuroDB: "$prematuroDB",
+                  peso_nacer_menor_2500DB: "$peso_nacer_menor_2500DB",
+                  peso_nacer_mayor_3800DB: "$peso_nacer_mayor_3800DB",
+                  inmunodeprimidaDB: "$inmunodeprimidaDB",
+                  fumaDB: "$fumaDB",
+                  riesgoDB: "$riesgoDB",
+                  embarazada_semanaDB: "$embarazada_semanaDB",
+                  puerperaDB: "$puerperaDB",
+                  personal_saludDB: "$personal_saludDB",
+                  personal_esencialDB: "$personal_esencialDB",
+                  diabetes1DB: "$diabetes1DB",
+                  diabetes2DB: "$diabetes2DB",
+                  dislipidemiaDB: "$dislipidemiaDB",
+                  celiacaDB: "$celiacaDB",
+                  hipertensionDB: "$hipertensionDB",
+                  insuficiencia_renalDB: "$insuficiencia_renalDB",
+                },
+              },
+            };
+          } else {
+            detallado = {
+              detalle_entregas: {
+                $push: {
+                  fecha: {$dateToString: {format: "%Y-%m-%d", date: "$fecha"}},
+                  pacienteDB: "$pacienteDB",
+                  pacienteDocDB: "$pacienteDocDB",
+                  pacienteSexoDB: "$pacienteSexoDB",
+                  pacienteTelefonoDB: "$pacienteTelefonoDB",
+                  oSocial: "$oSocial",
+                  procedencia: "$procedencia",
+                  cantidad: "$cantidad",
+                  lote: "$lote",
+                  vencimiento: {$dateToString: {format: "%Y-%m-%d", date: "$vencimiento"}},
+                },
+              },
+            };
+          }
         }
 
         entregasDB
@@ -240,7 +411,7 @@ app.get(
           })
           .sort({areaDB: 1, categoriaDB: 1, insumoDB: 1});
 
-        // Excel detallado
+        // Excel Detallado
         if (modelos.entr.ex && !modelos.entr.nd) {
           entregasDB
             // borrar props
@@ -265,6 +436,35 @@ app.get(
               lote: {$ifNull: ["$detalle_entregas.lote", "$noRetornaNada"]},
               vencimiento: {$ifNull: ["$detalle_entregas.vencimiento", "$noRetornaNada"]},
               cantidad: {$ifNull: ["$detalle_entregas.cantidad", 0]},
+              // HICLEM
+              prematuroDB: {$ifNull: ["$detalle_entregas.prematuroDB", "$noRetornaNada"]},
+              peso_nacer_menor_2500DB: {
+                $ifNull: ["$detalle_entregas.peso_nacer_menor_2500DB", "$noRetornaNada"],
+              },
+              peso_nacer_mayor_3800DB: {
+                $ifNull: ["$detalle_entregas.peso_nacer_mayor_3800DB", "$noRetornaNada"],
+              },
+              inmunodeprimidaDB: {
+                $ifNull: ["$detalle_entregas.inmunodeprimidaDB", "$noRetornaNada"],
+              },
+              fumaDB: {$ifNull: ["$detalle_entregas.fumaDB", "$noRetornaNada"]},
+              riesgoDB: {$ifNull: ["$detalle_entregas.riesgoDB", "$noRetornaNada"]},
+              embarazada_semanaDB: {
+                $ifNull: ["$detalle_entregas.embarazada_semanaDB", "$noRetornaNada"],
+              },
+              puerperaDB: {$ifNull: ["$detalle_entregas.puerperaDB", "$noRetornaNada"]},
+              personal_saludDB: {$ifNull: ["$detalle_entregas.personal_saludDB", "$noRetornaNada"]},
+              personal_esencialDB: {
+                $ifNull: ["$detalle_entregas.personal_esencialDB", "$noRetornaNada"],
+              },
+              diabetes1DB: {$ifNull: ["$detalle_entregas.diabetes1DB", "$noRetornaNada"]},
+              diabetes2DB: {$ifNull: ["$detalle_entregas.diabetes2DB", "$noRetornaNada"]},
+              dislipidemiaDB: {$ifNull: ["$detalle_entregas.dislipidemiaDB", "$noRetornaNada"]},
+              celiacaDB: {$ifNull: ["$detalle_entregas.celiacaDB", "$noRetornaNada"]},
+              hipertensionDB: {$ifNull: ["$detalle_entregas.hipertensionDB", "$noRetornaNada"]},
+              insuficiencia_renalDB: {
+                $ifNull: ["$detalle_entregas.insuficiencia_renalDB", "$noRetornaNada"],
+              },
             })
             .addFields({
               cant_min: {$cond: [{$eq: ["$cantidad", 0]}, "$cant_min", "$noRetornaNada"]},

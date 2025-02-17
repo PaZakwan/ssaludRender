@@ -47,19 +47,31 @@ const verificaAdmin_Role = (req, res, next) => {
 // Verifica Array de Propiedades Value(null es un array)
 // =====================
 const verificaArrayPropValue = (req, res, next) => {
+  // si array esta vacio
+  if (!Array.isArray(req.verificacionArray) || req.verificacionArray.length === 0) {
+    return errorMessage(res, {message: "Server Error verificaArrayPropValue."}, 500);
+  }
   // recorrer array de props value
   for (const element of req.verificacionArray) {
-    // si no es array verificar con su value,
-    if (element.value && _get(req.usuario, element.prop) >= element.value) {
-      // si cumple Next
-      return next();
-    } else if (
-      // si es array usar una condicion,
-      Array.isArray(_get(req.usuario, element.prop)) &&
-      _get(req.usuario, element.prop).length >= 1
-    ) {
-      // si cumple Next
-      return next();
+    if (_get(req.usuario, element.prop)) {
+      // existe prop
+      if (element.value && _get(req.usuario, element.prop) >= element.value) {
+        // si existe value verifica prop con value
+        return next();
+      } else if (
+        Array.isArray(_get(req.usuario, element.prop)) &&
+        _get(req.usuario, element.prop).length >= 1
+      ) {
+        // si prop es array verifica si tiene elementos
+        return next();
+      } else if (
+        typeof _get(req.usuario, element.prop) === "object" &&
+        !Array.isArray(_get(req.usuario, element.prop)) &&
+        Object.keys(_get(req.usuario, element.prop)).length >= 1
+      ) {
+        // si prop es object y no array, verifica si tiene keys
+        return next();
+      }
     }
   }
   req.verificacionArray = [];
