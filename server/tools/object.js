@@ -245,7 +245,8 @@ const isVacio = (payload) => {
         return {dato: dato, vacio: false};
 
       case "string":
-        if (vacioEmptyStr && dato.trim() === "") {
+        dato = dato.trim();
+        if (vacioEmptyStr && dato === "") {
           return {dato: dato, vacio: true};
         }
         if (vacioCero && dato === "0") {
@@ -289,7 +290,8 @@ const isVacio = (payload) => {
                   vacio: "errorInside",
                   error: `problemas dentro (${key} : ${dato[key]}): ${vacioTemp.error}`,
                 };
-              } else if (vacioTemp.vacio === true) {
+              }
+              if (vacioTemp.vacio === true) {
                 if (borrar) {
                   if (Array.isArray(dato) && !vacioUndefined) {
                     dato[key] = Symbol("borrarIn");
@@ -353,30 +355,65 @@ const isVacio = (payload) => {
 //   // },
 //   und: undefined,
 //   null: null,
-//   // bool1: true,
-//   // bool0: false,
-//   // str: "hola",
+//   bool1: true,
+//   bool0: false,
+//   str: "hola",
 //   stre: "",
 //   stre2: "   ",
-//   // number0: 0,
-//   // number: 6,
+//   number0: 0,
+//   number: 6,
 //   arrayEmpty: [],
-//   // array: ["256", "  ", 0, 35, undefined, null, true, false, [], [0, 3], {}, {hola: "chau"}],
+//   array: [
+//     "256",
+//     "  ",
+//     0,
+//     35,
+//     undefined,
+//     null,
+//     true,
+//     false,
+//     [],
+//     [0, 3],
+//     {},
+//     {hola: "chau"},
+//     // () => {
+//     //   console.log("hola temp");
+//     // },
+//   ],
 //   obje: {},
-//   // obj: {
-//   //   und: undefined,
-//   //   null: null,
-//   //   bool1: true,
-//   //   bool0: false,
-//   //   str: "hola",
-//   //   stre: "",
-//   //   stre2: "   ",
-//   //   number0: 0,
-//   //   number: 6,
-//   //   arrayEmpty: [],
-//   //   array: ["256", "  ", 0, 35, undefined, null, true, false, [], [0, 3], {}, {hola: "chau"}],
-//   //   obje: {},
-//   // },
+//   obj: {
+//     // func: () => {
+//     //   console.log("hola temp");
+//     // },
+//     und: undefined,
+//     null: null,
+//     bool1: true,
+//     bool0: false,
+//     str: "hola",
+//     stre: "",
+//     stre2: "   ",
+//     number0: 0,
+//     number: 6,
+//     arrayEmpty: [],
+//     array: [
+//       "256",
+//       "  ",
+//       0,
+//       35,
+//       undefined,
+//       null,
+//       true,
+//       false,
+//       [],
+//       [0, 3],
+//       {},
+//       {hola: "chau"},
+//       // () => {
+//       //   console.log("hola temp");
+//       // },
+//     ],
+//     obje: {},
+//   },
 // };
 
 // TESTEAR VACIOS
@@ -449,50 +486,189 @@ const objectSetUnset = ({dato, unsetCero = false, unsetBoolean = false}) => {
   }
 };
 
-const objectToFind = (dato) => {
+const objectToFind = ({dato, mainValue = true, mainKey = false}) => {
+  // POR FUERA
+  // filtro = JSON.parse(filtro);
+  // filtro = isVacio({
+  //   dato: dato[key],
+  //   inArr: true, // false,
+  //   inObj: true, // false,
+  //   borrar: true, // false,
+  // });
+  //
+  // undefined -> undefined
+  // string -> new RegExp(dato, "i")
+  // number -> dato
+  // boolean -> dato
+  // object/array -> "$in" -> [dato]
+  // object -> noTocar / "elemMatch" -> {dato}
   try {
-    if (typeof dato !== "undefined") {
-      let temp = {};
-      if (
-        // si es un string && (.trim() !== "") && no es ("true/false" || "idObject" || fecha valida) => contenga el texto.. case insensitive
-        typeof dato === "string" &&
-        dato.trim() !== "" &&
-        dato !== "true" &&
-        dato !== "false" &&
-        !isObjectIdValid(dato) &&
-        !isDateValid(dato)
-      ) {
-        temp = new RegExp(dato, "i");
-      } else if (Array.isArray(dato) && dato.length !== 0) {
-        // si es un array no vacio => buscar que contenga alguno de los valores $in
-        temp = {$in: []};
-        for (let index = 0; index < dato.length; index++) {
-          temp.$in.push(objectToFind(dato[index]));
+    switch (typeof dato) {
+      case "undefined":
+        return undefined;
+
+      case "string":
+        if (dato === "false" || dato === "true" || isObjectIdValid(dato) || isDateValid(dato)) {
+          return dato;
         }
-      } else if (typeof dato === "object" && !dato?.noTocar) {
-        // si es un object con datos para modiicar => objectToFind recursiva
-        for (const key in dato) {
-          if (dato.hasOwnProperty(key)) {
-            temp[key] = objectToFind(dato[key]);
-            if (temp[key] === undefined) {
-              delete temp[key];
+        return new RegExp(dato, "i");
+
+      case "number":
+        return dato;
+
+      case "boolean":
+        return dato;
+
+      case "object":
+        // es array, busca alguno de los elementos en la propiedad..
+        if (Array.isArray(dato)) {
+          let temp = {$in: []};
+          for (let index = 0; index < dato.length; index++) {
+            let arrayElement = objectToFind({dato: dato[index], mainValue: false});
+            if (arrayElement.error) {
+              return {
+                dato: dato,
+                error: `problemas dentro (${index} : ${dato[index]}): ${arrayElement.error}`,
+              };
             }
+            temp.$in.push(arrayElement);
+          }
+          return temp;
+        }
+        // si es un object
+        else {
+          // sin datos para modiicar (prop:noTocar)
+          if (dato?.noTocar) {
+            delete dato.noTocar;
+            return dato;
+          }
+          // busca en el arrayDB de objetos el siguiente objeto.. (prop:elemMatch)
+          if (dato?.elemMatch) {
+            delete dato.elemMatch;
+            let temp = {$elemMatch: {}};
+            for (const key in dato) {
+              if (dato.hasOwnProperty(key)) {
+                temp["$elemMatch"][key] = objectToFind({
+                  dato: dato[key],
+                  mainValue: false,
+                  mainKey: key,
+                });
+                if (temp["$elemMatch"][key].error) {
+                  return {
+                    dato: dato,
+                    error: `problemas dentro (${key} : ${temp["$elemMatch"][key]}): ${temp["$elemMatch"][key].error}`,
+                  };
+                }
+                if (temp["$elemMatch"][key] === undefined) {
+                  delete temp["$elemMatch"][key];
+                }
+              }
+            }
+            return temp;
+          }
+          // con datos para modiicar => objectToFind recursiva
+          if (mainValue) {
+            let temp = {};
+            for (const key in dato) {
+              if (dato.hasOwnProperty(key)) {
+                temp[key] = objectToFind({dato: dato[key], mainValue: false, mainKey: key});
+                if (temp[key].error) {
+                  return {
+                    dato: dato,
+                    error: `problemas dentro (${key} : ${temp[key]}): ${temp[key].error}`,
+                  };
+                }
+                if (temp[key] === undefined) {
+                  delete temp[key];
+                }
+                if (temp[key].deleteMain) {
+                  delete temp[key].deleteMain;
+                  for (const key2 in temp[key]) {
+                    if (temp[key].hasOwnProperty(key2)) {
+                      temp[key2] = temp[key][key2];
+                    }
+                  }
+                  delete temp[key];
+                }
+              }
+            }
+            return temp;
+          } else if (mainKey) {
+            let temp = {deleteMain: true};
+            for (const key in dato) {
+              if (dato.hasOwnProperty(key)) {
+                temp[`${mainKey}.${key}`] = objectToFind({
+                  dato: dato[key],
+                  mainValue: false,
+                  mainKey: `${mainKey}.${key}`,
+                });
+                if (temp[`${mainKey}.${key}`].error) {
+                  return {
+                    dato: dato,
+                    error: `problemas dentro (${`${mainKey}.${key}`} : ${
+                      temp[`${mainKey}.${key}`]
+                    }): ${temp[`${mainKey}.${key}`].error}`,
+                  };
+                }
+                if (temp[`${mainKey}.${key}`] === undefined) {
+                  delete temp[`${mainKey}.${key}`];
+                }
+                if (temp[`${mainKey}.${key}`].deleteMain) {
+                  delete temp[`${mainKey}.${key}`].deleteMain;
+                  for (const key2 in temp[`${mainKey}.${key}`]) {
+                    if (temp[`${mainKey}.${key}`].hasOwnProperty(key2)) {
+                      temp[key2] = temp[`${mainKey}.${key}`][key2];
+                    }
+                  }
+                  delete temp[`${mainKey}.${key}`];
+                }
+              }
+            }
+            return temp;
+          } else {
+            let temp = {};
+            for (const key in dato) {
+              if (dato.hasOwnProperty(key)) {
+                temp[key] = objectToFind({
+                  dato: dato[key],
+                  mainValue: false,
+                  mainKey: key,
+                });
+                if (temp[key].error) {
+                  return {
+                    dato: dato,
+                    error: `problemas dentro (${key} : ${temp[key]}): ${temp[key].error}`,
+                  };
+                }
+                if (temp[key] === undefined) {
+                  delete temp[key];
+                }
+              }
+            }
+            return temp;
           }
         }
-      } else {
-        // si es un (string & (id object || true/false || fecha valida)) || number || boolean=> buscar tal como esta.
-        if (dato?.noTocar) {
-          delete dato.noTocar;
-        }
-        temp = dato;
-      }
-      return temp;
+
+      default:
+        return {dato: dato, error: "tipo de valor desconocido"};
     }
-    return undefined;
   } catch (error) {
     return {dato: dato, error};
   }
 };
+
+// TESTEAR objectToFind Mongoose
+// console.log(
+//   "objectToFind: ",
+//   objectToFind({
+//     dato: isVacio({
+//       dato: temp,
+//       inArr: true, // false,
+//       inObj: true, // false,
+//       borrar: true, // false,
+//     }).dato,
+//   })
+// );
 
 const sumarProps = (object1, object2) => {
   try {

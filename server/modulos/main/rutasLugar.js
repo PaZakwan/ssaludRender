@@ -110,13 +110,21 @@ app.get("/lugar/buscar", [verificaToken], async (req, res) => {
         }
         filtro = isVacio({
           dato: filtro,
+          inArr: true,
+          inObj: true,
           borrar: true,
         });
         if (filtro.vacio === true) {
           return errorMessage(res, {message: "No se envió ningún dato."}, 412);
         }
-        filtro = filtro.dato;
-        filtro = objectToFind(filtro);
+        filtro = objectToFind({dato: filtro.dato});
+        if (filtro.error) {
+          return errorMessage(
+            res,
+            {message: `El formato del Filtro no es valido. ${filtro.error}`},
+            400
+          );
+        }
       } catch (error) {
         return errorMessage(res, {message: "El dato de Filtro no es valido."}, 400);
       }
@@ -142,8 +150,7 @@ app.get("/lugar/buscar", [verificaToken], async (req, res) => {
     }
 
     // Realiza la busqueda en la BD
-    let lugarDB = null;
-    lugarDB = await Lugar.find(filtro)
+    let lugarDB = await Lugar.find(filtro)
       .collation({locale: "es", numericOrdering: true})
       .select(select)
       .sort(orden)

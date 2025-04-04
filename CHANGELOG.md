@@ -27,6 +27,17 @@
 
 ---
 
+### [1.7.20250217] - 2025-04-04
+
+- 📈 Improved a Sistema - objectToFind => Se mejora el formato para la busqueda en la base de datos.
+
+- ✨ Added a Sistema - Paciente => Se agrego la posibilidad de Borrar los Pacientes que no han sido utilizados por el sistema.
+- ✨ Added a Sistema - Paciente => Se agrego la posibilidad de Cargar la Fecha de Deceso al Paciente.
+- ✨ Added a Sistema - Paciente => Al momento de crear/editar muestra la edad del Paciente en base a la Fecha de Nacimiento.
+- 🚨 Changed a Sistema - Paciente => El campo de "Responsable Documento" tiene en cuenta la edad del paciente (fecha de nacimiento), siendo REQUERIDO SI ES MENOR DE 1 AÑO. Propuesto por Santa Brigida.
+
+- 🚨 Changed a Vacunas - Aplicacion => Antes se podian Borrar las aplicaciones realizadas en el mismo dia, ahora las aplicaciones las pueden Borrar en cualquier momento, siempre y cuando el usuario sea el mismo que realizo la aplicacion.
+
 ### [1.7.20250217] - 2025-02-17
 
 - 🩹 Fixed a HICLEM - Peso => El peso al nacer guardado previamente no se mostraba correctamente seleccionado en segunda carga.

@@ -215,6 +215,7 @@ app.get(
       if (req.query.select === "lite") {
         vacunacionesDB.project({
           _id: 1,
+          usuario_creador: 1,
           fecha: 1,
           origen: 1,
           origenDB: 1,
@@ -397,34 +398,22 @@ app.delete(
   async (req, res) => {
     try {
       // buscar vacunas
-      let vacunacionesDB = null;
-      vacunacionesDB = await VacunaAplicacion.findOne({_id: req.params.id}).exec();
+      let vacunacionesDB = await VacunaAplicacion.findOne({_id: req.params.id}).exec();
       if (!vacunacionesDB) {
         return errorMessage(res, {message: "Vacunacion no encontrada."}, 404);
       }
 
-      // comparar permisos (origen)
+      // comparar permisos (usuario creador)
       if (
         !(
           req.usuario.vacunas.general?.gestion === 1 ||
-          req.usuario.vacunas.gestion?.includes(vacunacionesDB.origen?.toString?.())
-        )
-      ) {
-        return errorMessage(res, {message: "Acceso Denegado."}, 401);
-      }
-
-      // comparar permisos (fecha)
-      let hoy = new Date().toISOString().slice(0, 10);
-      if (
-        !(
-          req.usuario.vacunas.general?.gestion === 1 ||
-          new Date(vacunacionesDB.createdAt).toISOString().slice(0, 10) === hoy
+          req.usuario._id.toString() === vacunacionesDB.usuario_creador.toString()
         )
       ) {
         return errorMessage(
           res,
           {
-            message: `Actividad no autorizada. La fecha de Carga debe ser ${hoy}`,
+            message: `Actividad no autorizada. No es el mismo usuario que realizo la aplicacion.`,
           },
           403
         );
@@ -432,8 +421,7 @@ app.delete(
 
       // recuperar stock
       if (vacunacionesDB.retirado) {
-        let stockDB = null;
-        stockDB = await modificarStockInc(
+        let stockDB = await modificarStockInc(
           vacunacionesDB.origen,
           {
             insumo: vacunacionesDB.insumo,
@@ -454,8 +442,7 @@ app.delete(
       }
 
       // buscar y borrar
-      let vacunacionBorrada = null;
-      vacunacionBorrada = await VacunaAplicacion.findOneAndDelete({_id: req.params.id}).exec();
+      let vacunacionBorrada = await VacunaAplicacion.findOneAndDelete({_id: req.params.id}).exec();
       if (!vacunacionBorrada) {
         return errorMessage(res, {message: "Vacunacion no encontrada."}, 404);
       }

@@ -29,7 +29,7 @@ const ps_us_oficina = {
   // ps_us => oficina_nro
   // Alvarez
   15: "15207",
-  // sambrizzi
+  // CIC Sanguinetti (ex sambrizzi)
   30: "15216",
   // pqe paso del rey
   32: "15218",
