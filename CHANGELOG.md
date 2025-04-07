@@ -27,7 +27,7 @@
 
 ---
 
-### [1.7.20250217] - 2025-04-04
+### [1.7.20250404] - 2025-04-04
 
 - 📈 Improved a Sistema - objectToFind => Se mejora el formato para la busqueda en la base de datos.
 
