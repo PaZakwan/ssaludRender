@@ -31,11 +31,11 @@
 |         |    SERVER    | OFFICE  |  HOME   |
 | :------ | :----------: | :-----: | :-----: |
 | S.O.    | Ubuntu 20.04 |  W 10   |  W 10   |
-| Node    |   20.17.0    | 20.17.0 | 20.17.0 |
-| NPM     |    10.8.3    | 10.9.2  | 10.8.3  |
-| MongoDB |    5.0.28    | 5.0.28  | 5.0.28  |
+| Node    |   20.19.2    | 20.17.0 | 20.17.0 |
+| NPM     |    10.9.2    | 10.9.2  | 10.8.3  |
+| MongoDB |    5.0.31    | 5.0.28  | 5.0.28  |
 | Nodemon |     ---      |  3.1.9  |         |
-| PM2     |              |         |         |
+| PM2     |    5.4.0     |         |         |
 | Nginx   |              |         |         |
 | NVM     |              |         |         |
 
@@ -254,10 +254,11 @@ db.getCollection("pacientes").aggregate([
 - [ ] Actualizar - Vue-Cli => Vue-Cli -> Vite -> [Migrate](https://vueschool.io/articles/vuejs-tutorials/how-to-migrate-from-vue-cli-to-vite/)
 
 - [ ] ‼️ Vacunas - CIPRES -> INTEROPERABILIDAD
-      [ ] Alta Pacientes con/sin documento en sistema de CIPRES.
-      [~] Matcheo de Aplicaciones.
-      [~] Mensajes de Error.
-      [ ] Posibilidad de correccion de Aplicaciones.
+
+  - [ ] Alta Pacientes con/sin documento en sistema de CIPRES.
+  - [~] Matcheo de Aplicaciones.
+  - [~] Mensajes de Error.
+  - [ ] Posibilidad de correccion de Aplicaciones.
 
 - [ ] ‼️ HICLEM - Salud Adulto -> Modulo de Medicacion (Consolidado)
 - [ ] ‼️ PACIENTE - UNIFICACION -> Apartado para UNIR... ASIGNAR A UN PACIENTE, las id del otro (Aplicaciones/Entregas/Hiclem) y luego borrarlo.
