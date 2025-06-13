@@ -202,6 +202,19 @@ let VacunaAplicacionSchema = new Schema(
       type: String,
     },
 
+    // CIPRES
+    cipres_id: {
+      type: String,
+      unique: true,
+      sparse: true,
+    },
+    cipres_fecha: {
+      type: Date,
+    },
+    cipres_msg: {
+      type: String,
+    },
+
     retirado: {
       type: Date,
     },

@@ -51,6 +51,7 @@ let listaBromatologia = [
   "sulfato",
   "arsenico",
   "cloruros",
+  "cloroResidual",
   "dureza",
   "alcalinidad",
 

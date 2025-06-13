@@ -21,60 +21,42 @@
     ver https://docs.sheetjs.com/docs/solutions/output/
     ‼️ SHEET https://docs.sheetjs.com/docs/
 - [ ] Dialogs - No se Cierran cuando caduca sesion o cuando se navega con "atras"/"adelante".
-- [x] Home - Google Map Rechaza la conexion, APIKEY algun dia cobrara por consultas... requiere tarjeta de credito.
-  - Capaturar Imagen de Localizacion y redireccionar a Google...
 - [ ] Farmacia - Ingresos con muchas cargas, puede colgar el navegador (RAM).
   - Generar con lazy load para que no tarde en renderizar.. Requiere update de Vuetify..
 
 ---
 
-<!-- TEMPORAL EJEMPLOS
-
-- BACK
-  1. [ ] Mercury
-  1. [x] ‼️ Venus
-  1. [ ] Earth (Orbit/Moon)
-         +some item
-         +another item
-  1. [ ] Mars
-- FRONT
-  - [x] Saturn
-        +some item
-  - [x] Uranus
-  - [ ] ‼️ Neptune
-        +some item
-  - [ ] Peruptuno
-  - [x] Garlandia -->
-
 <!-- #### Enviroment (Entorno)
-
----
 
 |         |    SERVER    | OFFICE  |  HOME   |
 | :------ | :----------: | :-----: | :-----: |
 | S.O.    | Ubuntu 20.04 |  W 10   |  W 10   |
 | Node    |   20.17.0    | 20.17.0 | 20.17.0 |
-| NPM     |    10.8.3    | 10.8.3  | 10.8.3  |
+| NPM     |    10.8.3    | 10.9.2  | 10.8.3  |
 | MongoDB |    5.0.28    | 5.0.28  | 5.0.28  |
+| Nodemon |     ---      |  3.1.9  |         |
+| PM2     |              |         |         |
 | Nginx   |              |         |         |
 | NVM     |              |         |         |
-| DOCKERS |              |         |         |
-
-##### Cheat
 
 ```bat
 # Go into the repository
 $ npm update / npm update --legacy-peer-deps
-$ npm install -g npm@10.8.3
+$ npm install -g npm@10.9.2
 $ npx update-browserslist-db@latest
 
 $ npm install -g @vue/cli
 
 # Get list of global package installed
-$ npm list -g --depth 0
+$ npm ls -g
+
+# Get list of local package installed
+$ npm ls
 ```
 
----
+--- -->
+
+<!--##### Consultas MONGODB
 
 ```js
 // Consulta la cantidad de Entregas de Medicamentos segun la Hora Durante el 2024
@@ -242,19 +224,47 @@ db.getCollection("pacientes").aggregate([
 
 // Exportar desde Robo3T agregar a las consultas "toArray" y cambiar vista para copiar como json.
 .toArray()
-``` -->
+```
+
+--- -->
+
+<!-- TEMPORAL EJEMPLOS
+
+- BACK
+  1. [ ] Mercury
+  1. [x] ‼️ Venus
+  1. [ ] Earth (Orbit/Moon)
+         +some item
+         +another item
+  1. [ ] Mars
+- FRONT
+  - [x] Saturn
+        +some item
+  - [x] Uranus
+  - [ ] ‼️ Neptune
+        +some item
+  - [ ] Peruptuno
+  - [x] Garlandia
+
+--- -->
 
 ### En Progreso - W.I.P. (Work in Progress)
 
 - [ ] Actualizar - MongoDB => 5.0 -> 6.0 -> [Compatibility](https://www.mongodb.com/docs/v6.0/release-notes/6.0-compatibility/)
-
 - [ ] Actualizar - Vue-Cli => Vue-Cli -> Vite -> [Migrate](https://vueschool.io/articles/vuejs-tutorials/how-to-migrate-from-vue-cli-to-vite/)
 
-- [ ] ‼️ PACIENTE - Duplicado BD -> sin documento pero si Responsable se carga nuevamente)? VER!!!
-- [ ] ‼️ PACIENTE - UNIFICACION -> Apartado para UNIR... ASIGNAR A UN PACIENTE, las id del otro (Aplicaciones/Entregas/Hiclem) y luego borrarlo.
-- [ ] ‼️ PACIENTE - EXPAND/Dialog -> usar ruta /paciente/buscar/{id} como en vacunas y medicamentos.. para el hiclem u otro lugar
-      VER SI HAY DIFERENCIA CON EL /paciente/buscar/{id} vs filtro {\_id}
+- [ ] ‼️ Vacunas - CIPRES -> INTEROPERABILIDAD
+      [ ] Alta Pacientes con/sin documento en sistema de CIPRES.
+      [~] Matcheo de Aplicaciones.
+      [~] Mensajes de Error.
+      [ ] Posibilidad de correccion de Aplicaciones.
 
+- [ ] ‼️ HICLEM - Salud Adulto -> Modulo de Medicacion (Consolidado)
+- [ ] ‼️ PACIENTE - UNIFICACION -> Apartado para UNIR... ASIGNAR A UN PACIENTE, las id del otro (Aplicaciones/Entregas/Hiclem) y luego borrarlo.
+      Boton en dialog paciente.
+      Seccion para unificacion (HICLEM), con boton para traer posibles candidatos de repetidos.
+
+- [ ] ‼️ PACIENTE - Duplicado BD -> sin documento pero si Responsable se carga nuevamente)? VER!!!
 - [ ] ‼️ Vacunas - Aplicaciones -> SCRIPT LINKEAR APLICACIONES
       SIN-> paciente (PACIENTE ID) y documento,
       CON-> ps_paciente(id), doc_responsable.
@@ -272,6 +282,7 @@ db.getCollection("pacientes").aggregate([
 - [ ] Sistema -> Notificar al Loguear si hay algun Mantenimiento Programado [1 semana](Dialog Informativo con fecha-hora).
 
 - [ ] Sistema - Date -> Input Date Range Select -> con la posibilidad de seleccionar años... o mes actual... o mes anterior...
+      wip date-range
 
 - [ ] Municipio - Nombre de dominio para SiGiSeSaM.
 
@@ -473,7 +484,7 @@ db.getCollection("Insumos").deleteMany({categoria: "Vacuna"});
 
 - [x] HICLEM - Patologia -> Diabetes Tipo I y Diabetes Tipo II (excluyente lo que se les medica).
 - [ ] HICLEM - Patologia -> Si Patologia es Diabetes Solicitar fecha de ddjj.
-- [ ] Paciente - Alta -> Fecha fallecimiento.
+- [x] Paciente - Alta -> Fecha fallecimiento.
 - [ ] Egreso -> Categoria Medicacion no permitir egreso con motivo Utilizado.
 - [ ] Insumo - Alta -> Agregar Patologia("Subcategoria").
 - [ ] Insumo - Alta-> Agregar Estado para poder deshabilitarlos.. que no se usen para nuevos ingresos..

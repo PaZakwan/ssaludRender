@@ -169,6 +169,9 @@ let bromatologiaSchema = new Schema(
     cloruros: {
       type: Number,
     },
+    cloroResidual: {
+      type: Number,
+    },
     dureza: {
       type: Number,
     },

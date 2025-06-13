@@ -15,7 +15,7 @@
 
 <!--
 - 🩹 Fixed a XXX - YYY => NNN.
-- ✨ Added a XXX - YYY => NNN.
+- ✨ Added a XXX - YYY => NNN. Propuesto por ...
 - 📈 Improved a XXX - YYY => NNN.
 - 🚨 Changed a XXX - YYY => NNN.
 - ‼️🗑️ Removed a XXX - YYY => NNN.
@@ -26,6 +26,27 @@
 - 💡 <a href="./ToDo" target="_self">Continuara... Lista de cosas para hacer (ToDo List).</a> 😅
 
 ---
+
+### [1.7.20250613] - 2025-06-13
+
+- ✨ Added a Sistema - Usuarios => Se agrego el permiso de Vacunas Cipres para la interoperabilidad con Provincia.
+- 📈 Improved a Sistema - Tablas => Se mejoro la visualizacion de los botones de paginacion y filas por pagina (Amarillito).
+
+- 📈 Improved a HICLEM - Expands => Se mejoro el formato de los mismos para que sea mas intuitivo al programador.
+- ✨ Added a HICLEM - Expands => Se agregaron los expands de Vacunaciones y de Insumos(Medicamentos) Recibidos del paciente.
+
+- ✨ Added a Vacunas - Alta Vacuna => Se agregaron Dosis Posibles -> Adicional, Dosis Cero, 8va, 9na y 10ma.
+- ✨ Added a Vacunas - Alta Vacuna => Se agrego link al SISA para obtener codigos NOMIVAC.
+- 📈 Improved a Vacunas - Aplicacion => Ahora la Seleccion de "Origen" solamente muestra las areas con permiso del usuario.
+- 🚨 Changed a Vacunas - Aplicacion => Se cambiaron las Estrategias -> Se agrego "Atrasado", "Prescripcion Medica", "Grupo de Riesgo", "Por excepcion" y se quitaron "Contactos", "Terreno", "Internacion" y "Pre Exposicion".
+- 🚨 Changed a Vacunas - Alta Vacuna => El Condigo NOMIVAC ahora se puede repetir.
+- ‼️🗑️ Removed a Vacunas - Alta Vacuna => Se quito la Dosis Posible -> Refuerzo 4to.
+
+- 📈 Improved a Farmacia - Entregas => Ahora la Seleccion de "Origen" solamente muestra las areas con permiso del usuario.
+- 🚨 Changed a Farmacia - Descartes => Ahora todos los motivos de descarte tienen la opcion de "Justificacion" siendo para "Error" obligatoria. Propuesto por Marcos Ludueña
+
+- ✨ Added a Lab Bromatologico - FisicoQuimico => Se agrego el Campo Opcional -> Cloro Residual (CAA 0.2 - 2.0). Propuesto por Jasid Sebastian
+- 🚨 Changed a Lab Bromatologico - Validacion => Ahora la validacion de los rangos del CAA los marca en rojo si estan en el limite.
 
 ### [1.7.20250404] - 2025-04-04
 
@@ -43,7 +64,7 @@
 - 🩹 Fixed a HICLEM - Peso => El peso al nacer guardado previamente no se mostraba correctamente seleccionado en segunda carga.
 - 🚨 Changed a HICLEM - Antecedentes => "Diabetes (DM)" -> "Diabetes Tipo 1 (DM1)", "Diabetes Tipo 2 (DM2)".
 
-- ✨ Added a Farmacia - Entregas => Nuevo "paso" al realizar Entregas de medicacion que solicita la carga de datos para el Historial Clinico de la persona (HICLEM).
+- ✨ Added a Farmacia - Entregas => Nuevo "paso" al realizar Entregas de medicacion que solicita la carga de datos para el Historial Clinico de la persona (HICLEM). Propuesto por Macorin Natalia
 - ✨ Added a Farmacia - Entregas => Los Excels de Entregas Nominales (Detallados) ahora tienen las columnas del Historial Clinico de la persona (HICLEM).
 
 - 🩹 Fixed a Patrimonio - Insumos => Entregas permitia entregar cualquier cantidad del insumo cuando el stock estaba en 0, ahora tiene en cuenta la cantidad 0 al igual que cuando habia insumos que no dejaba realizar entregas que superaran el stock; ademas Ingresos permitia ingresar insumos con cantidad en 0 lo cual no tenia sentido, ya solucionado.

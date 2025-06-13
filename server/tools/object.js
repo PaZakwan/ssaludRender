@@ -1,4 +1,5 @@
 const {ObjectId} = require("mongodb");
+const _get = require("lodash/get");
 
 const isObjectIdValid = (id) => {
   try {
@@ -710,7 +711,8 @@ const sumarProps = (object1, object2) => {
 const groupBy = ({array, keys}) => {
   return array.reduce((acumulador, obj) => {
     keys.forEach((key) => {
-      (acumulador[obj[key]] = acumulador[obj[key]] || []).push(obj);
+      (acumulador[_get(obj, key, "not found")] =
+        acumulador[_get(obj, key, "not found")] || []).push(obj);
     });
     return acumulador;
   }, {});

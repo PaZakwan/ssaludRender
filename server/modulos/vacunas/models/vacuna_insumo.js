@@ -34,8 +34,6 @@ let VacunaInsumoSchema = new Schema(
     id_Nomivac: {
       type: String,
       trim: true,
-      unique: true,
-      sparse: true,
       required: [
         function () {
           return this.categoria === "Vacuna" || this.getUpdate?.().$set?.categoria === "Vacuna";

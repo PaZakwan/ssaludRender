@@ -35,8 +35,9 @@ const ps_us_oficina = {
   32: "15218",
   // posta San Carlos R25
   35: "15240",
-  // portal saludable
-  39: "15256",
+  // Portal Saludable [15256] -> Salud Comunitaria (Prom Territorial) [15107]
+  // 39: "15256",
+  39: "15107",
   // REM
   40: "15254",
   // Amancio Alcorta
@@ -119,7 +120,7 @@ const ps_us_oficina = {
   414: "15248",
   // Martin Fierro
   431: "15223",
-  // Jose de San Martin
+  // San Jose de San Martin
   449: "15239",
   // San Carlos R23
   457: "15251",

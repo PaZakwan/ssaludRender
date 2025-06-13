@@ -323,11 +323,72 @@ app.delete(
 );
 
 // ============================
-// XXXXXX  Desarrollar  XXXXXXX
+// Unir Pacientes
 // ============================
-// XXXXXXXXXXXXXXXXXXXXXXXXXXXX
-// UNIFICAR FUSIONAR PACIENTES
-// XXXXXXXXXXXXXXXXXXXXXXXXXXXX
+app.put(
+  "/paciente/join",
+  [
+    verificaToken,
+    (req, res, next) => {
+      req.verificacionArray = verificacionArrayEdit;
+      next();
+    },
+    verificaArrayPropValue,
+  ],
+  async (req, res) => {
+    try {
+      // ============================
+      // XXXXXX  Desarrollar  XXXXXXX
+      // ============================
+      // XXXXXXXXXXXXXXXXXXXXXXXXXXXX
+      // UNIFICAR FUSIONAR PACIENTES
+      // XXXXXXXXXXXXXXXXXXXXXXXXXXXX
+      // Actualizar IDs de otros servicios actualizar con los del nuevo Paciente Unificado.
+      // Actualizar datos del Paciente Unificado.
+      // Borrar IDs de otros servicios que no se migraran buscar y borrarlos.
+      // Borrar Paciente "Repetido"
+      return errorMessage(res, {message: "Unificacion de Paciente en DESARROLLO."}, 501);
+
+      let body = isVacio({
+        dato: _pick(req.body, listaPaciente),
+        borrar: req.body._id ? false : true,
+      });
+      if (body.vacio === true) {
+        return errorMessage(res, {message: "No se envió ningún dato."}, 412);
+      }
+      body = body.dato;
+
+      body["usuario_modifico"] = req.usuario._id;
+
+      let pacienteDB = null;
+      if (body._id) {
+        // Update
+        delete body._id;
+        // Delete del campo si esta como null / "" / undefined /array vacio
+        body = objectSetUnset({dato: body}).dato;
+        // Modificando la BD
+        pacienteDB = await Paciente.findOneAndUpdate({_id: req.body._id}, body, {
+          new: true,
+          runValidators: true,
+        }).exec();
+      } else {
+        // Nuevo
+        pacienteDB = await new Paciente(body).save();
+      }
+
+      if (!pacienteDB) {
+        return errorMessage(res, {message: "Paciente no encontrado."}, 404);
+      }
+
+      return res.json({
+        ok: true,
+        paciente: pacienteDB,
+      });
+    } catch (err) {
+      return errorMessage(res, err, err.code);
+    }
+  }
+);
 
 // ============================
 // TUBERCULOSIS Modificar hist_tuberculosis de Paciente por id

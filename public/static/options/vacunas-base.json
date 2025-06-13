@@ -10,7 +10,6 @@
     ],
     "vacunas_dosis_posibles": [
       "Unica",
-      "Neonatal",
       "1era",
       "2da",
       "3era",
@@ -18,20 +17,25 @@
       "5ta",
       "6ta",
       "7ma",
+      "8va",
+      "9na",
+      "10ma",
       "Anual",
       "Refuerzo",
       "Refuerzo 2do",
       "Refuerzo 3ero",
-      "Refuerzo 4to"
+      "Adicional",
+      "Dosis Cero",
+      "Neonatal"
     ],
     "vacunas_estrategia": [
       "Calendario",
       "Campaña",
-      "Contactos",
-      "Terreno",
-      "Internacion",
-      "Pre Exposicion",
-      "Post Exposicion"
+      "Atrasado",
+      "Prescripcion Medica",
+      "Grupo de Riesgo",
+      "Post Exposicion",
+      "Por excepcion"
     ],
     "vacunas_reportes": [
       "Masculinos",

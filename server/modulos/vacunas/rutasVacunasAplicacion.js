@@ -67,10 +67,13 @@ app.get(
     verificaToken,
     (req, res, next) => {
       req.verificacionArray = [
+        {prop: "historial_clinico", value: 1},
         {prop: "vacunas.gestion"},
         {prop: "vacunas.lectura"},
+        {prop: "vacunas.cipres"},
         {prop: "vacunas.general.gestion", value: 1},
         {prop: "vacunas.general.lectura", value: 1},
+        {prop: "vacunas.general.cipres", value: 1},
       ];
       next();
     },
@@ -309,7 +312,7 @@ app.put(
         }
 
         if (!stockDB || stockDB?.err) {
-          // o si tira error..
+          // modificar stock tira error..
           errors.push({
             message: `${insumo.insumo.insumoDB} - Modificar Stock - ${
               stockDB?.err ?? "No contemplado"
@@ -318,12 +321,8 @@ app.put(
           });
         } else {
           // modifico stock sin error
-          if (
-            body.No_Provista ||
-            insumo.No_Provista ||
-            insumo?.insumo?.insumoCategoriaDB === "Vacuna"
-          ) {
-            // (guarda vacunacion)
+          if (insumo?.insumo?.insumoCategoriaDB === "Vacuna") {
+            // si es Vacuna (guarda vacunacion)
             vacunacionesDB = await new VacunaAplicacion({
               ...body,
               vacunaName: insumo.vacunaName,
@@ -345,14 +344,14 @@ app.put(
               });
             }
           } else {
-            // (guardar descarte)
+            // si no es Vacuna (guardar descarte)
             descarteDB = await new VacunaDescarte({
               ...body,
               insumo: insumo.insumo?.insumo,
               procedencia: insumo.insumo?.procedencia,
               lote: insumo.insumo?.lote,
               vencimiento: insumo.insumo?.vencimiento,
-              retirado: retiradoDate,
+              retirado: body.No_Provista || insumo.No_Provista ? undefined : retiradoDate,
               motivo: "Utilizado",
               cantidad: 1,
             }).save();
@@ -417,6 +416,10 @@ app.delete(
           },
           403
         );
+      }
+
+      if (vacunacionesDB.cipres_id) {
+        return errorMessage(res, {message: "Vacunacion Registrada en CIPRES."}, 403);
       }
 
       // recuperar stock

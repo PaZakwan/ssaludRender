@@ -44,6 +44,7 @@ app.get(
     verificaToken,
     (req, res, next) => {
       req.verificacionArray = [
+        {prop: "historial_clinico", value: 1},
         {prop: "farmacia.entregas"},
         {prop: "farmacia.general.reportes", value: 1},
         {prop: "farmacia.general.admin", value: 1},

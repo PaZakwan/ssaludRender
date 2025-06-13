@@ -45,8 +45,8 @@ const errorMessage = function (res, error, statusTemp) {
 
   // "timed out" o "MongooseServerSelectionError" mensaje de BD no funcionando
   if (
-    error.message?.includes("timed out") ||
-    error.name?.includes("MongooseServerSelectionError")
+    error.message?.includes?.("timed out") ||
+    error.name?.includes?.("MongooseServerSelectionError")
   ) {
     status = 503;
     msjtemp = `Problema con la Conexion a la Base de Datos

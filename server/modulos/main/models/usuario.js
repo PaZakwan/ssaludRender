@@ -74,8 +74,10 @@ const permisosVacunas = new mongoose.Schema({
 
   // Supervisor del area (Solo Lectura)
   lectura: {type: [{type: mongoose.Schema.Types.ObjectId, ref: "Area"}], default: void 0},
-  // Gestion del area: solicitudes propias, ingresos, transferencias, egresos, egresos nominales.
+  // Gestion del area: solicitudes propias, ingresos, transferencias, egresos, egresos nominales (Aplicaciones Vacunas).
   gestion: {type: [{type: mongoose.Schema.Types.ObjectId, ref: "Area"}], default: void 0},
+  // Gestion del area: egresos nominales (Aplicaciones Vacunas).
+  cipres: {type: [{type: mongoose.Schema.Types.ObjectId, ref: "Area"}], default: void 0},
 
   // Para todas las areas
   general: {
@@ -85,6 +87,11 @@ const permisosVacunas = new mongoose.Schema({
       max: 1,
     },
     gestion: {
+      type: Number,
+      min: 0,
+      max: 1,
+    },
+    cipres: {
       type: Number,
       min: 0,
       max: 1,

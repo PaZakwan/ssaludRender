@@ -61,6 +61,7 @@ app.get("/usuario", [verificaToken, verificaAdmin_Role], async (req, res) => {
       .populate("farmacia.gestion", "area")
       .populate("vacunas.lectura", "area")
       .populate("vacunas.gestion", "area")
+      .populate("vacunas.cipres", "area")
       .populate("solicitudes.lectura", "area")
       .populate("solicitudes.gestion", "area")
       .exec();
@@ -86,6 +87,7 @@ app.get("/usuario/:id", [verificaToken, verificaAdmin_Role], async (req, res) =>
       .populate("farmacia.gestion", "area")
       .populate("vacunas.lectura", "area")
       .populate("vacunas.gestion", "area")
+      .populate("vacunas.cipres", "area")
       .populate("solicitudes.lectura", "area")
       .populate("solicitudes.gestion", "area")
       .exec();
@@ -120,6 +122,7 @@ app.get("/usuario/perfil/:id", [verificaToken], async (req, res) => {
       .populate("farmacia.gestion", "area")
       .populate("vacunas.lectura", "area")
       .populate("vacunas.gestion", "area")
+      .populate("vacunas.cipres", "area")
       .populate("solicitudes.lectura", "area")
       .populate("solicitudes.gestion", "area")
       .exec();

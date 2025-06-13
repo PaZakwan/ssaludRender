@@ -187,11 +187,12 @@ app.put(
         if (!body.justificacion) {
           return errorMessage(res, {message: "Falta justificar para proceder."}, 412);
         }
-      } else {
-        if (body.justificacion) {
-          delete body.justificacion;
-        }
       }
+      // else {
+      //   if (body.justificacion) {
+      //     delete body.justificacion;
+      //   }
+      // }
 
       let errors = [];
       body.retirado = new Date();
