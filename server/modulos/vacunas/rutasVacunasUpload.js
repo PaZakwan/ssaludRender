@@ -100,8 +100,8 @@ const ps_us_oficina = {
   261: "15221",
   // Reja Grande
   279: "15211",
-  // Maternidad Estela de Carloto (prov)
-  300: "56000953",
+  // Maternidad Estela de Carloto (Muni Moreno) (prov)
+  300: "56000686111",
   // Paso del Rey
   341: "15214",
   // Juramento
@@ -215,17 +215,17 @@ const ps_vacuna_name = {
   14: "SR Doble Viral",
   15: "Neumococo (23) Polisacarida",
   16: "Varicela",
-  17: "Antigripal Pediatrica",
+  17: "Antigripal Trivalente Pediatrica",
   18: "Salk IPV",
-  26: "Rotavirus",
+  26: "Rotavirus Monovalente",
   27: "Meningococo menveo ACYW",
   28: "PPD", //name tuberculosis examen
-  30: "Antigripal Adultos",
-  31: "Antigripal Mayores", //name
+  30: "Antigripal Trivalente Adultos",
+  31: "Antigripal Adyuvantada Mayores", //name
   32: "Hepatitis B Adultos 20mcg",
   33: "Sextuple DTPa Hib HB Salk",
   34: "Antirrábica Humana CRL", //name
-  35: "Antirrábica Humana cultivo en líneas celulares", //name
+  35: "Antirrábica Humana Cultivo en Líneas Celulares CCL", //name
   36: "Meningococo menactra", //name
   37: "Meningococo bexsero", //name
   39: "Haemophilus", //name
@@ -339,10 +339,8 @@ const VacunacionProperties = [
   "vacunadorName",
   "fecha_futura_cita",
 
-  // Obetener sexo y localidad del paciente para la "zona_sanitaria"
-  "tipo_doc",
-  "documento",
-  "doc_responsable",
+  // Obetener fec_nac, sexo y localidad del paciente para la "zona_sanitaria"
+  "fec_nac", // FechaNac
   "sexo",
   "edad_valor",
   "edad_unidad",
@@ -369,6 +367,7 @@ const VacunacionProperties = [
   "lote",
   "vencimiento",
   "dosis", // "ps_dosis"
+  "qty_dosis",
   "completa", // "ps_completa"
   "estrategia", // "ps_estrategia"
   "retirado", // "No_Provista" / (fecha)
@@ -376,7 +375,10 @@ const VacunacionProperties = [
   // PS
   "ps_id",
   "ps_nombreC",
-  "ps_fecha_nacimiento",
+  "ps_tipo_doc", // tipo_doc
+  "ps_doc", // documento
+  "ps_fecha_nacimiento", // FechaNac
+  "ps_doc_resp", // doc_responsable / DNIResponsable
 
   "error",
   "advertencia",
@@ -523,11 +525,18 @@ const VacunacionFormat = async ({
       delete json.IdPersona;
     }
     if (json.DNIResponsable) {
-      json.doc_responsable = json.doc_responsable ?? json.DNIResponsable;
+      json.ps_doc_resp = json.ps_doc_resp ?? json.DNIResponsable;
       delete json.DNIResponsable;
     }
-    if (json.doc_responsable == 0) {
+    if (json.doc_responsable) {
+      json.ps_doc_resp = json.ps_doc_resp ?? json.doc_responsable;
       delete json.doc_responsable;
+    }
+    if (json.ps_doc_resp == 0) {
+      delete json.ps_doc_resp;
+    }
+    if (json.ps_doc_resp) {
+      json.ps_doc_resp = json.ps_doc_resp.trim().toUpperCase();
     }
 
     // crear select en base a los datos que podrian faltar.
@@ -546,23 +555,27 @@ const VacunacionFormat = async ({
     } else {
       selectPaciente["_id"] = 1;
     }
-    //  documento
+    //  ps_doc|documento
     if (json.documento) {
-      json.documento = json.documento.trim().toUpperCase();
-      if (json.documento == 0 || !/^[A-Z0-9]+$/.test(json.documento)) {
-        delete json.documento;
-        selectPaciente["documento"] = 1;
-      }
-    } else {
-      selectPaciente["documento"] = 1;
+      json.ps_doc = json.ps_doc ?? json.documento;
+      delete json.documento;
     }
-    // tipo_doc (default "DNI")
-    if (!json.documento) {
+    if (json.ps_doc) {
+      json.ps_doc = json.ps_doc.trim().toUpperCase();
+      if (json.ps_doc == 0 || !/^[A-Z0-9]+$/.test(json.ps_doc)) {
+        delete json.ps_doc;
+      }
+    }
+    // ps_tipo_doc|tipo_doc (default "DNI")
+    if (json.tipo_doc) {
+      json.ps_tipo_doc = json.ps_tipo_doc ?? json.tipo_doc;
       delete json.tipo_doc;
-      selectPaciente["tipo_doc"] = 1;
+    }
+    if (!json.ps_doc) {
+      delete json.ps_tipo_doc;
     } else {
-      if (json.tipo_doc) {
-        switch (json.tipo_doc) {
+      if (json.ps_tipo_doc) {
+        switch (json.ps_tipo_doc) {
           case "DNI":
           case "Cédula Mercosur":
           case "Documento Bolivia":
@@ -581,36 +594,36 @@ const VacunacionFormat = async ({
           // PSVacunas
           case "1":
           case "54":
-            json.tipo_doc = "DNI";
+            json.ps_tipo_doc = "DNI";
             break;
           case "55":
-            json.tipo_doc = "Documento Brasil";
+            json.ps_tipo_doc = "Documento Brasil";
             break;
           case "56":
-            json.tipo_doc = "Documento Chile";
+            json.ps_tipo_doc = "Documento Chile";
             break;
           case "57":
-            json.tipo_doc = "Documento Colombia";
+            json.ps_tipo_doc = "Documento Colombia";
             break;
           case "591":
-            json.tipo_doc = "Documento Bolivia";
+            json.ps_tipo_doc = "Documento Bolivia";
             break;
           case "595":
-            json.tipo_doc = "Documento Paraguay";
+            json.ps_tipo_doc = "Documento Paraguay";
             break;
           case "598":
-            json.tipo_doc = "Documento Uruguay";
+            json.ps_tipo_doc = "Documento Uruguay";
             break;
           case "999":
-            json.tipo_doc = "Otro documento extranjero";
+            json.ps_tipo_doc = "Otro documento extranjero";
             break;
 
           default:
-            json.tipo_doc = "DNI";
+            json.ps_tipo_doc = "DNI";
             break;
         }
       } else {
-        json.tipo_doc = "DNI";
+        json.ps_tipo_doc = "DNI";
       }
     }
     // sexo
@@ -637,29 +650,28 @@ const VacunacionFormat = async ({
     // #### filtro
     // faltan datos
     if (Object.keys(selectPaciente).length) {
-      // doc_responsable (opcional, solo lo busca si necesita algun dato del paciente).
-      if (!json.doc_responsable) {
-        selectPaciente["doc_responsable"] = 1;
-      }
-      // buscar "paciente" con -> paciente / (tipo_doc - documento) / ps_paciente (IdPersona)
+      // buscar "paciente" con -> paciente / (ps_tipo_doc|tipo_doc - ps_doc|documento) / ps_paciente (IdPersona)
       let filtroPaciente = false;
       // primero json.paciente
       if (json.paciente) {
         filtroPaciente = {_id: json.paciente};
       }
-      // segundo ver json.documento (tipo_doc)
-      else if (json.documento) {
+      // segundo ver json.ps_doc (ps_tipo_doc)
+      else if (json.ps_doc) {
         filtroPaciente = {
-          tipo_doc: json.tipo_doc,
-          documento: json.documento,
+          tipo_doc: json.ps_tipo_doc,
+          documento: json.ps_doc,
         };
       }
       // por ultimo buscar con ps_paciente (IdPersona)
       else if (json.ps_paciente) {
         // ESTO TARDA MUCHO!, NO ES UNA BUSQUEDA INDEXADA COMO EL DOCUMENTO (300s[5m] -> 2400s[40m]),
-        // POR ESO LE AGREGO OTRO CONDICIONAL, ES MAS PROBABLE QUE EXISTA PACIENTE CON DOC_RESPONSABLE.
-        if (json.doc_responsable) {
+        // POR ESO LE AGREGO OTRO CONDICIONAL, ES MAS PROBABLE QUE EXISTA PACIENTE CON ps_doc_resp|DOC_RESPONSABLE.
+        if (json.ps_doc_resp) {
           filtroPaciente = {
+            // tipo_doc: {$exists: false},
+            // documento: {$exists: false},
+            // doc_responsable: {$exists: true},
             ps_id: json.ps_paciente,
           };
         }
@@ -683,9 +695,7 @@ const VacunacionFormat = async ({
           // completar datos del selectPaciente
           Object.keys(selectPaciente).forEach((select) => {
             if (!pacienteTemp[select]) {
-              if (select !== "doc_responsable") {
-                advertencia += ` valor de paciente.${select} Sin Dato.`;
-              }
+              advertencia += ` valor de paciente.${select} Sin Dato.`;
             } else if (select === "_id") {
               json.paciente = pacienteTemp[select];
             } else {
@@ -718,15 +728,20 @@ const VacunacionFormat = async ({
       delete json.Nombres;
     }
 
-    // ps_fecha_nacimiento
-    json.ps_fecha_nacimiento = json.ps_fecha_nacimiento ?? json.FechaNac;
-    delete json.FechaNac;
+    // ps_fecha_nacimiento & fec_nac | FechaNac
+    if (json.FechaNac) {
+      json.ps_fecha_nacimiento = json.ps_fecha_nacimiento ?? json.FechaNac;
+      delete json.FechaNac;
+    }
+    json.ps_fecha_nacimiento = json.ps_fecha_nacimiento ?? json.fec_nac;
     if (!json.ps_fecha_nacimiento) {
       delete json.ps_fecha_nacimiento;
+      delete json.fec_nac;
     } else if (!isDateValid(json.ps_fecha_nacimiento)) {
       errores += ` fecha nacimiento PS (${json.ps_fecha_nacimiento}) [YYYY-MM-DD].`;
     } else {
       json.ps_fecha_nacimiento = new Date(json.ps_fecha_nacimiento);
+      json.fec_nac = json.ps_fecha_nacimiento.toISOString().slice(0, 10);
     }
 
     if (json.zona_sanitaria) {
@@ -834,6 +849,12 @@ const VacunacionFormat = async ({
       }
     } else {
       errores += " dosis Sin Dato.";
+    }
+
+    if (json.qty_dosis) {
+      if (!["Media dosis", "Doble dosis"].includes(json.qty_dosis)) {
+        errores += ` qty_dosis No Valida (${json.qty_dosis}).`;
+      }
     }
 
     // ps_vacuna, (vacunaName) (insumo)

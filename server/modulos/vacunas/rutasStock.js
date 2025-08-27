@@ -518,6 +518,9 @@ app.get(
         if (JSON.parse(req.query.insumoSelect)?.dosis) {
           insumoSelect.dosisDB = {$ifNull: ["$insumoDB.dosis_posibles", "$vacio"]};
         }
+        if (JSON.parse(req.query.insumoSelect)?.qty_dosis) {
+          insumoSelect.qty_dosisDB = {$ifNull: ["$insumoDB.qty_dosis_posibles", "$vacio"]};
+        }
         if (JSON.parse(req.query.insumoSelect)?.condiciones) {
           insumoSelect.condicionesDB = {$ifNull: ["$insumoDB.condiciones", "$vacio"]};
         }

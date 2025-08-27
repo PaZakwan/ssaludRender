@@ -1,8 +1,7 @@
 const mongoose = require("mongoose");
 const uniqueValidator = require("mongoose-unique-validator");
-const {resolve} = require("path");
 
-const {capitalize} = require(resolve(process.env.MAIN_FOLDER, "tools/string"));
+const {capitalize} = require(process.env.MAIN_FOLDER + "/tools/string");
 
 let schemaOptions = {
   toObject: {

@@ -1,11 +1,10 @@
 const mongoose = require("mongoose");
 const uniqueValidator = require("mongoose-unique-validator");
-const {resolve} = require("path");
 
 const TuberculosisSchema = require("./schemas/Tuberculosis");
 
-const {capitalize, trim_between} = require(resolve(process.env.MAIN_FOLDER, "tools/string"));
-const {getEdad} = require(resolve(process.env.MAIN_FOLDER, "tools/object"));
+const {capitalize, trim_between} = require(process.env.MAIN_FOLDER + "/tools/string");
+const {getEdad} = require(process.env.MAIN_FOLDER + "/tools/object");
 
 let schemaOptions = {
   toObject: {
@@ -158,6 +157,10 @@ let pacienteSchema = new mongoose.Schema(
       uppercase: true,
     },
 
+    cipres_id: {
+      type: String,
+    },
+
     estado: {
       type: Boolean,
       default: true,
@@ -240,31 +243,6 @@ pacienteSchema.virtual("edad").get(function () {
   }
 });
 
-// antes del save()
-pacienteSchema.pre("save", async function (next) {
-  // NUMERO DE HISTORIAL DE SALITAS NO REPETIBLE...
-  if (this.hist_salitas) {
-    for (const element of this.hist_salitas) {
-      if (element.area) {
-        let DB = await Paciente.find({
-          hist_salitas: {$elemMatch: {area: element.area, historial: element.historial}},
-        })
-          .select("_id id")
-          .exec();
-        if (DB.length >= 1) {
-          // ya existe
-          throw (err = {
-            message: `El N° de Historial (${element.historial
-              ?.trim()
-              .toUpperCase()}) ya se encuentra utilizado en esa Sala por otro paciente.`,
-          });
-        }
-      }
-    }
-  }
-  next();
-});
-
 // antes del update()
 pacienteSchema.pre("findOneAndUpdate", async function (next) {
   // Actualiza horario de edicion
@@ -277,27 +255,6 @@ pacienteSchema.pre("findOneAndUpdate", async function (next) {
     this.getUpdate().$set.hist_tuberculosis.updatedAt = new Date();
   } else if (this.getUpdate().hist_tuberculosis) {
     this.getUpdate().hist_tuberculosis.updatedAt = new Date();
-  }
-
-  // NUMERO DE HISTORIAL DE SALITAS NO REPETIBLE...
-  if (this.getUpdate().$set?.hist_salitas) {
-    for (const element of this.getUpdate().$set.hist_salitas) {
-      if (element.area) {
-        let DB = await Paciente.find({
-          hist_salitas: {$elemMatch: {area: element.area, historial: element.historial}},
-        })
-          .select("_id id")
-          .exec();
-        if (!(DB.length === 0 || DB.findIndex((obj) => obj?.id === this.getFilter()._id) >= 0)) {
-          // Esta Repetido y No es el mismo
-          throw (err = {
-            message: `El N° de Historial (${element.historial
-              ?.trim()
-              .toUpperCase()}) ya se encuentra utilizado en esa Sala por otro paciente.`,
-          });
-        }
-      }
-    }
   }
 
   next();

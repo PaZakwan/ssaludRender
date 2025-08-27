@@ -27,6 +27,7 @@ let listaInsumo = [
   "condiciones",
   "grupo_etario",
   "dosis_posibles",
+  "qty_dosis_posibles",
   "estado",
 ];
 
@@ -166,7 +167,7 @@ app.put(
         return errorMessage(res, {message: "Error al guardar el Insumo."}, 400);
       }
 
-      // Verificar si hay aplicaciones con nombre similar y si existe aplicacion vincularla con el nuevo Insumo Vacuna.
+      // Verificar si hay aplicaciones con nombre similar y sin ID de INSUMO => si existe aplicacion agrega nuevo ID de Insumo Vacuna.
       // VacunaAplicacion => insumo (objectID) / vacunaName (str) <=> VacunaInsumo => _id (objectID) / nombre (str)
       if (insumoDB.categoria === "Vacuna") {
         await VacunaAplicacion.updateMany(

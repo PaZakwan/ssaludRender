@@ -27,6 +27,10 @@ const isDateValid = (date) => {
 
 const dateUTC = ({date, hours = "00:00:00.000", timezone = "+00:00", excelValue = false}) => {
   try {
+    // si date esta en tipo string y con formato ISO -> trasnformarlo a tipo Date y retornarlo
+    if (typeof date === "string" && date.length === 24 && new Date(date).toISOString() === date) {
+      return new Date(date);
+    }
     if (timezone != "+00:00" && !/^(?:[+-](?:2[0-3]|[01][0-9]):[0-5][0-9])$/.test(timezone)) {
       // offset = req.get("timezoneoffset");
       return {
@@ -94,6 +98,7 @@ const getEdad = ({
   dateHasta = new Date().toISOString().slice(0, 10),
   onlyYear = true,
   formatString = false,
+  formatAñoDia = false,
 }) => {
   if (!date) {
     return "";
@@ -113,10 +118,13 @@ const getEdad = ({
       date: date,
       hours: "00:00:00.000",
     });
-    if (desde.error) {
+
+    if (desde.error || hasta.error) {
       return {
-        dato: {date, dateHasta, onlyYear, formatString},
-        error: `getEdad desde: ${desde.error}`,
+        dato: {date, dateHasta, onlyYear, formatString, formatAñoDia},
+        error: `getEdad:${desde.error ? ` date: ${desde.error}` : ""}${
+          hasta.error ? ` dateHasta: ${hasta.error}` : ""
+        }`,
       };
     }
     // corregir fechas invertidas..
@@ -164,9 +172,10 @@ const getEdad = ({
       edad_weeks: Math.floor(edad_days / 7),
       edad_days: Math.round(edad_days),
       formatString: formatString ? `${edad_years}a ${mes_diff}m ${dias_diff}d` : null,
+      formatAñoDia: formatAñoDia ? `${edad_years}a (${Math.round(edad_days)}d)` : null,
     };
   } catch (error) {
-    return {dato: {date, dateHasta, onlyYear, formatString}, error};
+    return {dato: {date, dateHasta, onlyYear, formatString, formatAñoDia}, error};
   }
 };
 

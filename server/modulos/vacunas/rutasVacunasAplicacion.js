@@ -22,9 +22,7 @@ let listaVacunaciones = [
   "vacunadorName",
   "fecha_futura_cita",
 
-  "tipo_doc",
-  "documento",
-  "doc_responsable",
+  "fec_nac",
   "sexo",
   "edad_valor",
   "edad_unidad",
@@ -50,6 +48,7 @@ let listaVacunaciones = [
   // "lote",
   // "vencimiento",
   // "dosis",
+  // "qty_dosis",
   // "completa",
   // "estrategia",
   // "No_Provista",
@@ -168,17 +167,29 @@ app.get(
           pacienteDocDB: {
             $ifNull: [
               {
-                $concat: ["$tipo_doc", " ", "$documento"],
+                $concat: ["$ps_tipo_doc", " ", "$ps_doc", " (PS)"],
               },
               {
                 $concat: ["$pacienteDB.tipo_doc", " ", "$pacienteDB.documento"],
               },
               {
-                $concat: ["Resp ", "$doc_responsable"],
+                $concat: ["Resp ", "$ps_doc_resp", " (PS)"],
               },
               {
                 $concat: ["Resp ", "$pacienteDB.doc_responsable"],
               },
+              "$vacio",
+            ],
+          },
+          pacienteFecNacDB: {
+            $ifNull: ["$ps_fecha_nacimiento", "$fec_nac", "$pacienteDB.fec_nac", "$vacio"],
+          },
+          pacienteDocRespDB: {
+            $ifNull: [
+              {
+                $concat: ["$ps_doc_resp", " (PS)"],
+              },
+              "$pacienteDB.doc_responsable",
               "$vacio",
             ],
           },
@@ -225,15 +236,21 @@ app.get(
           vacunadorDB: 1,
           pacienteDB: 1,
           pacienteDocDB: 1,
+          pacienteFecNacDB: 1,
+          pacienteDocRespDB: 1,
           oSocial: 1,
           insumoDB: 1,
           procedencia: 1,
           lote: 1,
           vencimiento: 1,
           dosis: 1,
-          completa: 1,
+          qty_dosis: 1,
+          // completa: 1,
           estrategia: 1,
           fecha_futura_cita: 1,
+          cipres_fecha: 1,
+          cipres_id: 1,
+          cipres_msg: 1,
           retirado: 1,
           createdAt: 1,
         });
@@ -305,10 +322,22 @@ app.put(
         let descarteDB = null;
         let stockDB = null;
 
+        if (insumo.qty_dosis === "Doble dosis") {
+          insumo.cantidad = 2;
+        }
+        if (insumo.qty_dosis === "Dosis completa") {
+          delete insumo.qty_dosis;
+        }
+
         if (body.No_Provista || insumo.No_Provista) {
           stockDB = true;
         } else {
-          stockDB = await modificarStockInc(body.origen, insumo.insumo, 1, "resta");
+          stockDB = await modificarStockInc(
+            body.origen,
+            insumo.insumo,
+            insumo.cantidad ?? 1,
+            "resta"
+          );
         }
 
         if (!stockDB || stockDB?.err) {
@@ -321,16 +350,18 @@ app.put(
           });
         } else {
           // modifico stock sin error
-          if (insumo?.insumo?.insumoCategoriaDB === "Vacuna") {
+          // es vacuna o body.No_Provista === "Paciente | Historial"
+          if (body.No_Provista || insumo?.insumo?.insumoCategoriaDB === "Vacuna") {
             // si es Vacuna (guarda vacunacion)
             vacunacionesDB = await new VacunaAplicacion({
               ...body,
-              vacunaName: insumo.vacunaName,
+              vacunaName: insumo.insumo?.insumoDB ?? insumo.vacunaName,
               procedencia: insumo.insumo?.procedencia ?? body.No_Provista,
               insumo: insumo.insumo?.insumo ?? insumo.insumo?.id,
               lote: insumo.insumo?.lote ?? insumo.lote,
               vencimiento: insumo.insumo?.vencimiento ?? insumo.vencimiento,
               dosis: insumo.dosis,
+              qty_dosis: insumo.qty_dosis ?? undefined,
               completa: insumo.completa ? true : undefined,
               estrategia: insumo.estrategia,
               retirado: body.No_Provista || insumo.No_Provista ? undefined : retiradoDate,
@@ -353,7 +384,7 @@ app.put(
               vencimiento: insumo.insumo?.vencimiento,
               retirado: body.No_Provista || insumo.No_Provista ? undefined : retiradoDate,
               motivo: "Utilizado",
-              cantidad: 1,
+              cantidad: insumo.cantidad,
             }).save();
             if (descarteDB === null) {
               errors.push({
@@ -432,7 +463,7 @@ app.delete(
             lote: vacunacionesDB.lote,
             vencimiento: vacunacionesDB.vencimiento,
           },
-          1
+          vacunacionesDB.qty_dosis === "Doble dosis" ? 2 : 1
         );
         // si hay un error Salir
         if (!stockDB || stockDB?.err) {

@@ -6,8 +6,8 @@ const _pick = require("lodash/pick");
 const {verificaToken, verificaArrayPropValue} = require(process.env.MAIN_FOLDER +
   "/middlewares/autenticacion");
 const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
-const {isVacio, objectSetUnset, isObjectIdValid, objectToFind} = require(process.env.MAIN_FOLDER +
-  "/tools/object");
+const {isVacio, objectSetUnset, isObjectIdValid, objectToFind, getEdad} = require(process.env
+  .MAIN_FOLDER + "/tools/object");
 const {capitalize} = require(process.env.MAIN_FOLDER + "/tools/string");
 const Paciente = require("./models/paciente");
 
@@ -52,6 +52,9 @@ let listaPaciente = [
 
   // PS
   // "ps_id",
+
+  // CIPRES
+  // "cipres_id",
 
   //todos
   "estado",
@@ -206,6 +209,52 @@ app.put(
 
       body["usuario_modifico"] = req.usuario._id;
 
+      // VERIFICA NUMERO DE HISTORIAL DE SALITAS NO REPETIBLE...
+      if (body.hist_salitas) {
+        for (const element of body.hist_salitas) {
+          if (element.area) {
+            let DB = await Paciente.find({
+              hist_salitas: {
+                $elemMatch: {
+                  area: element.area,
+                  historial: element.historial?.trim().toUpperCase(),
+                },
+              },
+            })
+              .select("_id id")
+              .exec();
+
+            if (body._id) {
+              // Update
+              if (!(DB.length === 0 || DB.findIndex((obj) => obj?.id === body._id) >= 0)) {
+                return errorMessage(
+                  res,
+                  {
+                    message: `El N° de Historial (${element.historial
+                      ?.trim()
+                      .toUpperCase()}) ya se encuentra utilizado en esa Sala por otro paciente.`,
+                  },
+                  400
+                );
+              }
+            } else {
+              // Nuevo
+              if (DB.length >= 1) {
+                return errorMessage(
+                  res,
+                  {
+                    message: `El N° de Historial (${element.historial
+                      ?.trim()
+                      .toUpperCase()}) ya se encuentra utilizado en esa Sala por otro paciente.`,
+                  },
+                  400
+                );
+              }
+            }
+          }
+        }
+      }
+
       let pacienteDB = null;
       if (body._id) {
         // Update
@@ -217,6 +266,62 @@ app.put(
           new: true,
           runValidators: true,
         }).exec();
+
+        // Verifica y actualiza las aplicaciones del paciente con nueva fecha de nacimiento o sexo.
+        let vacunacionesCursor = VacunaAplicacion.find({
+          cipres_id: {$exists: false},
+          paciente: req.body._id,
+          $or: [
+            {
+              sexo: {$ne: body.$set.sexo},
+            },
+            {
+              fec_nac: {$ne: body.$set.fec_nac},
+            },
+          ],
+        }).cursor();
+
+        for await (const vacunacionDB of vacunacionesCursor) {
+          if (body.$set.sexo !== vacunacionDB.sexo) {
+            vacunacionDB.sexo = body.$set.sexo;
+          }
+          if (body.$set.fec_nac !== vacunacionDB.fec_nac) {
+            vacunacionDB.fec_nac = body.$set.fec_nac;
+            // Recalculo de edades con fecha apliacion y nueva fecha de nacimiento
+            let edadTemp = getEdad({
+              date: vacunacionDB.fec_nac,
+              dateHasta: vacunacionDB.fecha,
+              onlyYear: false,
+              formatString: true,
+            });
+            switch (vacunacionDB.edad_unidad) {
+              case "Año":
+                vacunacionDB.edad_valor = edadTemp?.edad_years ?? "";
+                break;
+
+              case "Mes":
+                vacunacionDB.edad_valor = edadTemp?.edad_months ?? "";
+                break;
+
+              case "Semana":
+                vacunacionDB.edad_valor = edadTemp?.edad_weeks ?? "";
+                break;
+
+              case "Dia":
+                vacunacionDB.edad_valor = edadTemp?.edad_days ?? "";
+                break;
+
+              case "Hora":
+                vacunacionDB.edad_valor = vacunacionDB.edad_valor;
+                break;
+
+              default:
+                vacunacionDB.edad_valor = vacunacionDB.edad_valor;
+                break;
+            }
+          }
+          await vacunacionDB.save();
+        }
       } else {
         // Nuevo
         pacienteDB = await new Paciente(body).save();

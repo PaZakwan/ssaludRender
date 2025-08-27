@@ -27,6 +27,31 @@
 
 ---
 
+### [1.7.20250827] - 2025-08-27
+
+- 🚨 Changed a Sistema - Nombre => Sistema De Gestion Integral de la Secretaria de Salud de Moreno (Si.G.I.Se.Sa.M) -> Gestion Integral de Salud Moreno (G.I.SA.M.).
+- 📈 Improved a Sistema - Confirm => Se mejoraron los mensajes de alerta y confirmacion para que tengan el mismo estilo que el sistema general.
+
+- 🩹 Fixed a Vacunas - Aplicacion => La descarga de PDFs con el boton de "DESCARGAR PDF" no estaba funcionando correctamente.
+- 🩹 Fixed a Vacunas - Aplicacion | Reportes => Exportar Reportes y Aplicaciones Nominales ahora muestra correctamente el documento del responsable y se agrego la fecha de nacimiento de los pacientes donde correspondia.
+- ✨ Added a Vacunas - Sistema => Ahora se puede configurar y seleccionar la cantidad administrada de la dosis, "Dosis Administrada" puede tomar los siguientes valores "Media dosis", "Doble dosis" o "Dosis completa", la ultima opcion es tomada como por defecto. Mejora compatibilidad con CIPRES.
+- ✨ Added a Vacunas - Aplicacion => A la exportacion Nominal en excel se le agregaron los datos del CIPRES, la estrategia utilizada y la cantidad administrada.
+- 🚨 Changed a Vacunas - Reportes => El reporte Nominal ahora muestra la cantidad administrada en la vacuna y no la estrategia utilizada.
+
+### [1.7.20250811] - 2025-08-11
+
+- ✨ Added a Vacunas - Aplicacion => Ahora muestra la edad de los pacientes en la que se aplicaron la vacuna en la tabla de busqueda.
+- ✨ Added a Vacunas - Aplicacion => Se agregaron los siguientes filtros para ver aplicaciones: "Todas", "Registradas CIPRES", "ERRORES CIPRES", "No Envio CIPRES", "Vencidas".
+- ✨ Added a Vacunas - Aplicacion => Cada vacunador puede enviar solamente sus aplicaciones a CIPRES o un Gestor de CIPRES del area.
+- ✨ Added a Vacunas - Aplicacion => Todos pueden ver los mensajes de respuesta de CIPRES.
+- 📈 Improved a Vacunas - Sistema => Se mejoro la visibilidad de varios campos de seleccion que mostraban muchas opciones deshabilitadas, ahora solamente muestra las opciones con las que cuenta el usuario.
+- 🚨 Changed a Vacunas - Sistema => Se modificaron el uso de variables y sus nombres para mejorar futuros cambios y rastreo de errores. -tipo_doc, -documento -doc_responsable -> +ps_tipo_doc, +ps_doc +ps_doc_resp (para historial los valores reales los toma del paciente) | +fec_nac (acelerar reportes por edad).
+
+- 📈 Improved a Farmacia - Sistema => Se mejoro la visibilidad de varios campos de seleccion que mostraban muchas opciones deshabilitadas, ahora solamente muestra las opciones con las que cuenta el usuario.
+
+- 📈 Improved a Sistema - Net => Se mejoro la Deteccion y Notificacion del vencimiento del certificado para la navegacion segura y tambien los casos de no encontrar archivos debido a actualizacion del sistema.
+- 🚨 Changed a Sistema - Paciente => Cuando se modifica su fecha de nacimiento y/o sexo -> se actualizaran todas sus aplicaciones que no se registraron en CIPRES con los nuevos datos, re-calculando la edad a la fecha de aplicacion de ser necesario.
+
 ### [1.7.20250613] - 2025-06-13
 
 - ✨ Added a Sistema - Usuarios => Se agrego el permiso de Vacunas Cipres para la interoperabilidad con Provincia.

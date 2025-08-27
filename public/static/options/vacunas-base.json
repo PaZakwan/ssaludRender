@@ -28,6 +28,7 @@
       "Dosis Cero",
       "Neonatal"
     ],
+    "qty_dosis_posibles": ["Media dosis", "Doble dosis"],
     "vacunas_estrategia": [
       "Calendario",
       "Campaña",

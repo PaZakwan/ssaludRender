@@ -91,6 +91,7 @@ const loadRutasApi = () => {
   try {
     // Habilita GETs de la carpeta public
     app.use(express.static(path.resolve(__dirname, "../public")));
+    // app.use(express.static(path.resolve(__dirname, "../publicOld")));
 
     // Configuración global de rutas de la API
     app.use("/api", require("./rutas_api_index"));
@@ -117,7 +118,7 @@ const loadRutasApi = () => {
 
     // Si no encuentra la ruta responde con lo siguiente 404
     app.use((req, res, next) => {
-      return res.status(404).send({
+      return res.status(404).json({
         ok: false,
         err: {
           message: "Ruta Inexistente",
@@ -132,7 +133,7 @@ const loadRutasApi = () => {
         name: "RutasApi",
         falla: err,
       });
-      return res.status(500).send({
+      return res.status(500).json({
         ok: false,
         err: {
           message: "Error Interno en el Servidor",

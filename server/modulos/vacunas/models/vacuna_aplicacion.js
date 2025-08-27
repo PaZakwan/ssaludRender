@@ -59,18 +59,9 @@ let VacunaAplicacionSchema = new Schema(
     },
 
     // Valores del Paciente para acelerar Reportes...
-    tipo_doc: {
+    fec_nac: {
       type: String,
-    },
-    documento: {
-      type: String,
-      trim: true,
-      uppercase: true,
-    },
-    doc_responsable: {
-      type: String,
-      trim: true,
-      uppercase: true,
+      required: [true, "La Fecha de Nacimiento del Paciente es necesaria."],
     },
     sexo: {
       // para group etario estadistica
@@ -178,6 +169,9 @@ let VacunaAplicacionSchema = new Schema(
       type: String,
       required: [true, "La Dosis de la Vacuna a aplicar es necesaria."],
     },
+    qty_dosis: {
+      type: String,
+    },
     completa: {
       type: Boolean,
     },
@@ -198,18 +192,27 @@ let VacunaAplicacionSchema = new Schema(
     ps_nombreC: {
       type: String,
     },
+    ps_tipo_doc: {
+      type: String,
+    },
+    ps_doc: {
+      type: String,
+    },
     ps_fecha_nacimiento: {
+      type: String,
+    },
+    ps_doc_resp: {
       type: String,
     },
 
     // CIPRES
+    cipres_fecha: {
+      type: Date,
+    },
     cipres_id: {
       type: String,
       unique: true,
       sparse: true,
-    },
-    cipres_fecha: {
-      type: Date,
     },
     cipres_msg: {
       type: String,

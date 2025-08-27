@@ -14,7 +14,7 @@ const app = express();
 // ============================
 // Mostrar Vacunaciones con datos del paciente - CIPRES => GroupBy: fecha - area - paciente. entre fechas.
 //    Vacunatorio -> fec_apl + Datos del Paciente (apynm,doc(tip,num),domicilio,telefono,municipio,fec.nac,edad(v,u),sexo)
-//             vacuna/vucunaName-dosis(valor - estrategia), total dosis por paciente.
+//             vacuna/vucunaName-dosis(valor - qty_dosis), total dosis por paciente.
 //      subtotales -> "pacientes" (diferentes), por vacuna/vucunaName-dosis. dosis Totales.
 //          OPCIONALES ->
 //            "Menores de 15",
@@ -233,27 +233,29 @@ app.get(
           ],
         })
         // fec_apl + Datos del Paciente (apynm,doc(tip,num),domicilio,telefono,municipio, fec.nac,edad(v,u),sexo)
-        //             vacuna/vucunaName-dosis(valor - estrategia), total dosis por paciente.
+        //             vacuna/vucunaName-dosis(valor - qty_dosis), total dosis por paciente.
         .project({
           _id: 0,
           origen: 1,
           fecha: 1,
           paciente: 1,
-          tipo_doc: 1,
-          documento: 1,
           ps_paciente: 1,
           ps_nombreC: 1,
           ps_fecha_nacimiento: 1,
-          doc_responsable: 1,
+          ps_tipo_doc: 1,
+          ps_doc: 1,
+          ps_doc_resp: 1,
+          fec_nac: 1,
+          sexo: 1,
           edad_valor: 1,
           edad_unidad: 1,
-          sexo: 1,
           insumo: 1,
           vacunaName: 1,
           procedencia: 1,
           lote: 1,
           vencimiento: 1,
           dosis: 1,
+          qty_dosis: 1,
           estrategia: 1,
           ...opcionalesProyect,
         })
@@ -277,7 +279,7 @@ app.get(
               $ifNull: [
                 "$paciente",
                 {
-                  $concat: [{$ifNull: ["$ps_nombreC", ""]}, " (", "$ps_paciente", ")"],
+                  $concat: [{$ifNull: ["$ps_nombreC", ""]}, " (PS ", "$ps_paciente", ")"],
                 },
               ],
             },
@@ -287,17 +289,19 @@ app.get(
           edad_unidad: {$first: "$edad_unidad"},
           //            "Masculinos",
           //            "Femeninos",
+          ps_tipo_doc: {$first: "$ps_tipo_doc"},
+          ps_doc: {$first: "$ps_doc"},
+          ps_doc_resp: {$first: "$ps_doc_resp"},
+          fec_nac: {$first: "$fec_nac"},
           sexo: {$first: "$sexo"},
-          tipo_doc: {$first: "$tipo_doc"},
-          documento: {$first: "$documento"},
           ps_fecha_nacimiento: {$first: "$ps_fecha_nacimiento"},
-          doc_responsable: {$first: "$doc_responsable"},
           vacunacionesDB: {
             $push: {
               vacuna: {$concat: [{$ifNull: ["$insumoDB", "Sin Dato"]}, " - ", "$dosis"]},
               procedencia: "$procedencia",
               lote: "$lote",
               vencimiento: {$dateToString: {format: "%Y-%m-%d", date: "$vencimiento"}},
+              qty_dosis: "$qty_dosis",
               estrategia: "$estrategia",
               //            "Estrategia - Campaña",
               //            "Estrategia - Contactos",
@@ -306,7 +310,7 @@ app.get(
           vacunacionesTemp: {
             $push: {
               k: {$concat: [{$ifNull: ["$insumoDB", "Sin Dato"]}, " - ", "$dosis"]},
-              v: "$estrategia",
+              v: {$ifNull: ["$qty_dosis", "Dosis completa"]},
             },
           },
           total_dosis: {$sum: 1},
@@ -333,7 +337,7 @@ app.get(
           fecha: {$dateToString: {format: "%Y-%m-%d", date: "$_id.fecha"}},
           area: "$_id.area",
           paciente: "$_id.paciente",
-          // ...{"vacuna-dosis":"estrategia"}...
+          // ...{"vacuna-dosis":"qty_dosis"}...
           vacunacionesObject: {$arrayToObject: "$vacunacionesTemp"},
         })
         .project({vacunacionesTemp: 0})
@@ -370,17 +374,26 @@ app.get(
           pacienteDocDB: {
             $ifNull: [
               {
-                $concat: ["$tipo_doc", " ", "$documento"],
+                $concat: ["$ps_tipo_doc", " ", "$ps_doc", " (PS)"],
               },
               {
                 $concat: ["$pacienteDB.tipo_doc", " ", "$pacienteDB.documento"],
               },
               {
-                $concat: ["Resp ", "$doc_responsable"],
+                $concat: ["Resp ", "$ps_doc_resp", " (PS)"],
               },
               {
                 $concat: ["Resp ", "$pacienteDB.doc_responsable"],
               },
+              "$vacio",
+            ],
+          },
+          pacienteDocRespDB: {
+            $ifNull: [
+              {
+                $concat: ["$ps_doc_resp", " (PS)"],
+              },
+              "$pacienteDB.doc_responsable",
               "$vacio",
             ],
           },
@@ -395,11 +408,11 @@ app.get(
           pacienteTelefonoDB: {
             $ifNull: ["$pacienteDB.telefono", "$pacienteDB.telefono_alt", "$vacio"],
           },
-          pacienteFec_nacDB: {
-            $ifNull: ["$pacienteDB.fec_nac", "$ps_fecha_nacimiento", "$vacio"],
+          pacienteFecNacDB: {
+            $ifNull: ["$ps_fecha_nacimiento", "$fec_nac", "$pacienteDB.fec_nac", "$vacio"],
           },
           sexo: {$ifNull: ["$sexo", "$pacienteDB.sexo"]},
-          ...opcionalesPopulatePaciente,
+          pacienteMunicipioDB: {$ifNull: ["$pacienteDB.dir_municipio", "$vacio"]},
         })
         .sort({areaDB: 1, fecha: 1, pacienteDB: 1})
         .exec();

@@ -89,6 +89,16 @@ let VacunaInsumoSchema = new Schema(
       ],
     },
 
+    qty_dosis_posibles: {
+      type: [
+        {
+          type: String,
+          enum: ["Media dosis", "Doble dosis"],
+        },
+      ],
+      default: void 0,
+    },
+
     estado: {
       type: Boolean,
       default: true,

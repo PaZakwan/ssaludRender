@@ -1,7 +1,6 @@
 const mongoose = require("mongoose");
-const {resolve} = require("path");
 
-const {trim_between} = require(resolve(process.env.MAIN_FOLDER, "tools/string"));
+const {trim_between} = require(process.env.MAIN_FOLDER + "/tools/string");
 
 let schemaOptions = {
   toObject: {

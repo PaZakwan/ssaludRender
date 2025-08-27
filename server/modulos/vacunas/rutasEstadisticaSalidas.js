@@ -144,6 +144,8 @@ app.get(
                   fecha: {$dateToString: {format: "%Y-%m-%d", date: "$fecha"}},
                   pacienteDB: "$pacienteDB",
                   pacienteDocDB: "$pacienteDocDB",
+                  pacienteDocRespDB: "$pacienteDocRespDB",
+                  pacienteFecNacDB: "$pacienteFecNacDB",
                   pacienteSexoDB: "$pacienteSexoDB",
                   pacienteTelefonoDB: "$pacienteTelefonoDB",
 
@@ -165,6 +167,12 @@ app.get(
                   lote: "$lote",
                   vencimiento: {$dateToString: {format: "%Y-%m-%d", date: "$vencimiento"}},
                   dosis: "$dosis",
+                  qty_dosis: "$qty_dosis",
+                  estrategia: "$estrategia",
+
+                  cipres_fecha: {$dateToString: {format: "%Y-%m-%d", date: "$cipres_fecha"}},
+                  cipres_id: "$cipres_id",
+                  cipres_msg: "$cipres_msg",
                 },
               },
             };
@@ -196,10 +204,10 @@ app.get(
               pacienteDB: {
                 $ifNull: [
                   {
-                    $concat: ["$pacienteDB.apellido", ", ", "$pacienteDB.nombre"],
+                    $concat: [{$ifNull: ["$ps_nombreC", ""]}, " (PS ", "$ps_paciente", ")"],
                   },
                   {
-                    $concat: [{$ifNull: ["$ps_nombreC", ""]}, " (", "$ps_paciente", ")"],
+                    $concat: ["$pacienteDB.apellido", ", ", "$pacienteDB.nombre"],
                   },
                   {$toString: "$paciente"},
                 ],
@@ -207,19 +215,31 @@ app.get(
               pacienteDocDB: {
                 $ifNull: [
                   {
-                    $concat: ["$tipo_doc", " ", "$documento"],
+                    $concat: ["$ps_tipo_doc", " ", "$ps_doc", " (PS)"],
                   },
                   {
                     $concat: ["$pacienteDB.tipo_doc", " ", "$pacienteDB.documento"],
                   },
                   {
-                    $concat: ["Resp ", "$doc_responsable"],
+                    $concat: ["Resp ", "$ps_doc_resp", " (PS)"],
                   },
                   {
                     $concat: ["Resp ", "$pacienteDB.doc_responsable"],
                   },
                   "$vacio",
                 ],
+              },
+              pacienteDocRespDB: {
+                $ifNull: [
+                  {
+                    $concat: ["$ps_doc_resp", " (PS)"],
+                  },
+                  "$pacienteDB.doc_responsable",
+                  "$vacio",
+                ],
+              },
+              pacienteFecNacDB: {
+                $ifNull: ["$ps_fecha_nacimiento", "$fec_nac", "$pacienteDB.fec_nac", "$vacio"],
               },
               pacienteSexoDB: {
                 $ifNull: ["$sexo", "$pacienteDB.sexo", "$vacio"],
@@ -289,6 +309,12 @@ app.get(
               fecha: {$ifNull: ["$detalle_vacunaciones.fecha", "$noRetornaNada"]},
               pacienteDB: {$ifNull: ["$detalle_vacunaciones.pacienteDB", "$noRetornaNada"]},
               pacienteDocDB: {$ifNull: ["$detalle_vacunaciones.pacienteDocDB", "$noRetornaNada"]},
+              pacienteDocRespDB: {
+                $ifNull: ["$detalle_vacunaciones.pacienteDocRespDB", "$noRetornaNada"],
+              },
+              pacienteFecNacDB: {
+                $ifNull: ["$detalle_vacunaciones.pacienteFecNacDB", "$noRetornaNada"],
+              },
               pacienteSexoDB: {$ifNull: ["$detalle_vacunaciones.pacienteSexoDB", "$noRetornaNada"]},
               pacienteTelefonoDB: {
                 $ifNull: ["$detalle_vacunaciones.pacienteTelefonoDB", "$noRetornaNada"],
@@ -322,6 +348,12 @@ app.get(
               lote: {$ifNull: ["$detalle_vacunaciones.lote", "$noRetornaNada"]},
               vencimiento: {$ifNull: ["$detalle_vacunaciones.vencimiento", "$noRetornaNada"]},
               dosis: {$ifNull: ["$detalle_vacunaciones.dosis", "$noRetornaNada"]},
+              qty_dosis: {$ifNull: ["$detalle_vacunaciones.qty_dosis", "$noRetornaNada"]},
+              estrategia: {$ifNull: ["$detalle_vacunaciones.estrategia", "$noRetornaNada"]},
+
+              cipres_fecha: {$ifNull: ["$detalle_vacunaciones.cipres_fecha", "$noRetornaNada"]},
+              cipres_id: {$ifNull: ["$detalle_vacunaciones.cipres_id", "$noRetornaNada"]},
+              cipres_msg: {$ifNull: ["$detalle_vacunaciones.cipres_msg", "$noRetornaNada"]},
             })
             // borrar detalle
             .project({

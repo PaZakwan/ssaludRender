@@ -17,6 +17,7 @@ file_server/opciones/*
 
 # Ignora archivos
 public/static/config.json
+publicOld/static/config.json
 nodemon.json
 
 # omitir ignoracion xD

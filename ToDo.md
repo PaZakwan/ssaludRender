@@ -30,11 +30,11 @@
 
 |         |    SERVER    | OFFICE  |  HOME   |
 | :------ | :----------: | :-----: | :-----: |
-| S.O.    | Ubuntu 20.04 |  W 10   |  W 10   |
+| S.O.    | Ubuntu 20.04 |  W 10   |  W 11   |
 | Node    |   20.19.2    | 20.17.0 | 20.17.0 |
-| NPM     |    10.9.2    | 10.9.2  | 10.8.3  |
+| NPM     |    10.9.2    | 10.9.2  | 10.9.2  |
 | MongoDB |    5.0.31    | 5.0.28  | 5.0.28  |
-| Nodemon |     ---      |  3.1.9  |         |
+| Nodemon |     ---      |  3.1.9  |  3.1.9  |
 | PM2     |    5.4.0     |         |         |
 | Nginx   |              |         |         |
 | NVM     |              |         |         |
@@ -56,7 +56,7 @@ $ npm ls
 
 --- -->
 
-<!--##### Consultas MONGODB
+<!-- ##### Consultas MONGODB
 
 ```js
 // Consulta la cantidad de Entregas de Medicamentos segun la Hora Durante el 2024
@@ -84,146 +84,369 @@ db.getCollection("InsumoEntregas").aggregate([
 ]);
 
 // Consulta para correcion de Aplicaciones de Vacunas con fechas de Aplicacion improbables.
-db.getCollection('VacunaAplicaciones').find({
-  ps_id : {$exists: 1},
-  $or : [
-    {fecha: {$gte: new Date()}},
-    {fecha: {$lte: ISODate("1900-01-01T00:00:00.000Z")}},
-  ]
-},
-{
-  fecha_aplicacion: { $dateToString: { format: "%Y-%m-%d", date: "$fecha" }},
-  fecha_nacimiento: { $dateToString: { format: "%Y-%m-%d", date: "$ps_fecha_nacimiento" }},
-  tipo_doc: "$tipo_doc",
-  documento: "$documento",
-  apelido_nombre: "$ps_nombreC",
-  _id:0
-})
-.sort({fecha:-1, ps_fecha_nacimiento:-1, _id:1})
+db.getCollection("VacunaAplicaciones")
+  .find(
+    {
+      ps_id: {$exists: 1},
+      $or: [{fecha: {$gte: new Date()}}, {fecha: {$lte: ISODate("1900-01-01T00:00:00.000Z")}}],
+    },
+    {
+      fecha_aplicacion: {$dateToString: {format: "%Y-%m-%d", date: "$fecha"}},
+      fecha_nacimiento: {$dateToString: {format: "%Y-%m-%d", date: "$ps_fecha_nacimiento"}},
+      tipo_doc: "$tipo_doc",
+      documento: "$documento",
+      apelido_nombre: "$ps_nombreC",
+      _id: 0,
+    }
+  )
+  .sort({fecha: -1, ps_fecha_nacimiento: -1, _id: 1});
 
 // Consulta para correcion de Pacientes con fechas de Nacimiento improbables.
-db.getCollection('pacientes').find({
-  $or : [
-    {fec_nac: {$gte: new Date().toISOString().substr(0,10)}},
-    {fec_nac: {$lte: "1900-01-01"}}
-  ]
-},
-{
-  fecha_nacimiento: "$fec_nac",
-  tipo_doc: "$tipo_doc",
-  documento: "$documento",
-  apellido: "$apellido",
-  nombre: "$nombre",
-  documento_responsable: "$doc_responsable",
-  _id:0
-})
-.sort({fec_nac:-1, doc_responsable:-1, _id:1})
+db.getCollection("pacientes")
+  .find(
+    {
+      $or: [
+        {fec_nac: {$gte: new Date().toISOString().substr(0, 10)}},
+        {fec_nac: {$lte: "1900-01-01"}},
+      ],
+    },
+    {
+      fecha_nacimiento: "$fec_nac",
+      tipo_doc: "$tipo_doc",
+      documento: "$documento",
+      apellido: "$apellido",
+      nombre: "$nombre",
+      documento_responsable: "$doc_responsable",
+      _id: 0,
+    }
+  )
+  .sort({fec_nac: -1, doc_responsable: -1, _id: 1});
 
 // Consulta para agrupar Pacientes con mismo Responsable.
-db.getCollection("pacientes").aggregate([
-  {$match: { doc_responsable:{$exists: 1} } },
-  {
-    $sort: {
-      fec_nac: -1,
-      _id: 1,
-    },
-  },
-  {
-    $group: {
-      _id: "$doc_responsable",
-      aCargoDe: {
-        $push: "$$ROOT",
+db.getCollection("pacientes").aggregate(
+  [
+    {$match: {doc_responsable: {$exists: 1}}},
+    {
+      $sort: {
+        fec_nac: -1,
+        _id: 1,
       },
-      totalCargo: {$sum: 1},
     },
-  },
-  {$match: { totalCargo:{$gt: 1} } },
-  {
-    $sort: {
-      totalCargo: 1,
-      _id: 1,
+    {
+      $group: {
+        _id: "$doc_responsable",
+        aCargoDe: {
+          $push: "$$ROOT",
+        },
+        totalCargo: {$sum: 1},
+      },
     },
-  }
-  // { $count: "totalResponsables" }
-],{allowDiskUse:true});
+    {$match: {totalCargo: {$gt: 1}}},
+    {
+      $sort: {
+        totalCargo: 1,
+        _id: 1,
+      },
+    },
+    // { $count: "totalResponsables" }
+  ],
+  {allowDiskUse: true}
+);
 
 // Consulta para agrupar Pacientes con mismo ps_id.
-db.getCollection("pacientes").aggregate([
-  { $match: { ps_id:{$exists: 1} } },
-  {
-    $sort: {
-      fec_nac: -1,
-      _id: 1,
-    },
-  },
-  { $unwind: { path: "$ps_id" } },
-  { $match: { ps_id:{$ne: "salud_adulto"} } },
-  {
-    $group: {
-      _id: "$ps_id",
-      mismoPS: {
-        $push: "$$ROOT",
+db.getCollection("pacientes").aggregate(
+  [
+    {$match: {ps_id: {$exists: 1}}},
+    {
+      $sort: {
+        fec_nac: -1,
+        _id: 1,
       },
-      repetido: {$sum: 1},
     },
-  },
-  { $match: { repetido:{$gt: 1} } },
-  {
-    $sort: {
-      repetido: -1,
-      _id: 1,
+    {$unwind: {path: "$ps_id"}},
+    {$match: {ps_id: {$ne: "salud_adulto"}}},
+    {
+      $group: {
+        _id: "$ps_id",
+        mismoPS: {
+          $push: "$$ROOT",
+        },
+        repetido: {$sum: 1},
+      },
     },
-  },
-  // { $count: "psRepetidos" }
-],{allowDiskUse:true});
+    {$match: {repetido: {$gt: 1}}},
+    {
+      $sort: {
+        repetido: -1,
+        _id: 1,
+      },
+    },
+    // { $count: "psRepetidos" }
+  ],
+  {allowDiskUse: true}
+);
 
 // Consulta para agrupar Pacientes con mismo ps_id. CUENTA CANTIDAD DE PS REPETIDOS
-db.getCollection("pacientes").aggregate([
-  { $match: { ps_id:{$exists: 1} } },
-  { $unwind: { path: "$ps_id" } },
-  { $match: { ps_id:{$ne: "salud_adulto"} } },
-  {
-    $group: {
-      _id: "$ps_id",
-      repetido: {$sum: 1},
+db.getCollection("pacientes").aggregate(
+  [
+    {$match: {ps_id: {$exists: 1}}},
+    {$unwind: {path: "$ps_id"}},
+    {$match: {ps_id: {$ne: "salud_adulto"}}},
+    {
+      $group: {
+        _id: "$ps_id",
+        repetido: {$sum: 1},
+      },
     },
-  },
-  { $match: { repetido:{$gt: 1} } },
-  { $count: "psRepetidos" },
-],{allowDiskUse:true});
+    {$match: {repetido: {$gt: 1}}},
+    {$count: "psRepetidos"},
+  ],
+  {allowDiskUse: true}
+);
 
 // Consulta para agrupar Pacientes (sin Documento) con mismo ps_id y fec_nac. (Se cargaron por duplicado?)
-db.getCollection("pacientes").aggregate([
-  { $match: { documento:{$exists: 0}, ps_id:{$exists: 1} } },
-  {
-    $sort: {
-      _id: 1,
-    },
-  },
-  { $unwind: { path: "$ps_id" } },
-  { $match: { ps_id:{$ne: "salud_adulto"} } },
-  {
-    $group: {
-      _id: {ps_id: "$ps_id",fec_nac:"$fec_nac"},
-      mismoPS: {
-        $push: "$$ROOT",
+db.getCollection("pacientes").aggregate(
+  [
+    {$match: {documento: {$exists: 0}, ps_id: {$exists: 1}}},
+    {
+      $sort: {
+        _id: 1,
       },
-      repetido: {$sum: 1},
     },
-  },
-  { $match: { repetido:{$gt: 1} } },
-  { $addFields: { ps_id: "$_id.ps_id" ,fec_nac: "$_id.fec_nac"}},
-  {
-    $sort: {
-      repetido: -1,
-      "_id.ps_id": 1,
+    {$unwind: {path: "$ps_id"}},
+    {$match: {ps_id: {$ne: "salud_adulto"}}},
+    {
+      $group: {
+        _id: {ps_id: "$ps_id", fec_nac: "$fec_nac"},
+        mismoPS: {
+          $push: "$$ROOT",
+        },
+        repetido: {$sum: 1},
+      },
     },
+    {$match: {repetido: {$gt: 1}}},
+    {$addFields: {ps_id: "$_id.ps_id", fec_nac: "$_id.fec_nac"}},
+    {
+      $sort: {
+        repetido: -1,
+        "_id.ps_id": 1,
+      },
+    },
+    //{ $count: "psRepetidosNoDocumento" }
+  ],
+  {allowDiskUse: true}
+);
+
+// Consulta para obtener pacientes que faltan vacunar entre edad
+db.getCollection("VacunaAplicaciones").aggregate(
+  [
+    {
+      $match: {
+        paciente: {$exists: 1},
+        $or: [
+          {
+            ps_fecha_nacimiento: {
+              $gte: ISODate("2020-07-04T00:00:00.000Z"),
+              $lte: ISODate("2025-01-04T00:00:00.000Z"),
+            },
+          },
+          {ps_fecha_nacimiento: null},
+        ],
+      },
+    },
+    {$sort: {_id: -1}},
+    {
+      $group: {
+        _id: "$paciente",
+        aplicaciones: {
+          $push: {
+            origen: "$origen",
+            insumo: "$insumo",
+            estrategia: "$estrategia",
+          },
+        },
+        //totalAplicaciones: { $sum: 1 },
+      },
+    },
+    {
+      $match: {
+        "aplicaciones.insumo": {$ne: ObjectId("64a56ec37d749887ed6aa73b")},
+      },
+    },
+    {
+      $lookup: {
+        from: "pacientes",
+        localField: "_id",
+        foreignField: "_id",
+        as: "pacienteDB",
+      },
+    },
+    {
+      $match: {
+        "pacienteDB.fec_nac": {$gte: "2020-07-04", $lte: "2025-01-04"},
+      },
+    },
+    {$addFields: {areaMasReciente: {$arrayElemAt: ["$aplicaciones.origen", 0]}}},
+    {
+      $project: {
+        _id: 0,
+        aplicaciones: 0,
+      },
+    },
+    {
+      $lookup: {
+        from: "areas",
+        localField: "areaMasReciente",
+        foreignField: "_id",
+        as: "areaMasReciente",
+      },
+    },
+    {
+      $addFields: {
+        areaMasReciente: {$arrayElemAt: ["$areaMasReciente.area", 0]},
+        zonaMasReciente: {$arrayElemAt: ["$areaMasReciente.zona_us", 0]},
+      },
+    },
+    {$unwind: {path: "$pacienteDB", preserveNullAndEmptyArrays: true}},
+    {
+      $addFields: {
+        "paciente-apellido": "$pacienteDB.apellido",
+        "paciente-nombre": "$pacienteDB.nombre",
+        "paciente-sexo": "$pacienteDB.sexo",
+        "paciente-fec_nac": "$pacienteDB.fec_nac",
+        "paciente-tipo_doc": "$pacienteDB.tipo_doc",
+        "paciente-documento": "$pacienteDB.documento",
+        "paciente-doc_responsable": "$pacienteDB.doc_responsable",
+        "paciente-telefono": "$pacienteDB.telefono",
+        "paciente-telefono_alt": "$pacienteDB.telefono_alt",
+        "paciente-email": "$pacienteDB.email",
+        "paciente-dir_calle": "$pacienteDB.dir_calle",
+        "paciente-dir_numero": "$pacienteDB.dir_numero",
+        "paciente-dir_barrio": "$pacienteDB.dir_barrio",
+      },
+    },
+    {$project: {pacienteDB: 0}},
+    {$sort: {areaMasReciente: 1, "paciente-fec_nac": 1}},
+    //{ $skip: 0 },
+    //{ $limit: 50 },
+    //{ $count: "totalPaciente6M-5ASinVacuna" },
+  ],
+  {allowDiskUse: true}
+);
+
+// ACTUALIZAR DATA DE CAMPOS
+db.getCollection("tabla").updateMany({field: "Val"}, {$set: {field: "NewVal"}});
+
+// COPIAR DATA DE UN CAMPO A OTRO
+db.getCollection("tabla").updateMany({field: {$exists: true}}, {$set: {NewField: "$field"}});
+
+// MODIFICAR DATA DE LOS DOCUMENTOS PERSONALIZADO
+db.getCollection("tabla")
+  .find({
+    // CAMPOS EXISTENTES Y NO NULL
+    $and: [{field: {$ne: null}}, {field: {$exists: true}}]
+    })
+  .forEach(function (doc) {
+    let upDoc = {$set: {}, $unset:{}};
+    // to String
+    upDoc.$set.field = "" + doc.field;
+    // to Number
+    upDoc.$set.field = Number(doc.field);
+    // to Boolean
+    upDoc.$set.field = true;
+    // String to Date
+    upDoc.$set.field = new Date(doc.field);
+    // Date to String YYYY-MM-DD
+    upDoc.$set.field = doc.field.toISOString().slice(0, 10);
+
+    // RENOMBRAR CAMPOS
+    if (doc.field) {
+      upDoc.$set["newField"] = doc.field;
+      upDoc.$unset["field"] = 1;
+    }
+    // console.log
+    print(doc)
+    print(upDoc)
+    db.getCollection("tabla").updateOne({_id: doc._id}, upDoc);
+  });
+
+// REMOVER CAMPOS EXISTENTES
+db.getCollection("tabla").updateMany(
+  {ubicacion_anterior: {$exists: true}},
+  {$unset: {ubicacion_anterior: 1}}
+);
+
+// RENOMBRAR CAMPOS EXISTENTES
+db.getCollection("tabla").updateMany(
+  {field: {$exists: true}},
+  {$rename: {field: "NewFieldName"}}
+);
+
+// COPIAR DATA DE UNA TABLA (Collection) -> another Collection
+db.getCollection("tabla")
+  .aggregate([{$match: {categoria: "Value"}}, {$merge: "tablaDestino"}])
+
+// BORRAR DOCUMENTOS deja primeros 20 y borra en tandas de 500.000
+db.getCollection("tabla").remove({
+  _id: {
+    $in: db
+      .getCollection("tabla")
+      .find({})
+      .skip(20)
+      .limit(500000)
+      .map((doc) => doc._id),
   },
-  //{ $count: "psRepetidosNoDocumento" }
-],{allowDiskUse:true});
+});
 
 // Exportar desde Robo3T agregar a las consultas "toArray" y cambiar vista para copiar como json.
-.toArray()
+.toArray();
+
+// ACTUALIZAR VacunaAplicaciones 2025-08-11 LISTO ADAPTAR PARA QUE ACTUALICE fec_nac de los que no tienen ps_id?
+db.getCollection("VacunaAplicaciones")
+  .find({})
+   .skip(1000000)
+  // .skip(1100000)
+  // .skip(1200000)
+  // .skip(1300000)
+  // .skip(1400000)
+  // .skip(1500000)
+  // .skip(1600000)
+  // .skip(1700000)
+  // .skip(1800000)
+  // .skip(1900000)
+  // 7 min (380+ seg) aprox cada 100k de documentos
+  .limit(100000)
+  .forEach(function (doc) {
+    let upDoc = { $set: {}, $unset: {} };
+    //SI ps_id existe ->
+        //tipo_doc, documento -> +ps_tipo_doc, +ps_doc
+        //doc_responsable -> +ps_doc_resp.
+    //ps_fecha_nacimiento (historico) agregar +fec_nac (reportes).
+
+    if (doc.tipo_doc) {
+        if (doc.ps_id) {
+            upDoc.$set["ps_tipo_doc"] = doc.tipo_doc;
+        }
+      upDoc.$unset["tipo_doc"] = 1;
+    }
+    if (doc.documento) {
+        if (doc.ps_id) {
+            upDoc.$set["ps_doc"] = doc.documento;
+        }
+      upDoc.$unset["documento"] = 1;
+    }
+    if (doc.doc_responsable) {
+        if (doc.ps_id) {
+            upDoc.$set["ps_doc_resp"] = doc.doc_responsable;
+        }
+      upDoc.$unset["doc_responsable"] = 1;
+    }
+    if (doc.ps_fecha_nacimiento) {
+      upDoc.$set["fec_nac"] = doc.ps_fecha_nacimiento.toISOString().slice(0, 10);
+    }
+    print(upDoc)
+    db.getCollection("VacunaAplicaciones").updateOne({_id: doc._id}, upDoc);
+  });
 ```
 
 --- -->
@@ -255,37 +478,37 @@ db.getCollection("pacientes").aggregate([
 
 - [ ] ‼️ Vacunas - CIPRES -> INTEROPERABILIDAD
 
-  - [ ] Alta Pacientes con/sin documento en sistema de CIPRES.
+  - [~] Credenciales para acceder a la API de CIPRES...
   - [~] Matcheo de Aplicaciones.
-  - [~] Mensajes de Error.
-  - [ ] Posibilidad de correccion de Aplicaciones.
 
-- [ ] ‼️ HICLEM - Salud Adulto -> Modulo de Medicacion (Consolidado)
 - [ ] ‼️ PACIENTE - UNIFICACION -> Apartado para UNIR... ASIGNAR A UN PACIENTE, las id del otro (Aplicaciones/Entregas/Hiclem) y luego borrarlo.
       Boton en dialog paciente.
       Seccion para unificacion (HICLEM), con boton para traer posibles candidatos de repetidos.
 
-- [ ] ‼️ PACIENTE - Duplicado BD -> sin documento pero si Responsable se carga nuevamente)? VER!!!
-- [ ] ‼️ Vacunas - Aplicaciones -> SCRIPT LINKEAR APLICACIONES
-      SIN-> paciente (PACIENTE ID) y documento,
-      CON-> ps_paciente(id), doc_responsable.
-      db.getCollection('VacunaAplicaciones').find({paciente:{$exists:0},documento:{$exists:0},ps_paciente:{$exists:1},doc_responsable:{$exists:1}}) -> buscar con ps_paciente en Pacientes ps_id -> si existe actualizar Aplicacion.
+- [ ] ‼️ Farmacia/Vacunas -> Estado de Insumos (solo utilizables para reportes, historica).
+
+- [ ] ‼️ Vacunas - Aplicaciones -> ESPERAR IMPORTACION DEL MATERNO + Historicos -> SCRIPT LINKEAR APLICACIONES
+      SIN-> paciente (PACIENTE ID) y ps_doc,
+      CON-> ps_paciente(id), ps_doc_resp.
+      db.getCollection('VacunaAplicaciones').find({paciente:{$exists:0},ps_doc:{$exists:0},ps_paciente:{$exists:1},ps_doc_resp:{$exists:1}}) -> buscar con ps_paciente en Pacientes ps_id -> si existe actualizar Aplicacion.
       each -> find and save
 
-- [ ] Farmacia/Vacunas -> Unificar Filtros en (Back! y Front?)
+- [ ] Sistema - Date -> Input Date Range Select -> con la posibilidad de seleccionar años... o mes actual... o mes anterior...
+      wip date-range
+
+- [ ] Farmacia/Vacunas - Filtros Agregar boton seleccionar todos (areas).
+- [ ] Farmacia/Vacunas - Filtros Agregar boton seleccionar grupo por ejemplo por zonas para areas o por categoria para insumos.
 
 - [ ] Farmacia/Vacunas - BUSCAR POR LOTE, en todos los buscadores | filtros.
-
 - [ ] Farmacia/Vacunas - BUSCAR TODO TIPO DE MOVIMIENTO POR LOTE. CONTROL CENTRAL.
+
+- [ ] ‼️ HICLEM - Salud Adulto -> Modulo de Medicacion (Consolidado)
 
 - [ ] Farmacia - Permisos -> Supervisores por area.
 
 - [ ] Sistema -> Notificar al Loguear si hay algun Mantenimiento Programado [1 semana](Dialog Informativo con fecha-hora).
 
-- [ ] Sistema - Date -> Input Date Range Select -> con la posibilidad de seleccionar años... o mes actual... o mes anterior...
-      wip date-range
-
-- [ ] Municipio - Nombre de dominio para SiGiSeSaM.
+- [ ] Municipio - Nombre de dominio para G.I.SA.M.
 
 ### En Progreso Secundario
 
