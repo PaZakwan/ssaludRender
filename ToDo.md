@@ -476,16 +476,52 @@ db.getCollection("VacunaAplicaciones")
 - [ ] Actualizar - MongoDB => 5.0 -> 6.0 -> [Compatibility](https://www.mongodb.com/docs/v6.0/release-notes/6.0-compatibility/)
 - [ ] Actualizar - Vue-Cli => Vue-Cli -> Vite -> [Migrate](https://vueschool.io/articles/vuejs-tutorials/how-to-migrate-from-vue-cli-to-vite/)
 
+- [ ] ‼️ Vacunas - Sistema -> MongoDB Script -> Unificar areas de la Maternidad... ihbafshbjashbjkfsda Capa 8
+      HORARIO - ANTES DE LAS 11:00 -> Horario con menor carga.
+      Maternidad Estela de Carlotto -> Maternidad Carlotto (CIPRES Maternidad)
+      ObjectId("601d4f84dba59803f718c935") -> ObjectId("6871182993b2e6a417961a2b")
+
+      - [ ] VacunaStock => db.getCollection("VacunaStock").updateMany({area: ObjectId("601d4f84dba59803f718c935")}, {$set: {area: ObjectId("6871182993b2e6a417961a2b")}});
+
+      - [ ] VacunaAplicaciones => db.getCollection("VacunaAplicaciones").updateMany({origen: ObjectId("601d4f84dba59803f718c935")}, {$set: {origen: ObjectId("6871182993b2e6a417961a2b")}});
+
+      - [ ] VacunaIngreso => db.getCollection("VacunaIngreso").updateMany({destino: ObjectId("601d4f84dba59803f718c935")}, {$set: {destino: ObjectId("6871182993b2e6a417961a2b")}});
+
+      - [ ] VacunaDescartes => db.getCollection("VacunaDescartes").updateMany({origen: ObjectId("601d4f84dba59803f718c935")}, {$set: {origen: ObjectId("6871182993b2e6a417961a2b")}});
+
+      - [ ] Cambiar Nombre / Actualizar datos => Maternidad Carlotto (CIPRES Maternidad) -> Maternidad Estela de Carlotto
+
+      - [ ] Sacar permisos -> Maternidad Estela de Carlotto - ObjectId("601d4f84dba59803f718c935")
+
+      - [ ] Borrar area -> Maternidad Estela de Carlotto - ObjectId("601d4f84dba59803f718c935")
+
+- [ ] ‼️ Vacunas - Aplicacion -> Quitar input de edad_tipo/edad_valor... no sirve mas.. solo fecha de nacimiento, ver como modificar y los reportes... etarios, etc.
+      VER si combiene editar datos del paciente con un emit desde el componente de selected -> @selectedPaciente="({paciente}) => pacienteSeleccionado(paciente)", teniendo en cuenta el "STEP" del dialog de vacunacion... (LO MISMO PENSAR SI COMBIENE MANEJAR TODOS LOS CLOSE.FINISH CON EMITS... SI PORQUE SON OPTATIVOS Y SON MEJOR MANEJABLES POR LOS PARENTS COMPONENTS MAS PERSONALIZABLES)
+
 - [ ] ‼️ Vacunas - CIPRES -> INTEROPERABILIDAD
 
   - [~] Credenciales para acceder a la API de CIPRES...
   - [~] Matcheo de Aplicaciones.
 
-- [ ] ‼️ PACIENTE - UNIFICACION -> Apartado para UNIR... ASIGNAR A UN PACIENTE, las id del otro (Aplicaciones/Entregas/Hiclem) y luego borrarlo.
-      Boton en dialog paciente.
-      Seccion para unificacion (HICLEM), con boton para traer posibles candidatos de repetidos.
+- [ ] ‼️ PACIENTE - UNIFICACION -> ASIGNAR A UN PACIENTE, las id del otro (ref: "Paciente") y luego BORRARLO al otro.
+
+  - [ ] Permiso Admin General | Permisos en cada modulo con modificacion en solo su modulo y lectura de los demas.
+
+  - [ ] Boton en dialog paciente -> Select Paciente 2 -> Pantalla Union | Marcar (futura union).
+  - [ ] Herramienta Admin General ->
+
+    - [ ] Auto Marcar Duplicados (script baches) -> Apellido y Fec Nac coincidan (Mellizos | Gemelos).
+    - [ ] Duplicados Manual -> Select Paciente 1 y Select Paciente 2 -> Opciones: Pantalla Union | Marcar (futura union).
+    - [ ] Gestion Duplicados (Marcados previamente) -> Pantalla Union con posibilidad de ver el siguiente Marcado.
+
+  - [~] Select Paciente
+  - [ ] Pantalla Union -> Desmarcar (si estaban Marcados) | Unificar (and complete finish function if exist)
+  - [ ] Paciente Marca -> Una Marca por Paciente
 
 - [ ] ‼️ Farmacia/Vacunas -> Estado de Insumos (solo utilizables para reportes, historica).
+
+- [ ] Farmacia - Entregas -> Crear nueva pagina de Faltantes similar a Entregas y Solicitudes, cantidad de insumo mostrando (recomendado y stock), Liberar seleccion de todos los insumos para ver que y quien pidio en las salas.
+- [ ] ‼️ HICLEM - Salud Adulto -> Modulo de Medicacion (Consolidado)
 
 - [ ] ‼️ Vacunas - Aplicaciones -> ESPERAR IMPORTACION DEL MATERNO + Historicos -> SCRIPT LINKEAR APLICACIONES
       SIN-> paciente (PACIENTE ID) y ps_doc,
@@ -501,8 +537,6 @@ db.getCollection("VacunaAplicaciones")
 
 - [ ] Farmacia/Vacunas - BUSCAR POR LOTE, en todos los buscadores | filtros.
 - [ ] Farmacia/Vacunas - BUSCAR TODO TIPO DE MOVIMIENTO POR LOTE. CONTROL CENTRAL.
-
-- [ ] ‼️ HICLEM - Salud Adulto -> Modulo de Medicacion (Consolidado)
 
 - [ ] Farmacia - Permisos -> Supervisores por area.
 

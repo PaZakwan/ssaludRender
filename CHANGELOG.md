@@ -27,6 +27,14 @@
 
 ---
 
+### [1.7.20250922] - 2025-09-22
+
+- 📈 Improved a Sistema - Confirm | Mensaje | Error => Se mejoraron los mensajes con mucho texto, ahora se puede scrollear el contenido sin perder los botones.
+
+- ✨ Added a Vacunas - Aplicacion => Antes de realizar la aplicacion de Vacunas, ahora se puede Verificar si existe un plan en CIPRES con la informacion cargada de la aplicacion.
+- 📈 Improved a Vacunas - Aplicacion => Se mejoraron los mensajes de error al no encontrar un Plan para realizar el registro en CIPRES.
+- ✨ Added a Vacunas - Insumos => Vacunas opcion de Dosis -> Dosis Extra (Doble y Triple Viral).
+
 ### [1.7.20250827] - 2025-08-27
 
 - 🚨 Changed a Sistema - Nombre => Sistema De Gestion Integral de la Secretaria de Salud de Moreno (Si.G.I.Se.Sa.M) -> Gestion Integral de Salud Moreno (G.I.SA.M.).

@@ -524,6 +524,9 @@ app.get(
         if (JSON.parse(req.query.insumoSelect)?.condiciones) {
           insumoSelect.condicionesDB = {$ifNull: ["$insumoDB.condiciones", "$vacio"]};
         }
+        if (JSON.parse(req.query.insumoSelect)?.id_Nomivac) {
+          insumoSelect.id_NomivacDB = {$ifNull: ["$insumoDB.id_Nomivac", "$vacio"]};
+        }
       }
 
       let stockDB = await VacunaStock.aggregate()

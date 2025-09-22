@@ -26,7 +26,8 @@
       "Refuerzo 3ero",
       "Adicional",
       "Dosis Cero",
-      "Neonatal"
+      "Neonatal",
+      "Dosis Extra"
     ],
     "qty_dosis_posibles": ["Media dosis", "Doble dosis"],
     "vacunas_estrategia": [

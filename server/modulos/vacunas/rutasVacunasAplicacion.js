@@ -224,6 +224,7 @@ app.get(
         .unwind({path: "$insumoDB", preserveNullAndEmptyArrays: true})
         .addFields({
           insumoDB: {$ifNull: ["$insumoDB.nombre", {$toString: "$insumo"}, "$vacunaName"]},
+          insumoNomivacDB: {$ifNull: ["$insumoDB.id_Nomivac", "$vacio"]},
         });
 
       if (req.query.select === "lite") {
@@ -240,6 +241,7 @@ app.get(
           pacienteDocRespDB: 1,
           oSocial: 1,
           insumoDB: 1,
+          insumoNomivacDB: 1,
           procedencia: 1,
           lote: 1,
           vencimiento: 1,

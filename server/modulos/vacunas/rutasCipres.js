@@ -151,7 +151,17 @@ app.put(
             runValidators: true,
           }
         ).exec();
-        return errorMessage(res, {message: verifica.error.message}, verifica.error.status);
+        return errorMessage(
+          res,
+          {
+            message: [
+              verifica.error.message,
+              "\n\nPlanes Existentes de la Vacuna en CIPRES ->",
+              ...registro.planesVacunasCipres,
+            ],
+          },
+          verifica.error.status
+        );
       }
 
       // registrar aplicacion en CIPRES.
@@ -216,6 +226,43 @@ app.put(
       }
       return errorMessage(res, err, err.status ?? err.code);
     }
+  }
+);
+
+app.post(
+  "/vacunas/cipres/planes_aplicacion",
+  [
+    verificaToken,
+    (req, res, next) => {
+      req.verificacionArray = [{prop: "vacunas"}];
+      next();
+    },
+    verificaArrayPropValue,
+  ],
+  async (req, res) => {
+    let body = isVacio({
+      dato: req.body,
+      //     vacioCero: true, // false,
+      vacioBoolean: true, // false,
+      inArr: true, // false,
+      inObj: true, // false,
+      borrar: true, // false,
+    });
+    if (body.vacio === true) {
+      return errorMessage(res, {message: "No se envió ningún dato."}, 412);
+    }
+    body = body.dato;
+
+    let planesVacunasCipres = await matchPlanesVacunasCIPRES({vacunacionDB: body});
+
+    if (planesVacunasCipres.error) {
+      return errorMessage(res, {message: planesVacunasCipres.error}, planesVacunasCipres.status);
+    }
+
+    return res.json({
+      ok: true,
+      planesVacunasCipres,
+    });
   }
 );
 
@@ -549,6 +596,7 @@ const matchCIPRES = async ({vacunacionDB, CIPRES}) => {
     "Refuerzo 3ero": "3º REFUERZO",
     Adicional: "ADICIONAL",
     "Dosis Cero": "DOSIS CERO",
+    "Dosis Extra": "DOSIS EXTRA",
 
     // Ex PSMoreno - Adaptacion no se usan mas
     Neonatal: "1º DOSIS",
@@ -558,23 +606,6 @@ const matchCIPRES = async ({vacunacionDB, CIPRES}) => {
     // "MEDIA DOSIS"
     // "MEDIA 1° DOSIS"
     // "MEDIA 2° DOSIS"
-    // "DOSIS EXTRA"
-  };
-  // estrategia: { name: descripcion, clase: (Esquema|Motivo) },
-  const miEstrategiaToCipres = {
-    Calendario: {name: "Regular", clase: "esquemas"},
-    Campaña: {name: "Campaña", clase: "motivos"},
-    Atrasado: {name: "Recupero", clase: "esquemas"},
-    "Prescripcion Medica": {name: "Prescripcion", clase: "esquemas"},
-    "Grupo de Riesgo": {name: "Riesgo", clase: "esquemas"},
-    "Post Exposicion": {name: "Exposicion", clase: "motivos"},
-    "Por excepcion": {name: "Excepcion", clase: "esquemas"},
-
-    // Ex PSMoreno - Adaptacion no se usan mas
-    Contactos: {name: "Exposicion", clase: "motivos"},
-    Terreno: {name: "Campaña", clase: "motivos"},
-    Internacion: {name: "Prescripcion", clase: "esquemas"},
-    "Pre Exposicion": {name: "Excepcion", clase: "esquemas"},
   };
 
   let registro = {
@@ -630,300 +661,72 @@ const matchCIPRES = async ({vacunacionDB, CIPRES}) => {
   }`;
 
   // BUSCAR planVacunacion CIPRES
-  // selectPlanVacunacionCIPRES({vacuna,dosis,estrategia(esquema|motivo),poblacionEspecial}) => id
+  // matchPlanesVacunasCIPRES({vacuna,dosis,estrategia(esquema|motivo),poblacionEspecial}) => id
   // {
   //   vacuna.idNomivac;
   //   planVacunacionDosis[dosis.id];
   //   descripcionEsquema | descripcionMotivo;
   //   descripcionPoblacion -> Embarazo, Puerperio, Grupos de riesgo, Personal de salud, Personal esencial
   // }
+  registro.planVacunacion = await matchPlanesVacunasCIPRES({
+    vacunacionDB: {
+      id_Nomivac: vacunacionDB.insumo.id_Nomivac,
+      edad_days_aplicacion: vacunacionDB.paciente.edad_days_aplicacion,
+      estrategia: vacunacionDB.estrategia,
+      dosis: vacunacionDB.dosis,
+      qty_dosis: vacunacionDB.qty_dosis,
+      embarazada_semana: vacunacionDB.embarazada_semana,
+      puerpera: vacunacionDB.puerpera,
+      riesgo: vacunacionDB.riesgo,
+      personal_salud: vacunacionDB.personal_salud,
+      personal_esencial: vacunacionDB.personal_esencial,
+    },
+    CIPRES,
+  });
 
-  // Caracteristica especial de poblacion
-  // vacunacionDB => embarazada_semana; puerpera; riesgo; personal_salud; personal_esencial;
-  let poblacion = {Default: []};
-  if (vacunacionDB.embarazada_semana > 0) {
-    poblacion["Embarazo"] = [];
-  }
-  if (vacunacionDB.puerpera) {
-    poblacion["Puerperio"] = [];
-  }
-  if (vacunacionDB.riesgo) {
-    poblacion["Grupos de Riesgo"] = [];
-  }
-  if (vacunacionDB.personal_salud) {
-    poblacion["Personal de Salud"] = [];
-  }
-  if (vacunacionDB.personal_esencial) {
-    poblacion["Personal Esencial"] = [];
-  }
-
-  // DESARROLLAR DOSIS ADMINISTRADA Y PLAN CON DIAS DE EDAD
-  // console.error("########################");
-  // Dosis Administrada -> Dosis completa, Media dosis, Doble dosis.
-
-  // comparar fecha (aplicacion) - fec_nac -> dias
-
-  // Adultos
-
-  // Hepatitis B		4015+
-  // Triple Viral SRP	4015+
-  // Doble Viral SR		4015+
-  // Fiebre Hemorragica	5475+
-  // Doble Bacteriana (dT)	5840+
-  // Antigripal Trivalente Adultos	Media dosis -> 180-809
-  // Antigripal Trivalente Adultos	Media dosis -> riesgo + 750-1139
-  // Antigripal Trivalente Adultos	mayores -> 23725+
-
-  // Pediátrica
-
-  // Antigripal Trivalente Pediátrica 	embarazada -> Doble dosis -> 4381+
-  // Antigripal Trivalente Pediátrica 	p salud -> Doble dosis -> 6206+
-  // Antigripal Trivalente Pediátrica 	puerpera -> Doble dosis -> 4381+
-  // Antigripal Trivalente Pediátrica 	p esencial -> Doble dosis -> 6206+
-  // Antigripal Trivalente Pediátrica 	riesgo -> Doble dosis -> 1080-3284
-  // Antigripal Trivalente Pediátrica 	riesgo -> Doble dosis -> 3285+
-  // Antigripal Trivalente Pediátrica 	mayores -> Doble dosis -> 23725+
-
-  // Media dosis
-
-  // Antigripal Trivalente Adultos	Media dosis -> 180-809
-  // Antigripal Trivalente Adultos	Media dosis -> riesgo + 750-1139
-
-  // Doble dosis -> descontar de stock 2 dosis y al borrar devolver 2.
-
-  // Hepatitis B
-  // Antigripal Trivalente Pediátrica 	mayores -> Doble dosis -> 23725+
-  // Antigripal Trivalente Pediátrica 	embarazada -> Doble dosis -> 4381+
-  // Antigripal Trivalente Pediátrica 	p salud -> Doble dosis -> 6206+
-  // Antigripal Trivalente Pediátrica 	puerpera -> Doble dosis -> 4381+
-  // Antigripal Trivalente Pediátrica 	p esencial -> Doble dosis -> 6206+
-  // Antigripal Trivalente Pediátrica 	riesgo -> Doble dosis -> 1080-3284
-  // Antigripal Trivalente Pediátrica 	riesgo -> Doble dosis -> 3285+
-
-  // recorrer planes de la vacuna (id_Nomivac)
-  for (
-    let index = 0;
-    index < CIPRES.planVacunacionesVacunaNOMIVAC[vacunacionDB.insumo.id_Nomivac]?.length;
-    index++
-  ) {
-    // console.log("########################");
-    // console.log("## planVacunaciones index", index);
-    // console.log("########################");
-
-    // seleccionar con dosis y edad
-    // console.log("vacunacionDB.dosis", miDosisToCipres[vacunacionDB.dosis]);
-    // console.log(
-    //   "vacunacionDB.paciente.edad_days_aplicacion",
-    //   vacunacionDB.paciente.edad_days_aplicacion
-    // );
-    // console.log(
-    //   "CIPRES.planVacunacionDosis",
-    //   CIPRES.planVacunacionesVacunaNOMIVAC[vacunacionDB.insumo.id_Nomivac][index]
-    //     .planVacunacionDosis
-    // );
-    if (
-      CIPRES.planVacunacionesVacunaNOMIVAC[vacunacionDB.insumo.id_Nomivac][
-        index
-      ].planVacunacionDosis.some(
-        (dosis) =>
-          dosis.dosis.descripcionDosis === miDosisToCipres[vacunacionDB.dosis] &&
-          dosis.edadDesde <= vacunacionDB.paciente.edad_days_aplicacion &&
-          vacunacionDB.paciente.edad_days_aplicacion <= dosis.edadHasta
-      ) === false
-    ) {
-      // dosis no coincide, continua con siguiente plan
-      // console.log("dosis y edad no existe");
-      continue;
-    }
-    // console.log("dosis y edad existe");
-
-    // seleccionar con qty_dosis (DosisAdministrada) si existe (Media dosis|Doble dosis)
-    if (
-      vacunacionDB.qty_dosis &&
-      vacunacionDB.qty_dosis !==
-        CIPRES.planVacunacionesVacunaNOMIVAC[vacunacionDB.insumo.id_Nomivac][index]
-          .descDosisAdministrada
-    ) {
-      // qty_dosis no coincide, continua con siguiente plan
-      // console.log(
-      //   "Dosis Administrada",
-      //   CIPRES.planVacunacionesVacunaNOMIVAC[vacunacionDB.insumo.id_Nomivac][index]
-      //     .descDosisAdministrada
-      // );
-      continue;
-    }
-
-    // seleccionar con estrategia (esquema|motivo)
-    let estrategia = [];
-    // separar cadena de texto CIPRES en palabras del
-    // descripcionEsquema;
-    if (miEstrategiaToCipres[vacunacionDB.estrategia].clase === "esquemas") {
-      estrategia.push(
-        ...CIPRES.planVacunacionesVacunaNOMIVAC[vacunacionDB.insumo.id_Nomivac][
-          index
-        ].descripcionEsquema.split(" ")
-      );
-    }
-    // descripcionMotivo;
-    if (miEstrategiaToCipres[vacunacionDB.estrategia].clase === "motivos") {
-      estrategia.push(
-        ...CIPRES.planVacunacionesVacunaNOMIVAC[vacunacionDB.insumo.id_Nomivac][
-          index
-        ].descripcionMotivo.split(" ")
-      );
-    }
-    // comparar si alguna de las palabras es de nuestra estrategia
-    for (let index2 = 0; index2 < estrategia.length; index2++) {
-      if (
-        // Case-insensitive and accent-insensitive comparison
-        estrategia[index2].localeCompare(
-          miEstrategiaToCipres[vacunacionDB.estrategia].name,
-          undefined,
-          {
-            sensitivity: "base",
-          }
-        ) === 0
-      ) {
-        estrategia = true;
-        break;
-      }
-    }
-    // console.log("vacunacionDB.estrategia", miEstrategiaToCipres[vacunacionDB.estrategia]);
-    // console.log(
-    //   "descripcionEsquema",
-    //   CIPRES.planVacunacionesVacunaNOMIVAC[vacunacionDB.insumo.id_Nomivac][index].descripcionEsquema
-    // );
-    // console.log(
-    //   "descripcionMotivo",
-    //   CIPRES.planVacunacionesVacunaNOMIVAC[vacunacionDB.insumo.id_Nomivac][index].descripcionMotivo
-    // );
-    // console.log("estrategia", estrategia);
-    if (estrategia !== true) {
-      // estrategia no coincide, continua con siguiente plan
-      // console.log("estrategia no existe");
-      continue;
-    }
-
-    // separar por poblacion
-    switch (
-      CIPRES.planVacunacionesVacunaNOMIVAC[vacunacionDB.insumo.id_Nomivac][index]
-        .descripcionPoblacion
-    ) {
-      case "Embarazo":
-        poblacion["Embarazo"]?.push(
-          CIPRES.planVacunacionesVacunaNOMIVAC[vacunacionDB.insumo.id_Nomivac][index]
-        );
-        break;
-
-      case "Puerperio":
-        poblacion["Puerperio"]?.push(
-          CIPRES.planVacunacionesVacunaNOMIVAC[vacunacionDB.insumo.id_Nomivac][index]
-        );
-        break;
-
-      case "Grupos de riesgo":
-        poblacion["Grupos de Riesgo"]?.push(
-          CIPRES.planVacunacionesVacunaNOMIVAC[vacunacionDB.insumo.id_Nomivac][index]
-        );
-        break;
-
-      case "Personal de salud":
-        poblacion["Personal de Salud"]?.push(
-          CIPRES.planVacunacionesVacunaNOMIVAC[vacunacionDB.insumo.id_Nomivac][index]
-        );
-        break;
-
-      case "Personal esencial":
-        poblacion["Personal Esencial"]?.push(
-          CIPRES.planVacunacionesVacunaNOMIVAC[vacunacionDB.insumo.id_Nomivac][index]
-        );
-        break;
-
-      default:
-        if (
-          CIPRES.planVacunacionesVacunaNOMIVAC[vacunacionDB.insumo.id_Nomivac][index]
-            .descripcionEsquema === "Grupos de Riesgo"
-        ) {
-          poblacion["Grupos de Riesgo"]?.push(
-            CIPRES.planVacunacionesVacunaNOMIVAC[vacunacionDB.insumo.id_Nomivac][index]
-          );
-          break;
-        }
-        if (
-          CIPRES.planVacunacionesVacunaNOMIVAC[vacunacionDB.insumo.id_Nomivac][index]
-            .descripcionMotivo === "Grupos de Riesgo"
-        ) {
-          poblacion["Grupos de Riesgo"]?.push(
-            CIPRES.planVacunacionesVacunaNOMIVAC[vacunacionDB.insumo.id_Nomivac][index]
-          );
-          break;
-        }
-        poblacion["Default"].push(
-          CIPRES.planVacunacionesVacunaNOMIVAC[vacunacionDB.insumo.id_Nomivac][index]
-        );
-        break;
+  if (!registro.planVacunacion.err) {
+    registro.planesVacunasCipres = [
+      ...registro.planVacunacion.map((plan) => `\n\n${plan.descripcion}`),
+    ];
+    // filtrar y ver si queda uno solo con coincidencia 100
+    registro.planVacunacion = registro.planVacunacion.filter((plan) => plan.coincidencias === 100);
+    if (registro.planVacunacion.length === 1) {
+      // si quedo un solo elemento autoseleccionarlo
+      registro.planVacunacion = `/api/vacunacion/plan_vacunacion/${registro.planVacunacion[0].id}`;
+    } else if (registro.planVacunacion.length > 1) {
+      // tiene mas de un plan que coincide con los datos
+      registro.planVacunacion.err = `Plan de Vacunacion: Mas de un plan coincidente encontrado (${registro.planVacunacion.length}) en CIPRES.`;
+    } else {
+      // ningun plan coincidio con los datos
+      registro.planVacunacion.err =
+        "Plan de Vacunacion: Ningun plan coincidente encontrado en CIPRES.";
     }
   }
 
-  registro.planVacunacion = {
-    poblacion: "",
-    res: [],
-  };
-
-  // Prioridad de Seleccion => Embarazo > Puerperio > Grupos de riesgo > Personal de Salud > Personal Esencial
-  if (poblacion["Embarazo"]?.length > 0) {
-    registro.planVacunacion.poblacion = "Embarazo";
-    registro.planVacunacion.res = poblacion["Embarazo"];
-  } else if (poblacion["Puerperio"]?.length > 0) {
-    registro.planVacunacion.poblacion = "Puerperio";
-    registro.planVacunacion.res = poblacion["Puerperio"];
-  } else if (poblacion["Grupos de Riesgo"]?.length > 0) {
-    registro.planVacunacion.poblacion = "Grupos de Riesgo";
-    registro.planVacunacion.res = poblacion["Grupos de Riesgo"];
-  } else if (poblacion["Personal de Salud"]?.length > 0) {
-    registro.planVacunacion.poblacion = "Personal de Salud";
-    registro.planVacunacion.res = poblacion["Personal de Salud"];
-  } else if (poblacion["Personal Esencial"]?.length > 0) {
-    registro.planVacunacion.poblacion = "Personal Esencial";
-    registro.planVacunacion.res = poblacion["Personal Esencial"];
-  } else {
-    registro.planVacunacion.poblacion = "Default";
-    registro.planVacunacion.res = poblacion["Default"];
-  }
-
-  // console.log("Embarazo", poblacion["Embarazo"]);
-  // console.log("Puerperio", poblacion["Puerperio"]);
-  // console.log("Grupos", poblacion["Grupos de Riesgo"]);
-  // console.log("Salud", poblacion["Personal de Salud"]);
-  // console.log("Esencial", poblacion["Personal Esencial"]);
-  // console.log("Default", poblacion["Default"]);
-
-  // si quedo un array con un solo elemento autoseleccionarlo
-  if (registro.planVacunacion.res.length === 1) {
-    registro.planVacunacion = `/api/vacunacion/plan_vacunacion/${registro.planVacunacion.res[0].id}`;
-  }
-  // tiene mas de un plan que coincide con los datos
-  else if (registro.planVacunacion.res.length > 1) {
-    registro.planVacunacion.err = `Plan de Vacunacion: Mas de un plan encontrado (${registro.planVacunacion.res.length}) en CIPRES.`;
-  }
-  // ningun plan coincide con los datos
-  else {
-    registro.planVacunacion.err = "Plan de Vacunacion: Ningun plan encontrado en CIPRES.";
-  }
   if (registro.planVacunacion.err) {
     registro.planVacunacion.err +=
-      `\nDatos-> Vacuna: ${vacunacionDB.insumo.nombre} (${vacunacionDB.insumo.id_Nomivac}).` +
+      "\nDatos Enviados ->" +
+      `\nVacuna: ${vacunacionDB.insumo.nombre} (${vacunacionDB.insumo.id_Nomivac}).` +
+      `\nDosis Administrada: ${vacunacionDB.qty_dosis ?? "Dosis completa"}.` +
+      `\nEstrategia: ${vacunacionDB.estrategia}. (Motivo|Esquema CIPRES)` +
+      `\nPoblacion: ${
+        vacunacionDB.embarazada_semana
+          ? "Embarazada"
+          : vacunacionDB.puerpera
+          ? "Puerpera"
+          : vacunacionDB.riesgo
+          ? "Grupo de Riesgo"
+          : vacunacionDB.personal_salud
+          ? "Personal de Salud"
+          : vacunacionDB.personal_esencial
+          ? "Personal de Esencial"
+          : "Default"
+      }.` +
       `\nDosis: ${vacunacionDB.dosis}.` +
-      ` Dosis Administrada: ${vacunacionDB.qty_dosis ?? "Dosis completa"}.` +
-      `\nEstrategia: ${vacunacionDB.estrategia}.` +
-      `\nPoblacion: ${registro.planVacunacion.poblacion}.` +
-      ` Edad Paciente: ${vacunacionDB.paciente.edad_days_aplicacion}.\n`;
+      `\nEdad Paciente: ${vacunacionDB.paciente.edad_days_aplicacion} (dias).\n`;
   }
 
-  // console.error("########################");
-  // console.log("planesPoblacion", poblacion);
-  // console.log("registro.planVacunacion", registro.planVacunacion);
-
+  // registro.planVacunacion.err += "\nPlanes Existentes de la Vacuna en CIPRES ->";
   return registro;
 };
 
@@ -1266,6 +1069,342 @@ const matchPacienteCIPRES = async ({
       err: `Paciente: ${error.message}.\n`,
     };
   }
+};
+
+const matchPlanesVacunasCIPRES = async ({vacunacionDB, CIPRES}) => {
+  // Comparar planes de CIPRES con los datos recibidos, retornar todos los planes de la vacuna
+  // pero marcando opciones coincidentes y ordenados por mayor coincidencia
+  // Prioridad de Seleccion => Embarazo > Puerperio > Grupos de riesgo > Personal de Salud > Personal Esencial ?
+
+  // {miDosis : descripcionDosis}
+  const miDosisToCipres = {
+    Unica: "UNICA DOSIS",
+    "1era": "1º DOSIS",
+    "2da": "2º DOSIS",
+    "3era": "3º DOSIS",
+    "4ta": "4º DOSIS",
+    "5ta": "5º DOSIS",
+    "6ta": "6º DOSIS",
+    "7ma": "7º DOSIS",
+    "8va": "8° DOSIS",
+    "9na": "9° DOSIS",
+    "10ma": "10° DOSIS",
+    Anual: "DOSIS ANUAL",
+    Refuerzo: "REFUERZO",
+    "Refuerzo 2do": "2º REFUERZO",
+    "Refuerzo 3ero": "3º REFUERZO",
+    Adicional: "ADICIONAL",
+    "Dosis Cero": "DOSIS CERO",
+    "Dosis Extra": "DOSIS EXTRA",
+
+    // Ex PSMoreno - Adaptacion no se usan mas
+    Neonatal: "1º DOSIS",
+    "Refuerzo 4to": "REFUERZO",
+
+    // CIPRES, no SISA (NOMIVAC)
+    // "MEDIA DOSIS"
+    // "MEDIA 1° DOSIS"
+    // "MEDIA 2° DOSIS"
+  };
+  // estrategia: { name: descripcion, clase: (Esquema|Motivo) },
+  const miEstrategiaToCipres = {
+    Calendario: {name: "Regular", clase: "esquemas"},
+    Campaña: {name: "Campaña", clase: "motivos"},
+    Atrasado: {name: "Recupero", clase: "esquemas"},
+    "Prescripcion Medica": {name: "Prescripcion", clase: "esquemas"},
+    "Grupo de Riesgo": {name: "Riesgo", clase: "esquemas"},
+    "Post Exposicion": {name: "Exposicion", clase: "motivos"},
+    "Por excepcion": {name: "Excepcion", clase: "esquemas"},
+
+    // Ex PSMoreno - Adaptacion no se usan mas
+    Contactos: {name: "Exposicion", clase: "motivos"},
+    Terreno: {name: "Campaña", clase: "motivos"},
+    Internacion: {name: "Prescripcion", clase: "esquemas"},
+    "Pre Exposicion": {name: "Excepcion", clase: "esquemas"},
+  };
+
+  // Verificar datos recibidos
+  if (
+    !vacunacionDB.id_Nomivac ||
+    !vacunacionDB.estrategia ||
+    !vacunacionDB.dosis ||
+    !vacunacionDB.edad_days_aplicacion
+    // vacunacionDB.qty_dosis
+  ) {
+    return {error: "Plan de Vacunacion: Falta información para proceder.", status: 412};
+  }
+
+  let poblacion_especial = false;
+  // Opcionales
+  // especialidades (embarazo | puerpera | salud | esencial | riesgo) comparar -> descripcionPoblacion;
+  if (
+    vacunacionDB.embarazada_semana ||
+    vacunacionDB.puerpera ||
+    vacunacionDB.riesgo ||
+    vacunacionDB.personal_salud ||
+    vacunacionDB.personal_esencial
+  ) {
+    poblacion_especial = true;
+  }
+
+  // Obtener datos de planes del CIPRES para detectar coincidencias
+  let planCipres = null;
+  if (CIPRES?.planVacunacionesVacunaNOMIVAC) {
+    planCipres = CIPRES.planVacunacionesVacunaNOMIVAC?.[vacunacionDB.id_Nomivac] ?? [];
+  } else {
+    planCipres = await getDataBaseCipres();
+    if (planCipres.error) {
+      // SI CIPRES RESPONDE CON ERROR DARLE FORMATO
+      if (planCipres.error.response) {
+        planCipres.error = errorCIPRES({respuesta: planCipres.error.response});
+      }
+      return errorMessage(res, {message: planCipres.error.message}, planCipres.error.status);
+    }
+    planCipres = planCipres.planVacunacionesVacunaNOMIVAC?.[vacunacionDB.id_Nomivac] ?? [];
+  }
+
+  // Recorrer planes de la vacuna -> marcar coincidencias
+  for (let index = 0; index < planCipres.length; index++) {
+    let planTemp = {
+      id_plan: planCipres[index]["id"],
+      coincidencias: 0,
+      si: {},
+      no: {},
+      tal_vez: {},
+      descripcion: ` ● Plan: ${planCipres[index]["descripcionPlan"] ?? "Sin Nombre"} (${
+        planCipres[index]["id"]
+      }).`,
+    };
+
+    // seleccionar con qty_dosis (DosisAdministrada) si existe (Media dosis|Doble dosis) o si no existe con dosis Completa
+    if (
+      (!vacunacionDB.qty_dosis && "Dosis completa" !== planCipres[index].descDosisAdministrada) ||
+      (vacunacionDB.qty_dosis && vacunacionDB.qty_dosis !== planCipres[index].descDosisAdministrada)
+    ) {
+      // qty_dosis no coincide
+      planTemp.no.descDosisAdministrada = planCipres[index].descDosisAdministrada;
+      planTemp.descripcion += `\n   Dosis Administrada: ${planCipres[index]["descDosisAdministrada"]}. ☐`;
+    } else {
+      // qty_dosis coincide
+      planTemp.si.descDosisAdministrada = planCipres[index].descDosisAdministrada;
+      planTemp.descripcion += `\n   Dosis Administrada: ${planCipres[index]["descDosisAdministrada"]}. ☑`;
+    }
+
+    // seleccionar con estrategia (esquema|motivo)
+    let estrategia = [];
+    // separar cadena de texto CIPRES en palabras del
+    if (miEstrategiaToCipres[vacunacionDB.estrategia].clase === "esquemas") {
+      // descripcionEsquema;
+      estrategia.push(...planCipres[index].descripcionEsquema.split(" "));
+    } else {
+      // descripcionMotivo;
+      estrategia.push(...planCipres[index].descripcionMotivo.split(" "));
+    }
+
+    // comparar si alguna de las palabras es de nuestra estrategia
+    for (let index2 = 0; index2 < estrategia.length; index2++) {
+      if (
+        // Case-insensitive and accent-insensitive comparison
+        estrategia[index2].localeCompare(
+          miEstrategiaToCipres[vacunacionDB.estrategia].name,
+          undefined,
+          {
+            sensitivity: "base",
+          }
+        ) === 0
+      ) {
+        estrategia = true;
+        break;
+      }
+    }
+
+    if (estrategia === true) {
+      if (miEstrategiaToCipres[vacunacionDB.estrategia].clase === "esquemas") {
+        // esquema coincide
+        planTemp.tal_vez.descripcionMotivo = planCipres[index].descripcionMotivo;
+        planTemp.descripcion += `\n   Motivo: ${planCipres[index]["descripcionMotivo"]}. ⊡`;
+        planTemp.si.descripcionEsquema = planCipres[index].descripcionEsquema;
+        planTemp.descripcion += `\n   Esquema: ${planCipres[index]["descripcionEsquema"]}. ☑`;
+      } else {
+        // motivo coincide
+        planTemp.si.descripcionMotivo = planCipres[index].descripcionMotivo;
+        planTemp.descripcion += `\n   Motivo: ${planCipres[index]["descripcionMotivo"]}. ☑`;
+        planTemp.tal_vez.descripcionEsquema = planCipres[index].descripcionEsquema;
+        planTemp.descripcion += `\n   Esquema: ${planCipres[index]["descripcionEsquema"]}. ⊡`;
+      }
+    } else {
+      if (miEstrategiaToCipres[vacunacionDB.estrategia].clase === "esquemas") {
+        // esquema no coincide
+        planTemp.tal_vez.descripcionMotivo = planCipres[index].descripcionMotivo;
+        planTemp.descripcion += `\n   Motivo: ${planCipres[index]["descripcionMotivo"]}. ⊡`;
+        planTemp.no.descripcionEsquema = planCipres[index].descripcionEsquema;
+        planTemp.descripcion += `\n   Esquema: ${planCipres[index]["descripcionEsquema"]}. ☐`;
+      } else {
+        // motivo no coincide
+        planTemp.no.descripcionMotivo = planCipres[index].descripcionMotivo;
+        planTemp.descripcion += `\n   Motivo: ${planCipres[index]["descripcionMotivo"]}. ☐`;
+        planTemp.tal_vez.descripcionEsquema = planCipres[index].descripcionEsquema;
+        planTemp.descripcion += `\n   Esquema: ${planCipres[index]["descripcionEsquema"]}. ⊡`;
+      }
+    }
+    estrategia = null;
+
+    // seleccionar por poblacion
+    // especialidades (embarazo | puerpera | salud | esencial | riesgo) comparar -> descripcionPoblacion;
+    switch (planCipres[index].descripcionPoblacion) {
+      case "Embarazo":
+        if (vacunacionDB.embarazada_semana) {
+          // poblacion coincide
+          planTemp.si.descripcionPoblacion = planCipres[index].descripcionPoblacion;
+        } else {
+          // poblacion no coincide
+          planTemp.no.descripcionPoblacion = planCipres[index].descripcionPoblacion;
+        }
+        break;
+
+      case "Puerperio":
+        if (vacunacionDB.puerpera) {
+          // poblacion coincide
+          planTemp.si.descripcionPoblacion = planCipres[index].descripcionPoblacion;
+        } else {
+          // poblacion no coincide
+          planTemp.no.descripcionPoblacion = planCipres[index].descripcionPoblacion;
+        }
+        break;
+
+      case "Grupos de riesgo":
+        if (vacunacionDB.riesgo) {
+          // poblacion coincide
+          planTemp.si.descripcionPoblacion = planCipres[index].descripcionPoblacion;
+        } else {
+          // poblacion no coincide
+          planTemp.no.descripcionPoblacion = planCipres[index].descripcionPoblacion;
+        }
+        break;
+
+      case "Personal de salud":
+        if (vacunacionDB.personal_salud) {
+          // poblacion coincide
+          planTemp.si.descripcionPoblacion = planCipres[index].descripcionPoblacion;
+        } else {
+          // poblacion no coincide
+          planTemp.no.descripcionPoblacion = planCipres[index].descripcionPoblacion;
+        }
+        break;
+
+      case "Personal esencial":
+        if (vacunacionDB.personal_esencial) {
+          // poblacion coincide
+          planTemp.si.descripcionPoblacion = planCipres[index].descripcionPoblacion;
+        } else {
+          // poblacion no coincide
+          planTemp.no.descripcionPoblacion = planCipres[index].descripcionPoblacion;
+        }
+        break;
+
+      default:
+        if (
+          planCipres[index].descripcionEsquema === "Grupos de Riesgo" ||
+          planCipres[index].descripcionMotivo === "Grupos de Riesgo"
+        ) {
+          if (vacunacionDB.riesgo) {
+            // poblacion coincide
+            planTemp.si.descripcionPoblacion = planCipres[index].descripcionPoblacion;
+            break;
+          }
+          // poblacion no coincide
+          planTemp.no.descripcionPoblacion = planCipres[index].descripcionPoblacion;
+          break;
+        }
+
+        if (poblacion_especial) {
+          planTemp.no.descripcionPoblacion = planCipres[index].descripcionPoblacion;
+        } else {
+          planTemp.tal_vez.descripcionPoblacion = planCipres[index].descripcionPoblacion;
+        }
+        break;
+    }
+
+    if (planTemp.si.descripcionPoblacion) {
+      planTemp.descripcion += `\n   Poblacion: ${planCipres[index]["descripcionPoblacion"]}. ☑`;
+    } else if (planTemp.tal_vez.descripcionPoblacion) {
+      planTemp.descripcion += `\n   Poblacion: ${planCipres[index]["descripcionPoblacion"]}. ⊡`;
+    } else {
+      planTemp.descripcion += `\n   Poblacion: ${planCipres[index]["descripcionPoblacion"]}. ☐`;
+    }
+
+    // seleccionar con dosis y edad
+    for (const dosis of planCipres[index].planVacunacionDosis) {
+      if (
+        dosis.dosis.descripcionDosis === miDosisToCipres[vacunacionDB.dosis] &&
+        dosis.edadDesde <= vacunacionDB.edad_days_aplicacion &&
+        vacunacionDB.edad_days_aplicacion <= dosis.edadHasta
+      ) {
+        // si dosis y edad
+        planTemp.si.dosis = dosis["dosis"]["descripcionDosis"];
+        planTemp.si.edad_days_aplicacion = `${dosis["edadDesde"]} - ${dosis["edadHasta"]} (dias).`;
+        delete planTemp.tal_vez.dosis;
+        delete planTemp.tal_vez.edad_days_aplicacion;
+        delete planTemp.no.dosis;
+        delete planTemp.no.edad_days_aplicacion;
+        planTemp.descripcion += `\n » Dosis: ${dosis["dosis"]["descripcionDosis"]}. ☑`;
+        planTemp.descripcion += `\n   Desde: ${dosis["edadDesde"]} - Hasta: ${dosis["edadHasta"]} (dias). ☑`;
+      } else {
+        if (dosis.dosis.descripcionDosis === miDosisToCipres[vacunacionDB.dosis]) {
+          // talvez dosis
+          if (!planTemp.si.dosis) {
+            planTemp.tal_vez.dosis = dosis["dosis"]["descripcionDosis"];
+            delete planTemp.no.dosis;
+          }
+          planTemp.descripcion += `\n » Dosis: ${dosis["dosis"]["descripcionDosis"]}. ⊡`;
+        } else {
+          // no dosis
+          if (!(planTemp.si.dosis || planTemp.tal_vez.dosis)) {
+            planTemp.no.dosis = dosis["dosis"]["descripcionDosis"];
+          }
+          planTemp.descripcion += `\n » Dosis: ${dosis["dosis"]["descripcionDosis"]}. ☐`;
+        }
+
+        if (
+          dosis.edadDesde <= vacunacionDB.edad_days_aplicacion &&
+          vacunacionDB.edad_days_aplicacion <= dosis.edadHasta
+        ) {
+          // talvez edad
+          if (!planTemp.si.edad_days_aplicacion) {
+            planTemp.tal_vez.edad_days_aplicacion = `${dosis["edadDesde"]} - ${dosis["edadHasta"]} (dias).`;
+            delete planTemp.no.edad_days_aplicacion;
+          }
+          planTemp.descripcion += `\n   Desde: ${dosis["edadDesde"]} - Hasta: ${dosis["edadHasta"]} (dias). ⊡`;
+        } else {
+          // no edad
+          if (!(planTemp.si.edad_days_aplicacion || planTemp.tal_vez.edad_days_aplicacion)) {
+            planTemp.no.edad_days_aplicacion = `${dosis["edadDesde"]} - ${dosis["edadHasta"]} (dias).`;
+          }
+          planTemp.descripcion += `\n   Desde: ${dosis["edadDesde"]} - Hasta: ${dosis["edadHasta"]} (dias). ☐`;
+        }
+      }
+    }
+
+    planTemp.coincidencias =
+      ((Object.keys(planTemp.si).length * 10 + Object.keys(planTemp.tal_vez).length) /
+        (Object.keys(planTemp.si).length * 10 +
+          Object.keys(planTemp.tal_vez).length +
+          Object.keys(planTemp.no).length * 10)) *
+      100;
+    planTemp.descripcion =
+      ` ▲ Coincidencias: ${planTemp.coincidencias.toFixed(2)}%.\n` + planTemp.descripcion;
+    planCipres[index] = planTemp;
+  }
+  if (!planCipres?.length) {
+    return {
+      error: "Plan de Vacunacion: No existen planes para esta Vacuna en CIPRES.",
+      status: 404,
+    };
+  }
+
+  // ordenar los planes por mayores coincidencias (descendente)
+  planCipres.sort((a, b) => b.coincidencias - a.coincidencias);
+  return planCipres;
 };
 
 const verificaMatchCIPRES = ({registro}) => {
