@@ -3,7 +3,7 @@ const axios = require("axios");
 
 const {verificaToken, verificaArrayPropValue} = require(process.env.MAIN_FOLDER +
   "/middlewares/autenticacion");
-const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
+const {errorMessage, errorAxios} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
 const {isVacio, getDiferenciaDias, objectSetUnset, isObjectIdValid} = require(process.env
   .MAIN_FOLDER + "/tools/object");
 const {guardarFile, leerFile} = require(process.env.MAIN_FOLDER + "/tools/file");
@@ -128,6 +128,10 @@ app.put(
         if (CIPRES.error.response) {
           CIPRES.error = errorCIPRES({respuesta: CIPRES.error.response});
         }
+        // SI CIPRES NO RESPONDE DARLE FORMATO
+        if (CIPRES.error.request && CIPRES.error.isAxiosError) {
+          CIPRES.error = errorAxios({serverName: "CIPRES", code: CIPRES.error.code});
+        }
         return errorMessage(res, {message: CIPRES.error.message}, CIPRES.error.status);
       }
 
@@ -168,7 +172,10 @@ app.put(
       registro = await axios.post(
         `${process.env.CIPRES_URL}/api/vacunacion/vacunaciones`,
         registro,
-        {headers: {"content-type": "application/json", Authorization: `Bearer ${CIPRES_TKN}`}}
+        {
+          headers: {"content-type": "application/json", Authorization: `Bearer ${CIPRES_TKN}`},
+          timeout: 5 * 60 * 1000, // 300.000 (300seg = 5min) default is `0` (no timeout)
+        }
       );
       if (registro?.data?.["id"]) {
         // guardar respuesta de CIPRES con el ID de la aplicacion
@@ -284,7 +291,10 @@ const getDataBaseCipres = async () => {
           password: process.env.CIPRES_PSR,
           realusername: "API Moreno GISAM",
         },
-        {headers: {"content-type": "application/json"}}
+        {
+          headers: {"content-type": "application/json"},
+          timeout: 5 * 60 * 1000, // 300.000 (300seg = 5min) default is `0` (no timeout)
+        }
       );
       if (respuesta?.data?.token) {
         CIPRES_TKN = respuesta.data.token;
@@ -311,6 +321,7 @@ const getDataBaseCipres = async () => {
         vacunasUsadasEnPlanes: {},
         motivosUsadosEnPlanes: {},
         esquemasUsadosEnPlanes: {},
+        poblacionesUsadasEnPlanes: {},
         dosisAdministradaUsadasEnPlanes: {},
         VacunaNomivacOpciones: {},
       };
@@ -328,6 +339,7 @@ const getDataBaseCipres = async () => {
           vacunasUsadasEnPlanes: {},
           motivosUsadosEnPlanes: {},
           esquemasUsadosEnPlanes: {},
+          poblacionesUsadasEnPlanes: {},
           dosisAdministradaUsadasEnPlanes: {},
           VacunaNomivacOpciones: {},
         },
@@ -350,6 +362,7 @@ const getDataBaseCipres = async () => {
         vacunasUsadasEnPlanes: {},
         motivosUsadosEnPlanes: {},
         esquemasUsadosEnPlanes: {},
+        poblacionesUsadasEnPlanes: {},
         dosisAdministradaUsadasEnPlanes: {},
         VacunaNomivacOpciones: {},
       };
@@ -357,6 +370,7 @@ const getDataBaseCipres = async () => {
       // dosis;
       respuesta = await axios.get(`${process.env.CIPRES_URL}/api/vacunacion/dosis`, {
         headers: {Authorization: `Bearer ${CIPRES_TKN}`},
+        timeout: 5 * 60 * 1000, // 300.000 (300seg = 5min) default is `0` (no timeout)
       });
       if (respuesta?.data?.["hydra:member"]) {
         CIPRES.dosis = respuesta.data["hydra:member"];
@@ -370,6 +384,7 @@ const getDataBaseCipres = async () => {
       // motivos;
       respuesta = await axios.get(`${process.env.CIPRES_URL}/api/vacunacion/motivos`, {
         headers: {Authorization: `Bearer ${CIPRES_TKN}`},
+        timeout: 5 * 60 * 1000, // 300.000 (300seg = 5min) default is `0` (no timeout)
       });
       if (respuesta?.data?.["hydra:member"]) {
         CIPRES.motivos = respuesta.data["hydra:member"];
@@ -383,6 +398,7 @@ const getDataBaseCipres = async () => {
       // esquemas;
       respuesta = await axios.get(`${process.env.CIPRES_URL}/api/vacunacion/esquemas`, {
         headers: {Authorization: `Bearer ${CIPRES_TKN}`},
+        timeout: 5 * 60 * 1000, // 300.000 (300seg = 5min) default is `0` (no timeout)
       });
       if (respuesta?.data?.["hydra:member"]) {
         CIPRES.esquemas = respuesta.data["hydra:member"];
@@ -413,6 +429,7 @@ const getDataBaseCipres = async () => {
             `${process.env.CIPRES_URL}/api/establecimiento/establecimientos?codigoSisa=${area.SISA}`,
             {
               headers: {Authorization: `Bearer ${CIPRES_TKN}`},
+              timeout: 5 * 60 * 1000, // 300.000 (300seg = 5min) default is `0` (no timeout)
             }
           );
 
@@ -439,6 +456,7 @@ const getDataBaseCipres = async () => {
           `${process.env.CIPRES_URL}/api/vacunacion/planes_vacunacion?page=${page}`,
           {
             headers: {Authorization: `Bearer ${CIPRES_TKN}`},
+            timeout: 5 * 60 * 1000, // 300.000 (300seg = 5min) default is `0` (no timeout)
           }
         );
         if (respuesta?.data?.["hydra:member"].length > 0) {
@@ -450,10 +468,15 @@ const getDataBaseCipres = async () => {
       // formato planVacunacionesVacunaNOMIVAC {vacuna(id) : {...}}
       CIPRES.planVacunacionesVacunaNOMIVAC = CIPRES.planVacunacionesVacunaNOMIVAC.map((plan) => {
         CIPRES.vacunasUsadasEnPlanes[plan.vacuna.descripcionVacuna] = plan.vacuna.idNomivac;
-        CIPRES.motivosUsadosEnPlanes[plan.motivo.descripcionMotivo] = plan.idMotivoNomivac;
-        CIPRES.esquemasUsadosEnPlanes[plan.esquema.descripcionEsquema] = plan.idEsquemaNomivac;
+        CIPRES.motivosUsadosEnPlanes[plan.motivo.descripcionMotivo] =
+          (CIPRES.motivosUsadosEnPlanes[plan.motivo.descripcionMotivo] ?? 0) + 1;
+        CIPRES.esquemasUsadosEnPlanes[plan.esquema.descripcionEsquema] =
+          (CIPRES.esquemasUsadosEnPlanes[plan.esquema.descripcionEsquema] ?? 0) + 1;
+        CIPRES.poblacionesUsadasEnPlanes[plan.poblacionObjetivo.descripcionPoblacion] =
+          (CIPRES.poblacionesUsadasEnPlanes[plan.poblacionObjetivo.descripcionPoblacion] ?? 0) + 1;
         CIPRES.dosisAdministradaUsadasEnPlanes[plan.dosisAdministrada.descDosisAdministrada] =
-          plan.dosisAdministrada.id;
+          (CIPRES.dosisAdministradaUsadasEnPlanes[plan.dosisAdministrada.descDosisAdministrada] ??
+            0) + 1;
         if (!CIPRES.VacunaNomivacOpciones[plan.vacuna.idNomivac]) {
           CIPRES.VacunaNomivacOpciones[plan.vacuna.idNomivac] = {
             descripcionVacuna: plan.vacuna.descripcionVacuna,
@@ -504,7 +527,8 @@ const getDataBaseCipres = async () => {
           idEsquemaNomivac: plan.idEsquemaNomivac,
           descripcionPoblacion: plan.poblacionObjetivo.descripcionPoblacion,
           planVacunacionDosis: plan.planVacunacionDosis.map((dosis) => {
-            CIPRES.dosisUsadosEnPlanes[dosis.dosis.descripcionDosis] = dosis.dosis.id;
+            CIPRES.dosisUsadosEnPlanes[dosis.dosis.descripcionDosis] =
+              (CIPRES.dosisUsadosEnPlanes[dosis.dosis.descripcionDosis] ?? 0) + 1;
             CIPRES.VacunaNomivacOpciones[plan.vacuna.idNomivac].dosis = [
               ...new Set([
                 ...CIPRES.VacunaNomivacOpciones[plan.vacuna.idNomivac].dosis,
@@ -692,10 +716,17 @@ const matchCIPRES = async ({vacunacionDB, CIPRES}) => {
     registro.planVacunacion = registro.planVacunacion.filter((plan) => plan.coincidencias === 100);
     if (registro.planVacunacion.length === 1) {
       // si quedo un solo elemento autoseleccionarlo
-      registro.planVacunacion = `/api/vacunacion/plan_vacunacion/${registro.planVacunacion[0].id}`;
+      registro.planVacunacion = `/api/vacunacion/plan_vacunacion/${registro.planVacunacion[0].id_plan}`;
     } else if (registro.planVacunacion.length > 1) {
       // tiene mas de un plan que coincide con los datos
-      registro.planVacunacion.err = `Plan de Vacunacion: Mas de un plan coincidente encontrado (${registro.planVacunacion.length}) en CIPRES.`;
+      if (
+        registro.planVacunacion[0].poblacion_especial >
+        registro.planVacunacion[1].poblacion_especial
+      ) {
+        registro.planVacunacion = `/api/vacunacion/plan_vacunacion/${registro.planVacunacion[0].id_plan}`;
+      } else {
+        registro.planVacunacion.err = `Plan de Vacunacion: Mas de un plan coincidente encontrado (${registro.planVacunacion.length}) en CIPRES.`;
+      }
     } else {
       // ningun plan coincidio con los datos
       registro.planVacunacion.err =
@@ -714,7 +745,7 @@ const matchCIPRES = async ({vacunacionDB, CIPRES}) => {
           ? "Embarazada"
           : vacunacionDB.puerpera
           ? "Puerpera"
-          : vacunacionDB.riesgo
+          : vacunacionDB.riesgo || vacunacionDB.estrategia === "Grupo de Riesgo"
           ? "Grupo de Riesgo"
           : vacunacionDB.personal_salud
           ? "Personal de Salud"
@@ -786,7 +817,10 @@ const matchPacienteCIPRES = async ({
         incluirDomicilio: false,
         // establecimiento: "",
       },
-      headers: {Authorization: `Bearer ${CIPRES_TKN}`},
+      headers: {
+        Authorization: `Bearer ${CIPRES_TKN}`,
+        timeout: 5 * 60 * 1000, // 300.000 (300seg = 5min) default is `0` (no timeout)
+      },
     });
 
     if (pacienteCipres?.data?.["hydra:member"]?.length > 0) {
@@ -867,7 +901,10 @@ const matchPacienteCIPRES = async ({
               incluirDomicilio: false,
               // establecimiento: "",
             },
-            headers: {Authorization: `Bearer ${CIPRES_TKN}`},
+            headers: {
+              Authorization: `Bearer ${CIPRES_TKN}`,
+              timeout: 5 * 60 * 1000, // 300.000 (300seg = 5min) default is `0` (no timeout)
+            },
           });
 
           // buscar si existe el paciente en los hijos del responsable
@@ -900,7 +937,10 @@ const matchPacienteCIPRES = async ({
                 tipoDocumento: "/api/paciente/referencias/tipo_documento/1",
                 incluirDomicilio: false,
               },
-              headers: {Authorization: `Bearer ${CIPRES_TKN}`},
+              headers: {
+                Authorization: `Bearer ${CIPRES_TKN}`,
+                timeout: 5 * 60 * 1000, // 300.000 (300seg = 5min) default is `0` (no timeout)
+              },
             });
           }
         }
@@ -934,7 +974,10 @@ const matchPacienteCIPRES = async ({
               }`,
             },
           },
-          {headers: {"content-type": "application/json", Authorization: `Bearer ${CIPRES_TKN}`}}
+          {
+            headers: {"content-type": "application/json", Authorization: `Bearer ${CIPRES_TKN}`},
+            timeout: 5 * 60 * 1000, // 300.000 (300seg = 5min) default is `0` (no timeout)
+          }
         );
 
         // console.log("# encontrado responsable registrado hijo", pacienteCipres?.data);
@@ -994,7 +1037,10 @@ const matchPacienteCIPRES = async ({
             }`,
             nacionalidad: "/api/referencias/nacionalidades/4",
           },
-          {headers: {"content-type": "application/json", Authorization: `Bearer ${CIPRES_TKN}`}}
+          {
+            headers: {"content-type": "application/json", Authorization: `Bearer ${CIPRES_TKN}`},
+            timeout: 5 * 60 * 1000, // 300.000 (300seg = 5min) default is `0` (no timeout)
+          }
         );
 
         // console.log("# no responsable, registrado", pacienteCipres?.data, responsableDB);
@@ -1027,7 +1073,10 @@ const matchPacienteCIPRES = async ({
               }`,
             },
           },
-          {headers: {"content-type": "application/json", Authorization: `Bearer ${CIPRES_TKN}`}}
+          {
+            headers: {"content-type": "application/json", Authorization: `Bearer ${CIPRES_TKN}`},
+            timeout: 5 * 60 * 1000, // 300.000 (300seg = 5min) default is `0` (no timeout)
+          }
         );
 
         // console.log("# no responsable, registrado paciente hijo", pacienteCipres?.data);
@@ -1054,7 +1103,10 @@ const matchPacienteCIPRES = async ({
           }`,
           nacionalidad: "/api/referencias/nacionalidades/4",
         },
-        {headers: {"content-type": "application/json", Authorization: `Bearer ${CIPRES_TKN}`}}
+        {
+          headers: {"content-type": "application/json", Authorization: `Bearer ${CIPRES_TKN}`},
+          timeout: 5 * 60 * 1000, // 300.000 (300seg = 5min) default is `0` (no timeout)
+        }
       );
 
       // console.log("# no encontrado paciente", pacienteCipres?.data);
@@ -1106,21 +1158,21 @@ const matchPlanesVacunasCIPRES = async ({vacunacionDB, CIPRES}) => {
     // "MEDIA 1° DOSIS"
     // "MEDIA 2° DOSIS"
   };
-  // estrategia: { name: descripcion, clase: (Esquema|Motivo) },
+  // estrategia: { name: descripcion, clase: (esquemas|motivos|alguno) },
   const miEstrategiaToCipres = {
-    Calendario: {name: "Regular", clase: "esquemas"},
+    Calendario: {name: "Regular", clase: "alguno"},
     Campaña: {name: "Campaña", clase: "motivos"},
     Atrasado: {name: "Recupero", clase: "esquemas"},
-    "Prescripcion Medica": {name: "Prescripcion", clase: "esquemas"},
-    "Grupo de Riesgo": {name: "Riesgo", clase: "esquemas"},
+    "Prescripcion Medica": {name: "Prescripción", clase: "alguno"},
+    "Grupo de Riesgo": {name: "Riesgo", clase: "alguno"},
     "Post Exposicion": {name: "Exposicion", clase: "motivos"},
-    "Por excepcion": {name: "Excepcion", clase: "esquemas"},
+    "Por excepcion": {name: "Excepcion", clase: "alguno"},
 
     // Ex PSMoreno - Adaptacion no se usan mas
     Contactos: {name: "Exposicion", clase: "motivos"},
     Terreno: {name: "Campaña", clase: "motivos"},
-    Internacion: {name: "Prescripcion", clase: "esquemas"},
-    "Pre Exposicion": {name: "Excepcion", clase: "esquemas"},
+    Internacion: {name: "Prescripción", clase: "alguno"},
+    "Pre Exposicion": {name: "Pre", clase: "motivos"},
   };
 
   // Verificar datos recibidos
@@ -1134,19 +1186,6 @@ const matchPlanesVacunasCIPRES = async ({vacunacionDB, CIPRES}) => {
     return {error: "Plan de Vacunacion: Falta información para proceder.", status: 412};
   }
 
-  let poblacion_especial = false;
-  // Opcionales
-  // especialidades (embarazo | puerpera | salud | esencial | riesgo) comparar -> descripcionPoblacion;
-  if (
-    vacunacionDB.embarazada_semana ||
-    vacunacionDB.puerpera ||
-    vacunacionDB.riesgo ||
-    vacunacionDB.personal_salud ||
-    vacunacionDB.personal_esencial
-  ) {
-    poblacion_especial = true;
-  }
-
   // Obtener datos de planes del CIPRES para detectar coincidencias
   let planCipres = null;
   if (CIPRES?.planVacunacionesVacunaNOMIVAC) {
@@ -1158,7 +1197,14 @@ const matchPlanesVacunasCIPRES = async ({vacunacionDB, CIPRES}) => {
       if (planCipres.error.response) {
         planCipres.error = errorCIPRES({respuesta: planCipres.error.response});
       }
-      return errorMessage(res, {message: planCipres.error.message}, planCipres.error.status);
+      // SI CIPRES NO RESPONDE DARLE FORMATO
+      if (planCipres.error.request && planCipres.error.isAxiosError) {
+        planCipres.error = errorAxios({serverName: "CIPRES", code: planCipres.error.code});
+      }
+      return {
+        error: planCipres.error.message,
+        status: planCipres.error.status,
+      };
     }
     planCipres = planCipres.planVacunacionesVacunaNOMIVAC?.[vacunacionDB.id_Nomivac] ?? [];
   }
@@ -1168,6 +1214,7 @@ const matchPlanesVacunasCIPRES = async ({vacunacionDB, CIPRES}) => {
     let planTemp = {
       id_plan: planCipres[index]["id"],
       coincidencias: 0,
+      poblacion_especial: 0,
       si: {},
       no: {},
       tal_vez: {},
@@ -1176,213 +1223,283 @@ const matchPlanesVacunasCIPRES = async ({vacunacionDB, CIPRES}) => {
       }).`,
     };
 
-    // seleccionar con qty_dosis (DosisAdministrada) si existe (Media dosis|Doble dosis) o si no existe con dosis Completa
+    // SELECCIONAR con qty_dosis (DosisAdministrada) si existe (Media dosis|Doble dosis) o si no existe con dosis Completa
     if (
-      (!vacunacionDB.qty_dosis && "Dosis completa" !== planCipres[index].descDosisAdministrada) ||
-      (vacunacionDB.qty_dosis && vacunacionDB.qty_dosis !== planCipres[index].descDosisAdministrada)
+      (!vacunacionDB.qty_dosis && planCipres[index].descDosisAdministrada !== "Dosis completa") ||
+      (vacunacionDB.qty_dosis && planCipres[index].descDosisAdministrada !== vacunacionDB.qty_dosis)
     ) {
       // qty_dosis no coincide
-      planTemp.no.descDosisAdministrada = planCipres[index].descDosisAdministrada;
+      planTemp.no["Dosis Administrada"] = planCipres[index].descDosisAdministrada;
       planTemp.descripcion += `\n   Dosis Administrada: ${planCipres[index]["descDosisAdministrada"]}. ☐`;
     } else {
       // qty_dosis coincide
-      planTemp.si.descDosisAdministrada = planCipres[index].descDosisAdministrada;
+      planTemp.si["Dosis Administrada"] = planCipres[index].descDosisAdministrada;
       planTemp.descripcion += `\n   Dosis Administrada: ${planCipres[index]["descDosisAdministrada"]}. ☑`;
     }
 
-    // seleccionar con estrategia (esquema|motivo)
-    let estrategia = [];
-    // separar cadena de texto CIPRES en palabras del
-    if (miEstrategiaToCipres[vacunacionDB.estrategia].clase === "esquemas") {
-      // descripcionEsquema;
-      estrategia.push(...planCipres[index].descripcionEsquema.split(" "));
-    } else {
-      // descripcionMotivo;
-      estrategia.push(...planCipres[index].descripcionMotivo.split(" "));
-    }
-
-    // comparar si alguna de las palabras es de nuestra estrategia
-    for (let index2 = 0; index2 < estrategia.length; index2++) {
+    // SELECCIONAR con estrategia (motivo|esquema|alguno[riesgo-poblacion])
+    // descripcionMotivo;
+    if (
+      miEstrategiaToCipres[vacunacionDB.estrategia].clase === "motivos" ||
+      miEstrategiaToCipres[vacunacionDB.estrategia].clase === "alguno"
+    ) {
+      // Dividir palabras -> chequar palabra -> si o no
       if (
-        // Case-insensitive and accent-insensitive comparison
-        estrategia[index2].localeCompare(
-          miEstrategiaToCipres[vacunacionDB.estrategia].name,
-          undefined,
-          {
-            sensitivity: "base",
-          }
-        ) === 0
+        // separar cadena de texto CIPRES en palabras
+        planCipres[index].descripcionMotivo.split(" ").some((motivo) => {
+          // comparar si alguna de las palabras es de nuestra estrategia
+          return (
+            // Case-insensitive and accent-insensitive comparison
+            motivo.localeCompare(miEstrategiaToCipres[vacunacionDB.estrategia].name, undefined, {
+              sensitivity: "base",
+            }) === 0
+          );
+        })
       ) {
-        estrategia = true;
-        break;
+        planTemp.si.Motivo = planCipres[index].descripcionMotivo;
+      } else {
+        planTemp.no.Motivo = planCipres[index].descripcionMotivo;
       }
     }
 
-    if (estrategia === true) {
-      if (miEstrategiaToCipres[vacunacionDB.estrategia].clase === "esquemas") {
-        // esquema coincide
-        planTemp.tal_vez.descripcionMotivo = planCipres[index].descripcionMotivo;
-        planTemp.descripcion += `\n   Motivo: ${planCipres[index]["descripcionMotivo"]}. ⊡`;
-        planTemp.si.descripcionEsquema = planCipres[index].descripcionEsquema;
-        planTemp.descripcion += `\n   Esquema: ${planCipres[index]["descripcionEsquema"]}. ☑`;
+    // descripcionEsquema;
+    if (
+      miEstrategiaToCipres[vacunacionDB.estrategia].clase === "esquemas" ||
+      miEstrategiaToCipres[vacunacionDB.estrategia].clase === "alguno"
+    ) {
+      // Dividir palabras -> chequar palabra -> si o no
+      if (
+        // separar cadena de texto CIPRES en palabras
+        planCipres[index].descripcionEsquema.split(" ").some((esquema) => {
+          // comparar si alguna de las palabras es de nuestra estrategia
+          return (
+            // Case-insensitive and accent-insensitive comparison
+            esquema.localeCompare(miEstrategiaToCipres[vacunacionDB.estrategia].name, undefined, {
+              sensitivity: "base",
+            }) === 0
+          );
+        })
+      ) {
+        planTemp.si.Esquema = planCipres[index].descripcionEsquema;
       } else {
-        // motivo coincide
-        planTemp.si.descripcionMotivo = planCipres[index].descripcionMotivo;
-        planTemp.descripcion += `\n   Motivo: ${planCipres[index]["descripcionMotivo"]}. ☑`;
-        planTemp.tal_vez.descripcionEsquema = planCipres[index].descripcionEsquema;
-        planTemp.descripcion += `\n   Esquema: ${planCipres[index]["descripcionEsquema"]}. ⊡`;
+        planTemp.no.Esquema = planCipres[index].descripcionEsquema;
       }
+    }
+
+    // EN BASE A miEstrategiaToCipres.clase modificar los no por tal vez
+    if (miEstrategiaToCipres[vacunacionDB.estrategia].clase === "alguno") {
+      if (planTemp.si.Motivo && planTemp.no.Esquema) {
+        delete planTemp.no.Esquema;
+        planTemp.tal_vez.Esquema = planCipres[index].descripcionEsquema;
+      }
+      if (planTemp.no.Motivo && planTemp.si.Esquema) {
+        delete planTemp.no.Motivo;
+        planTemp.tal_vez.Motivo = planCipres[index].descripcionMotivo;
+      }
+      if (planTemp.no.Motivo && planTemp.no.Esquema) {
+        planTemp.no.Estrategia = `Motivo: ${planTemp.no.Motivo}; Esquema: ${planTemp.no.Esquema}.`;
+        delete planTemp.no.Motivo;
+        delete planTemp.no.Esquema;
+      }
+    } else if (miEstrategiaToCipres[vacunacionDB.estrategia].clase === "motivos") {
+      planTemp.tal_vez.Esquema = planCipres[index].Esquema;
+    } else if (miEstrategiaToCipres[vacunacionDB.estrategia].clase === "esquemas") {
+      planTemp.tal_vez.Motivo = planCipres[index].descripcionMotivo;
+    }
+
+    // completar descripcion en base al resultado obtenido
+    if (planTemp.si.Motivo) {
+      planTemp.descripcion += `\n   Motivo: ${planCipres[index]["descripcionMotivo"]}. ☑`;
+    } else if (planTemp.tal_vez.Motivo) {
+      planTemp.descripcion += `\n   Motivo: ${planCipres[index]["descripcionMotivo"]}. ⊡`;
     } else {
-      if (miEstrategiaToCipres[vacunacionDB.estrategia].clase === "esquemas") {
-        // esquema no coincide
-        planTemp.tal_vez.descripcionMotivo = planCipres[index].descripcionMotivo;
-        planTemp.descripcion += `\n   Motivo: ${planCipres[index]["descripcionMotivo"]}. ⊡`;
-        planTemp.no.descripcionEsquema = planCipres[index].descripcionEsquema;
-        planTemp.descripcion += `\n   Esquema: ${planCipres[index]["descripcionEsquema"]}. ☐`;
-      } else {
-        // motivo no coincide
-        planTemp.no.descripcionMotivo = planCipres[index].descripcionMotivo;
-        planTemp.descripcion += `\n   Motivo: ${planCipres[index]["descripcionMotivo"]}. ☐`;
-        planTemp.tal_vez.descripcionEsquema = planCipres[index].descripcionEsquema;
-        planTemp.descripcion += `\n   Esquema: ${planCipres[index]["descripcionEsquema"]}. ⊡`;
-      }
+      planTemp.descripcion += `\n   Motivo: ${planCipres[index]["descripcionMotivo"]}. ☐`;
     }
-    estrategia = null;
+    if (planTemp.si.Esquema) {
+      planTemp.descripcion += `\n   Esquema: ${planCipres[index]["descripcionEsquema"]}. ☑`;
+    } else if (planTemp.tal_vez.Esquema) {
+      planTemp.descripcion += `\n   Esquema: ${planCipres[index]["descripcionEsquema"]}. ⊡`;
+    } else {
+      planTemp.descripcion += `\n   Esquema: ${planCipres[index]["descripcionEsquema"]}. ☐`;
+    }
 
-    // seleccionar por poblacion
-    // especialidades (embarazo | puerpera | salud | esencial | riesgo) comparar -> descripcionPoblacion;
+    // SELECCIONAR por poblacion especial
+    // descripcionPoblacion (embarazo 100 | puerpera 90 | riesgo 80/40 | salud 70 | esencial 60 | Default 50)
     switch (planCipres[index].descripcionPoblacion) {
       case "Embarazo":
         if (vacunacionDB.embarazada_semana) {
           // poblacion coincide
-          planTemp.si.descripcionPoblacion = planCipres[index].descripcionPoblacion;
+          planTemp.si.Poblacion = planCipres[index].descripcionPoblacion;
+          planTemp.poblacion_especial = 100;
         } else {
           // poblacion no coincide
-          planTemp.no.descripcionPoblacion = planCipres[index].descripcionPoblacion;
+          planTemp.no.Poblacion = planCipres[index].descripcionPoblacion;
         }
         break;
 
       case "Puerperio":
         if (vacunacionDB.puerpera) {
           // poblacion coincide
-          planTemp.si.descripcionPoblacion = planCipres[index].descripcionPoblacion;
+          planTemp.si.Poblacion = planCipres[index].descripcionPoblacion;
+          planTemp.poblacion_especial = 90;
         } else {
           // poblacion no coincide
-          planTemp.no.descripcionPoblacion = planCipres[index].descripcionPoblacion;
+          planTemp.no.Poblacion = planCipres[index].descripcionPoblacion;
         }
         break;
 
       case "Grupos de riesgo":
-        if (vacunacionDB.riesgo) {
+        if (vacunacionDB.riesgo || vacunacionDB.estrategia === "Grupo de Riesgo") {
           // poblacion coincide
-          planTemp.si.descripcionPoblacion = planCipres[index].descripcionPoblacion;
+          planTemp.si.Poblacion = planCipres[index].descripcionPoblacion;
+          planTemp.poblacion_especial = 80;
         } else {
           // poblacion no coincide
-          planTemp.no.descripcionPoblacion = planCipres[index].descripcionPoblacion;
+          planTemp.no.Poblacion = planCipres[index].descripcionPoblacion;
+          planTemp.poblacion_especial = 40;
         }
         break;
 
       case "Personal de salud":
         if (vacunacionDB.personal_salud) {
           // poblacion coincide
-          planTemp.si.descripcionPoblacion = planCipres[index].descripcionPoblacion;
+          planTemp.si.Poblacion = planCipres[index].descripcionPoblacion;
+          planTemp.poblacion_especial = 70;
         } else {
           // poblacion no coincide
-          planTemp.no.descripcionPoblacion = planCipres[index].descripcionPoblacion;
+          planTemp.no.Poblacion = planCipres[index].descripcionPoblacion;
         }
         break;
 
       case "Personal esencial":
         if (vacunacionDB.personal_esencial) {
           // poblacion coincide
-          planTemp.si.descripcionPoblacion = planCipres[index].descripcionPoblacion;
+          planTemp.si.Poblacion = planCipres[index].descripcionPoblacion;
+          planTemp.poblacion_especial = 60;
         } else {
           // poblacion no coincide
-          planTemp.no.descripcionPoblacion = planCipres[index].descripcionPoblacion;
+          planTemp.no.Poblacion = planCipres[index].descripcionPoblacion;
         }
         break;
 
       default:
         if (
-          planCipres[index].descripcionEsquema === "Grupos de Riesgo" ||
+          planCipres[index].descripcionEsquema === "Grupo de Riesgo" ||
           planCipres[index].descripcionMotivo === "Grupos de Riesgo"
         ) {
-          if (vacunacionDB.riesgo) {
+          if (vacunacionDB.riesgo || vacunacionDB.estrategia === "Grupo de Riesgo") {
             // poblacion coincide
-            planTemp.si.descripcionPoblacion = planCipres[index].descripcionPoblacion;
-            break;
+            planTemp.si.Poblacion = planCipres[index].descripcionPoblacion;
+            planTemp.poblacion_especial = 80;
+          } else {
+            // poblacion no coincide
+            planTemp.no.Poblacion = planCipres[index].descripcionPoblacion;
+            planTemp.poblacion_especial = 40;
           }
-          // poblacion no coincide
-          planTemp.no.descripcionPoblacion = planCipres[index].descripcionPoblacion;
           break;
         }
 
-        if (poblacion_especial) {
-          planTemp.no.descripcionPoblacion = planCipres[index].descripcionPoblacion;
-        } else {
-          planTemp.tal_vez.descripcionPoblacion = planCipres[index].descripcionPoblacion;
-        }
+        planTemp.tal_vez.Poblacion = planCipres[index].descripcionPoblacion;
+        planTemp.poblacion_especial = 50;
         break;
     }
 
-    if (planTemp.si.descripcionPoblacion) {
+    // completar descripcion en base al resultado obtenido
+    if (planTemp.si.Poblacion) {
       planTemp.descripcion += `\n   Poblacion: ${planCipres[index]["descripcionPoblacion"]}. ☑`;
-    } else if (planTemp.tal_vez.descripcionPoblacion) {
+    } else if (planTemp.tal_vez.Poblacion) {
       planTemp.descripcion += `\n   Poblacion: ${planCipres[index]["descripcionPoblacion"]}. ⊡`;
     } else {
       planTemp.descripcion += `\n   Poblacion: ${planCipres[index]["descripcionPoblacion"]}. ☐`;
     }
 
-    // seleccionar con dosis y edad
+    // SELECCIONAR con dosis y edad
+    // Tratarlo como un solo dato (conjunto) siendo mas prioritario la edad.
+    let tempDosis = {dosis: null, edad_days_aplicacion: null, caso: null};
     for (const dosis of planCipres[index].planVacunacionDosis) {
       if (
         dosis.dosis.descripcionDosis === miDosisToCipres[vacunacionDB.dosis] &&
         dosis.edadDesde <= vacunacionDB.edad_days_aplicacion &&
         vacunacionDB.edad_days_aplicacion <= dosis.edadHasta
       ) {
-        // si dosis y edad
-        planTemp.si.dosis = dosis["dosis"]["descripcionDosis"];
-        planTemp.si.edad_days_aplicacion = `${dosis["edadDesde"]} - ${dosis["edadHasta"]} (dias).`;
-        delete planTemp.tal_vez.dosis;
-        delete planTemp.tal_vez.edad_days_aplicacion;
-        delete planTemp.no.dosis;
-        delete planTemp.no.edad_days_aplicacion;
-        planTemp.descripcion += `\n » Dosis: ${dosis["dosis"]["descripcionDosis"]}. ☑`;
-        planTemp.descripcion += `\n   Desde: ${dosis["edadDesde"]} - Hasta: ${dosis["edadHasta"]} (dias). ☑`;
-      } else {
-        if (dosis.dosis.descripcionDosis === miDosisToCipres[vacunacionDB.dosis]) {
-          // talvez dosis
-          if (!planTemp.si.dosis) {
-            planTemp.tal_vez.dosis = dosis["dosis"]["descripcionDosis"];
-            delete planTemp.no.dosis;
-          }
-          planTemp.descripcion += `\n » Dosis: ${dosis["dosis"]["descripcionDosis"]}. ⊡`;
-        } else {
-          // no dosis
-          if (!(planTemp.si.dosis || planTemp.tal_vez.dosis)) {
-            planTemp.no.dosis = dosis["dosis"]["descripcionDosis"];
-          }
-          planTemp.descripcion += `\n » Dosis: ${dosis["dosis"]["descripcionDosis"]}. ☐`;
+        // EDAD
+        planTemp.descripcion += `\n » Desde: ${dosis["edadDesde"]} - Hasta: ${dosis["edadHasta"]} (dias). ☑`;
+        // DOSIS
+        planTemp.descripcion += `\n   Dosis: ${dosis["dosis"]["descripcionDosis"]}. ☑`;
+
+        tempDosis.caso = "ambos";
+        tempDosis.dosis = dosis["dosis"]["descripcionDosis"];
+        tempDosis.edad_days_desde = `${dosis["edadDesde"]} (dias).`;
+        tempDosis.edad_days_hasta = `${dosis["edadHasta"]} (dias).`;
+
+        // console.log("## SI dosis: ", dosis.dosis.descripcionDosis);
+      } else if (
+        dosis.edadDesde <= vacunacionDB.edad_days_aplicacion &&
+        vacunacionDB.edad_days_aplicacion <= dosis.edadHasta
+      ) {
+        // EDAD
+        planTemp.descripcion += `\n » Desde: ${dosis["edadDesde"]} - Hasta: ${dosis["edadHasta"]} (dias). ☑`;
+        // NO DOSIS
+        planTemp.descripcion += `\n   Dosis: ${dosis["dosis"]["descripcionDosis"]}. ⊡`;
+
+        if (tempDosis.caso !== "ambos") {
+          tempDosis.caso = "edad";
+          tempDosis.dosis = dosis["dosis"]["descripcionDosis"];
+          tempDosis.edad_days_desde = `${dosis["edadDesde"]} (dias).`;
+          tempDosis.edad_days_hasta = `${dosis["edadHasta"]} (dias).`;
         }
 
-        if (
-          dosis.edadDesde <= vacunacionDB.edad_days_aplicacion &&
-          vacunacionDB.edad_days_aplicacion <= dosis.edadHasta
-        ) {
-          // talvez edad
-          if (!planTemp.si.edad_days_aplicacion) {
-            planTemp.tal_vez.edad_days_aplicacion = `${dosis["edadDesde"]} - ${dosis["edadHasta"]} (dias).`;
-            delete planTemp.no.edad_days_aplicacion;
-          }
-          planTemp.descripcion += `\n   Desde: ${dosis["edadDesde"]} - Hasta: ${dosis["edadHasta"]} (dias). ⊡`;
-        } else {
-          // no edad
-          if (!(planTemp.si.edad_days_aplicacion || planTemp.tal_vez.edad_days_aplicacion)) {
-            planTemp.no.edad_days_aplicacion = `${dosis["edadDesde"]} - ${dosis["edadHasta"]} (dias).`;
-          }
-          planTemp.descripcion += `\n   Desde: ${dosis["edadDesde"]} - Hasta: ${dosis["edadHasta"]} (dias). ☐`;
+        // console.log("## No dosis: ", dosis.dosis.descripcionDosis);
+      } else if (dosis.dosis.descripcionDosis === miDosisToCipres[vacunacionDB.dosis]) {
+        // NO EDAD
+        planTemp.descripcion += `\n » Desde: ${dosis["edadDesde"]} - Hasta: ${dosis["edadHasta"]} (dias). ⊡`;
+        // DOSIS
+        planTemp.descripcion += `\n   Dosis: ${dosis["dosis"]["descripcionDosis"]}. ☑`;
+
+        if (tempDosis.caso === "ninguna" || tempDosis.caso === null) {
+          tempDosis.caso = "dosis";
+          tempDosis.dosis = dosis["dosis"]["descripcionDosis"];
+          tempDosis.edad_days_desde = `${dosis["edadDesde"]} (dias).`;
+          tempDosis.edad_days_hasta = `${dosis["edadHasta"]} (dias).`;
         }
+
+        // console.log("## No Edad: ", `Desde: ${dosis["edadDesde"]} - Hasta: ${dosis["edadHasta"]}.`);
+      } else {
+        // NO EDAD
+        planTemp.descripcion += `\n » Desde: ${dosis["edadDesde"]} - Hasta: ${dosis["edadHasta"]} (dias). ☐`;
+        // NO DOSIS
+        planTemp.descripcion += `\n   Dosis: ${dosis["dosis"]["descripcionDosis"]}. ☐`;
+
+        if (tempDosis.caso === null) {
+          tempDosis.caso = "ninguna";
+          tempDosis.dosis = dosis["dosis"]["descripcionDosis"];
+          tempDosis.edad_days_desde = `${dosis["edadDesde"]} (dias).`;
+          tempDosis.edad_days_hasta = `${dosis["edadHasta"]} (dias).`;
+        }
+
+        // console.log(
+        //   "## No NADA: ",
+        //   dosis.dosis.descripcionDosis,
+        //   `Desde: ${dosis["edadDesde"]} - Hasta: ${dosis["edadHasta"]}.`
+        // );
       }
+    }
+    switch (tempDosis.caso) {
+      case "ambos":
+        planTemp.si.Dosis = tempDosis.dosis;
+        break;
+      case "edad":
+        planTemp.no.Dosis = tempDosis.dosis;
+        break;
+      case "dosis":
+        planTemp.no["Edad Desde"] = tempDosis.edad_days_desde;
+        planTemp.no["Edad Hasta"] = tempDosis.edad_days_hasta;
+        break;
+      case "ninguna":
+        planTemp.no["Edad Desde"] = tempDosis.edad_days_desde;
+        planTemp.no["Edad Hasta"] = tempDosis.edad_days_hasta;
+        planTemp.no.Dosis = tempDosis.dosis;
+        break;
     }
 
     planTemp.coincidencias =
@@ -1402,8 +1519,12 @@ const matchPlanesVacunasCIPRES = async ({vacunacionDB, CIPRES}) => {
     };
   }
 
-  // ordenar los planes por mayores coincidencias (descendente)
-  planCipres.sort((a, b) => b.coincidencias - a.coincidencias);
+  // ordenar los planes por poblacion_especial (descendente) y por mayores coincidencias (descendente)
+  planCipres.sort(
+    (a, b) => b.poblacion_especial - a.poblacion_especial || b.coincidencias - a.coincidencias
+  );
+
+  // console.error("### planCipres: ", planCipres);
   return planCipres;
 };
 
