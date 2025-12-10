@@ -178,18 +178,11 @@ let pacienteSchema = new mongoose.Schema(
 );
 
 pacienteSchema.index(
-  {
-    // sexo: 1,
-    documento: 1,
-    tipo_doc: 1,
-  },
+  {documento: 1, tipo_doc: 1},
   {
     name: "documento_unico",
     unique: true,
     sparse: true,
-    // partialFilterExpression: {
-    //   $and: [{sexo: {$exists: true}}, {documento: {$exists: true}}, {tipo_doc: {$exists: true}}],
-    // },
   }
 );
 

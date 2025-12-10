@@ -27,16 +27,6 @@
 
 ---
 
-### [1.7.20251027] - 2025-10-27
-
-- 🩹 Fixed a Sistema - Dialogs => Se corrigieron los Dialogs (Ventanitas) que no se cerraban cuando caducaba la sesion o cuando se navegaba con "atras"/"adelante" desde el navegador, quedando abiertos al volver a iniciar sesion, ahora se cierran.
-- 📈 Improved a Sistema - Paciente => Se mejoro la comunicacion del componente siendo mas configurable, ahora informa si se borra, cancela, edita o es nuevo el paciente.
-
-- ✨ Added a Vacunas - Aplicacion => Ahora es posible modificar la fecha de nacimiento antes de efectuar la aplicacion.
-- 📈 Improved a Vacunas - Aplicacion => Verificar planes en CIPRES, Se mejoro la seleccion del plan teniendo en cuenta la Poblacion Especial, Edad y Estrategia (Motivo | Esquema).
-- 📈 Improved a Vacunas - Aplicacion => Se mejoraron los mensajes de error, teniendo en cuenta cuando CIPRES esta caido.
-- 🚨 Changed a Vacunas - Aplicacion => Ya no es necesario seleccionar "Edad Unidad" ni la "Edad", la edad de la aplicacion se autocalcula con la fecha de nacimiento.
-
 ### [1.7.20250922] - 2025-09-22
 
 - 📈 Improved a Sistema - Confirm | Mensaje | Error => Se mejoraron los mensajes con mucho texto, ahora se puede scrollear el contenido sin perder los botones.

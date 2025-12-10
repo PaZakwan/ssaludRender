@@ -41,7 +41,7 @@
     "morgan": "^1.10.0",
     "multer": "^1.4.5-lts.1",
     "node-schedule": "^2.1.1",
-    "nodemailer": "^7.0.10",
+    "nodemailer": "^6.9.16",
     "simple-xml-to-json": "^1.2.3",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },

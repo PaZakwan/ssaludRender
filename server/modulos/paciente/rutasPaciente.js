@@ -631,10 +631,7 @@ app.get(
             username: process.env.RENAPER_USR,
             password: process.env.RENAPER_PSR,
           },
-          {
-            headers: {"content-type": "application/x-www-form-urlencoded"},
-            timeout: 5 * 60 * 1000, // 300.000 (300seg = 5min) default is `0` (no timeout)
-          }
+          {headers: {"content-type": "application/x-www-form-urlencoded"}}
         );
 
         if (respuesta?.data?.data?.token) {
@@ -664,7 +661,6 @@ app.get(
           headers: {
             Authorization: `Bearer ${RENAPER.tkn}`,
           },
-          timeout: 5 * 60 * 1000, // 300.000 (300seg = 5min) default is `0` (no timeout)
         }
       );
       if (respuesta?.data?.apellido) {

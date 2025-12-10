@@ -99,12 +99,6 @@ if (process.env.NODE_ENV === "dev") {
     bufferCommands: false,
     family: 4,
     autoIndex: false,
-    // VER EL TEMA DE Encriptacion -> 127.0.0.1 en el server local con certificado propio...
-    //      Tutorial -> https://rajanmaharjan.medium.com/secure-your-mongodb-connections-ssl-tls-92e2addb3c89
-    //      Client -> https://mongoosejs.com/docs/tutorials/ssl.html#tlsssl-validation
-    //      Server -> https://www.mongodb.com/docs/manual/tutorial/configure-ssl
-    // tls: true,
-    // tlsAllowInvalidCertificates: true,
   });
 } else {
   process.env.DBoptions = JSON.stringify({
