@@ -199,7 +199,7 @@ let VacunaAplicacionSchema = new Schema(
       type: String,
     },
     ps_fecha_nacimiento: {
-      type: String,
+      type: Date,
     },
     ps_doc_resp: {
       type: String,

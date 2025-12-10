@@ -67,7 +67,41 @@ const errorMessage = function (res, error, statusTemp) {
   });
 };
 
+const errorAxios = function ({serverName, code}) {
+  // No se recibio respuesta y esta contemplado por axios
+  if (code === "ERR_NETWORK") {
+    return {
+      message: `Problema con la Conexion a ${serverName}.
+     Revise la conexion (acceso a internet) y pruebe nuevamente.
+     Si el problema persiste, Llame a Informatica para mas informacion.`,
+      status: 503,
+    };
+  } else if (code === "ECONNABORTED") {
+    return {
+      message: `Conexion cancelada a ${serverName}, el tiempo de espera de respuesta se excedio.
+     Revise la conexion (acceso a internet) y pruebe nuevamente.
+     Si el problema persiste, Llame a Informatica para mas informacion.`,
+      status: 503,
+    };
+  } else if (code === "ENOTFOUND") {
+    return {
+      message: `Problema con la Conexion a ${serverName}, servidor no encontrado.
+     Revise la conexion (acceso a internet) y pruebe nuevamente.
+     Si el problema persiste, Llame a Informatica para mas informacion.`,
+      status: 503,
+    };
+  } else {
+    return {
+      message: `Hubo un problema al intentar Conectar con ${serverName}.
+     Revise la conexion (acceso a internet) y pruebe nuevamente.
+     Si el problema persiste, Llame a Informatica para mas informacion.`,
+      status: 503,
+    };
+  }
+};
+
 exports.errorMessage = errorMessage;
+exports.errorAxios = errorAxios;
 
 // Examples
 

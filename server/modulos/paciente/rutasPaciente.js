@@ -45,7 +45,12 @@ let listaPaciente = [
   "hist_salitas",
   "fec_fallecimiento",
   "validadoRENAPER",
+  "resp_apellido",
+  "resp_nombre",
+  "resp_tipo_doc",
   "doc_responsable",
+  "resp_sexo",
+  "resp_fec_nac",
 
   "oSocial",
   "oSocialNumero",
@@ -631,7 +636,10 @@ app.get(
             username: process.env.RENAPER_USR,
             password: process.env.RENAPER_PSR,
           },
-          {headers: {"content-type": "application/x-www-form-urlencoded"}}
+          {
+            headers: {"content-type": "application/x-www-form-urlencoded"},
+            timeout: 5 * 60 * 1000, // 300.000 (300seg = 5min) default is `0` (no timeout)
+          }
         );
 
         if (respuesta?.data?.data?.token) {
@@ -661,6 +669,7 @@ app.get(
           headers: {
             Authorization: `Bearer ${RENAPER.tkn}`,
           },
+          timeout: 5 * 60 * 1000, // 300.000 (300seg = 5min) default is `0` (no timeout)
         }
       );
       if (respuesta?.data?.apellido) {

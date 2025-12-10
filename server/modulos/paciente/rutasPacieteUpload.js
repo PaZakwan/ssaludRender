@@ -139,6 +139,11 @@ const PacienteProperties = [
   "oSocial",
   "oSocialNumero",
   "fec_fallecimiento",
+  "resp_apellido",
+  "resp_nombre",
+  "resp_tipo_doc",
+  "resp_sexo",
+  "resp_fec_nac",
   // PS
   "doc_responsable", // DNIResponsable
   "ps_id", // IdPS

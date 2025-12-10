@@ -151,10 +151,44 @@ let pacienteSchema = new mongoose.Schema(
 
     // PSVacunas
     ps_id: {type: Array, default: void 0},
+
+    resp_apellido: {
+      type: String,
+      trim: true,
+      validate: {
+        validator: function (v) {
+          // \u00f1 y \u00d1 son el equivalente para "ñ" y "Ñ", \s es el espacio y algunos especiales -> '`´¨-
+          return /^[A-Za-z\sÀ-ÿ\u00f1\u00d1'`´¨-]+$/.test(v);
+        },
+        message: "No se admiten caracteres especiales ni numeros.",
+      },
+      set: capitalize,
+    },
+    resp_nombre: {
+      type: String,
+      trim: true,
+      validate: {
+        validator: function (v) {
+          // \u00f1 y \u00d1 son el equivalente para "ñ" y "Ñ", \s es el espacio y algunos especiales -> '`´¨-
+          return /^[A-Za-z\sÀ-ÿ\u00f1\u00d1'`´¨-]+$/.test(v);
+        },
+        message: "No se admiten caracteres especiales ni numeros.",
+      },
+      set: capitalize,
+    },
+    resp_tipo_doc: {
+      type: String,
+    },
     doc_responsable: {
       type: String,
       trim: true,
       uppercase: true,
+    },
+    resp_sexo: {
+      type: String,
+    },
+    resp_fec_nac: {
+      type: String,
     },
 
     cipres_id: {
@@ -178,11 +212,18 @@ let pacienteSchema = new mongoose.Schema(
 );
 
 pacienteSchema.index(
-  {documento: 1, tipo_doc: 1},
+  {
+    sexo: 1,
+    documento: 1,
+    tipo_doc: 1,
+  },
   {
     name: "documento_unico",
     unique: true,
     sparse: true,
+    partialFilterExpression: {
+      $and: [{sexo: {$exists: true}}, {tipo_doc: {$exists: true}}, {documento: {$exists: true}}],
+    },
   }
 );
 

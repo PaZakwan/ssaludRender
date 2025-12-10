@@ -20,7 +20,6 @@
     ver https://stackoverflow.com/questions/23301467/javascript-exporting-large-text-csv-file-crashes-google-chrome
     ver https://docs.sheetjs.com/docs/solutions/output/
     ‼️ SHEET https://docs.sheetjs.com/docs/
-- [ ] Dialogs - No se Cierran cuando caduca sesion o cuando se navega con "atras"/"adelante".
 - [ ] Farmacia - Ingresos con muchas cargas, puede colgar el navegador (RAM).
   - Generar con lazy load para que no tarde en renderizar.. Requiere update de Vuetify..
 
@@ -31,7 +30,7 @@
 |         |    SERVER    | OFFICE  |  HOME   |
 | :------ | :----------: | :-----: | :-----: |
 | S.O.    | Ubuntu 20.04 |  W 10   |  W 11   |
-| Node    |   20.19.2    | 20.17.0 | 20.17.0 |
+| Node    |   20.19.5    | 20.19.5 | 20.17.0 |
 | NPM     |    10.9.2    | 10.9.2  | 10.9.2  |
 | MongoDB |    5.0.31    | 5.0.28  | 5.0.28  |
 | Nodemon |     ---      |  3.1.9  |  3.1.9  |
@@ -476,32 +475,20 @@ db.getCollection("VacunaAplicaciones")
 - [ ] Actualizar - MongoDB => 5.0 -> 6.0 -> [Compatibility](https://www.mongodb.com/docs/v6.0/release-notes/6.0-compatibility/)
 - [ ] Actualizar - Vue-Cli => Vue-Cli -> Vite -> [Migrate](https://vueschool.io/articles/vuejs-tutorials/how-to-migrate-from-vue-cli-to-vite/)
 
-- [ ] ‼️ Vacunas - Sistema -> MongoDB Script -> Unificar areas de la Maternidad... ihbafshbjashbjkfsda Capa 8
-      HORARIO - ANTES DE LAS 11:00 -> Horario con menor carga.
-      Maternidad Estela de Carlotto -> Maternidad Carlotto (CIPRES Maternidad)
-      ObjectId("601d4f84dba59803f718c935") -> ObjectId("6871182993b2e6a417961a2b")
+- [ ] ‼️ CIPRES - ERROR -> Paciente: Internal Server Error. or Paciente: CIPRES Internal Server Error.
+      Posible documento del responsable esta mal? ver casos de mayores del año, consultar a CIPRES
+      MAIL A CIPRES CONSULTA POR LA RESPUESTA "Internal Server Error".
+      Persona Creada en CIPRES, SIN CODIGO DE CIPRES(SUMAR) y SIN RESPONSABLE o.o, creo que es lo que me esta generando el error.
 
-      - [ ] VacunaStock => db.getCollection("VacunaStock").updateMany({area: ObjectId("601d4f84dba59803f718c935")}, {$set: {area: ObjectId("6871182993b2e6a417961a2b")}});
+- [x] ‼️ PACIENTE - UNICOS -> Personas con documentos menores a 10Mill pueden tener el mismo dni diferenciados por el genero (sexo).
 
-      - [ ] VacunaAplicaciones => db.getCollection("VacunaAplicaciones").updateMany({origen: ObjectId("601d4f84dba59803f718c935")}, {$set: {origen: ObjectId("6871182993b2e6a417961a2b")}});
+  - [x] partialFilterExpression | https://www.mongodb.com/docs/manual/core/index-partial (no puedo filtrar por el numero de documento, string :/)
 
-      - [ ] VacunaIngreso => db.getCollection("VacunaIngreso").updateMany({destino: ObjectId("601d4f84dba59803f718c935")}, {$set: {destino: ObjectId("6871182993b2e6a417961a2b")}});
+- [~] Ver tema del campo de Responsable en Pacientes.
+  Agregar ademas del documento del Responsable: tipoDocumento (resp_tipo_doc), numeroDocumento(doc_responsable), fechaNacimiento(resp_fec_nac), apellido(resp_apellido), nombre(resp_nombre), sexo(resp_sexo).
 
-      - [ ] VacunaDescartes => db.getCollection("VacunaDescartes").updateMany({origen: ObjectId("601d4f84dba59803f718c935")}, {$set: {origen: ObjectId("6871182993b2e6a417961a2b")}});
-
-      - [ ] Cambiar Nombre / Actualizar datos => Maternidad Carlotto (CIPRES Maternidad) -> Maternidad Estela de Carlotto
-
-      - [ ] Sacar permisos -> Maternidad Estela de Carlotto - ObjectId("601d4f84dba59803f718c935")
-
-      - [ ] Borrar area -> Maternidad Estela de Carlotto - ObjectId("601d4f84dba59803f718c935")
-
-- [ ] ‼️ Vacunas - Aplicacion -> Quitar input de edad_tipo/edad_valor... no sirve mas.. solo fecha de nacimiento, ver como modificar y los reportes... etarios, etc.
-      VER si combiene editar datos del paciente con un emit desde el componente de selected -> @selectedPaciente="({paciente}) => pacienteSeleccionado(paciente)", teniendo en cuenta el "STEP" del dialog de vacunacion... (LO MISMO PENSAR SI COMBIENE MANEJAR TODOS LOS CLOSE.FINISH CON EMITS... SI PORQUE SON OPTATIVOS Y SON MEJOR MANEJABLES POR LOS PARENTS COMPONENTS MAS PERSONALIZABLES)
-
-- [ ] ‼️ Vacunas - CIPRES -> INTEROPERABILIDAD
-
-  - [~] Credenciales para acceder a la API de CIPRES...
-  - [~] Matcheo de Aplicaciones.
+  - [ ] Responsable de Paciente en Rutas Cipres.
+  - [ ] Boton que cargue datos de la DB local con tipoDoc,Doc y Sexo, en formulario paciente.
 
 - [ ] ‼️ PACIENTE - UNIFICACION -> ASIGNAR A UN PACIENTE, las id del otro (ref: "Paciente") y luego BORRARLO al otro.
 
