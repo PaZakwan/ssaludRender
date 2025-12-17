@@ -869,12 +869,6 @@ const matchPacienteCIPRES = async ({
       }
       if (paciente.doc_responsable) {
         // encontrado responsable
-
-        // ###############
-        // DESARROLLAR el uso deL responsable local
-        // resp_apellido resp_nombre resp_tipo_doc doc_responsable resp_sexo resp_fec_nac
-        // ###############
-
         // obetener datos locales del responsable con el documento
         let responsableDB = await Paciente.findOne(
           paciente.resp_sexo
@@ -885,33 +879,48 @@ const matchPacienteCIPRES = async ({
               }
             : {tipo_doc: paciente.resp_tipo_doc ?? "DNI", documento: paciente.doc_responsable}
         )
-          .select("apellido nombre fec_nac sexo cipres_id")
+          .select("apellido nombre tipo_doc documento sexo fec_nac cipres_id")
           .exec();
-        if (!responsableDB || !responsableDB.fec_nac) {
+
+        let responsable = {};
+        responsable.apellido = paciente.resp_apellido ?? responsableDB.apellido;
+        responsable.nombre = paciente.resp_nombre ?? responsableDB.nombre;
+        responsable.tipo_doc = paciente.resp_tipo_doc ?? responsableDB.tipo_doc;
+        responsable.documento = paciente.doc_responsable ?? responsableDB.documento;
+        responsable.sexo = paciente.resp_sexo ?? responsableDB.sexo;
+        responsable.fec_nac = paciente.resp_fec_nac ?? responsableDB.fec_nac;
+
+        if (
+          !responsable.apellido ||
+          !responsable.nombre ||
+          !responsable.fec_nac ||
+          !responsable.sexo
+        ) {
           return {
             err:
-              "Paciente: Faltan datos del Responsable para poder Registrar en CIPRES." +
-              `\nDatos Responsable-> Documento: ${paciente.doc_responsable}. ` +
-              `\nDar de alta a la persona responsable en el sistema local.\n`,
+              "Paciente: Faltan datos del Responsable para poder Registrarlo en CIPRES." +
+              `\nDatos Responsable-> Documento: ${responsable.documento}. ` +
+              `Apellido: ${responsable.apellido}. Nombre: ${responsable.nombre}. ` +
+              `Nacimiento: ${responsable.fec_nac}. Sexo: ${responsable.sexo}.\n`,
           };
         }
-        responsableDB.fec_nac = new Date(responsableDB.fec_nac).toISOString().slice(0, 10);
+        responsable.fec_nac = new Date(responsable.fec_nac).toISOString().slice(0, 10);
 
         // comparar fecha de nacimiento del responsable => DIA-MES-AÑO -> AÑO-MES-DIA
         if (
           pacienteCipres.data["hydra:member"][0].paciente?.fechaNacimiento
             ?.split("-")
             .reverse()
-            .join("-") !== responsableDB.fec_nac
+            .join("-") !== responsable.fec_nac
         ) {
           return {
             err:
               "Paciente: Fecha de Nacimiento del Responsable no coincide con la del CIPRES." +
-              `\nDatos -> Documento Responsable: ${paciente.doc_responsable}. ` +
+              `\nDatos -> Documento Responsable: ${responsable.documento}. ` +
               `\nCIPRES: ${pacienteCipres.data["hydra:member"][0].paciente?.fechaNacimiento
                 ?.split("-")
                 .reverse()
-                .join("-")}. LOCAL: ${responsableDB.fec_nac}\n`,
+                .join("-")}. LOCAL: ${responsable.fec_nac}\n`,
           };
         }
 
@@ -919,14 +928,14 @@ const matchPacienteCIPRES = async ({
         if (pacienteCipres.data["hydra:member"][0].hijos?.length > 0) {
           pacienteCipres = await axios.get(`${process.env.CIPRES_URL}/api/patient`, {
             params: {
-              numeroDocumento: paciente.doc_responsable,
-              sexo: paciente.sexo[0].toUpperCase(),
+              numeroDocumento: responsable.documento,
+              sexo: responsable.sexo[0].toUpperCase(),
               esDocumentoArgentino:
-                paciente.tipo_doc === "DNI" || !paciente.tipo_doc ? true : false,
+                responsable.tipo_doc === "DNI" || !responsable.tipo_doc ? true : false,
               esDocumentoPropio: false,
               incluirRelaciones: true,
               tipoDocumento: `/api/paciente/referencias/tipo_documento/${
-                paciente.tipo_doc === "DNI" ? "1" : "0"
+                responsable.tipo_doc === "DNI" ? "1" : "0"
               }`,
               incluirDomicilio: false,
               // establecimiento: "",
@@ -959,12 +968,14 @@ const matchPacienteCIPRES = async ({
             // Recuperar ID del Responsable
             pacienteCipres = await axios.get(`${process.env.CIPRES_URL}/api/patient`, {
               params: {
-                numeroDocumento: paciente.doc_responsable,
-                sexo: paciente.sexo[0].toUpperCase(),
+                numeroDocumento: responsable.documento,
+                sexo: responsable.sexo[0].toUpperCase(),
                 esDocumentoArgentino: true,
                 esDocumentoPropio: true,
                 incluirRelaciones: false,
-                tipoDocumento: "/api/paciente/referencias/tipo_documento/1",
+                tipoDocumento: `/api/paciente/referencias/tipo_documento/${
+                  responsable.tipo_doc === "DNI" ? "1" : "0"
+                }`,
                 incluirDomicilio: false,
               },
               headers: {
@@ -1019,49 +1030,57 @@ const matchPacienteCIPRES = async ({
       if (!paciente.documento && paciente.doc_responsable) {
         // no encontrado responsable
         // obetener datos locales del responsable con el documento
-        let responsableDB = await Paciente.findOne({
-          tipo_doc: "DNI",
-          documento: paciente.doc_responsable,
-        })
-          .select("apellido nombre fec_nac sexo cipres_id")
+        let responsableDB = await Paciente.findOne(
+          paciente.resp_sexo
+            ? {
+                sexo: paciente.resp_sexo,
+                tipo_doc: paciente.resp_tipo_doc ?? "DNI",
+                documento: paciente.doc_responsable,
+              }
+            : {tipo_doc: paciente.resp_tipo_doc ?? "DNI", documento: paciente.doc_responsable}
+        )
+          .select("apellido nombre tipo_doc documento sexo fec_nac cipres_id")
           .exec();
-        if (!responsableDB) {
-          return {
-            err:
-              "Paciente: Faltan datos del Responsable para poder Registrarlo en CIPRES." +
-              `\nDatos Responsable-> Documento: ${paciente.doc_responsable}. ` +
-              `Dar de alta a la persona responsable en el sistema local.\n`,
-          };
-        }
+
+        let responsable = {};
+        responsable.apellido = paciente.resp_apellido ?? responsableDB.apellido;
+        responsable.nombre = paciente.resp_nombre ?? responsableDB.nombre;
+        responsable.tipo_doc = paciente.resp_tipo_doc ?? responsableDB.tipo_doc;
+        responsable.documento = paciente.doc_responsable ?? responsableDB.documento;
+        responsable.sexo = paciente.resp_sexo ?? responsableDB.sexo;
+        responsable.fec_nac = paciente.resp_fec_nac ?? responsableDB.fec_nac;
+
         if (
-          !responsableDB.apellido ||
-          !responsableDB.nombre ||
-          !responsableDB.fec_nac ||
-          !responsableDB.sexo
+          !responsable.apellido ||
+          !responsable.nombre ||
+          !responsable.fec_nac ||
+          !responsable.sexo
         ) {
           return {
             err:
               "Paciente: Faltan datos del Responsable para poder Registrarlo en CIPRES." +
-              `\nDatos Responsable-> Documento: ${paciente.doc_responsable}. ` +
-              `Apellido: ${responsableDB.apellido}. Nombre: ${responsableDB.nombre}. ` +
-              `Nacimiento: ${responsableDB.fec_nac}. Sexo: ${responsableDB.sexo}.\n`,
+              `\nDatos Responsable-> Documento: ${responsable.documento}. ` +
+              `Apellido: ${responsable.apellido}. Nombre: ${responsable.nombre}. ` +
+              `Nacimiento: ${responsable.fec_nac}. Sexo: ${responsable.sexo}.\n`,
           };
         }
-        responsableDB.fec_nac = new Date(responsableDB.fec_nac).toISOString().slice(0, 10);
+        responsable.fec_nac = new Date(responsable.fec_nac).toISOString().slice(0, 10);
 
         // Registrar responsable
         let pacienteCipres = await axios.post(
           `${process.env.CIPRES_URL}/api/patient`,
           {
-            tipoDocumento: "/api/paciente/referencias/tipo_documento/1",
-            numeroDocumento: paciente.doc_responsable,
-            fechaNacimiento: responsableDB.fec_nac,
-            apellido: responsableDB.apellido,
-            nombre: responsableDB.nombre,
+            tipoDocumento: `/api/paciente/referencias/tipo_documento/${
+              responsable.tipo_doc === "DNI" ? "1" : "0"
+            }`,
+            numeroDocumento: responsable.documento,
+            fechaNacimiento: responsable.fec_nac,
+            apellido: responsable.apellido,
+            nombre: responsable.nombre,
             sexo: `/api/paciente/referencias/sexo/${
-              responsableDB.sexo[0].toUpperCase() === "M"
+              responsable.sexo[0].toUpperCase() === "M"
                 ? "1"
-                : responsableDB.sexo[0].toUpperCase() === "F"
+                : responsable.sexo[0].toUpperCase() === "F"
                 ? "2"
                 : "0"
             }`,
@@ -1073,7 +1092,7 @@ const matchPacienteCIPRES = async ({
           }
         );
 
-        // console.log("# no responsable, registrado", pacienteCipres?.data, responsableDB);
+        // console.log("# no responsable, registrado", pacienteCipres?.data, responsable);
         // Registrar paciente hijo
         pacienteCipres = await axios.post(
           `${process.env.CIPRES_URL}/api/patient`,

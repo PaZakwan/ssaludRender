@@ -480,16 +480,6 @@ db.getCollection("VacunaAplicaciones")
       MAIL A CIPRES CONSULTA POR LA RESPUESTA "Internal Server Error".
       Persona Creada en CIPRES, SIN CODIGO DE CIPRES(SUMAR) y SIN RESPONSABLE o.o, creo que es lo que me esta generando el error.
 
-- [x] ‼️ PACIENTE - UNICOS -> Personas con documentos menores a 10Mill pueden tener el mismo dni diferenciados por el genero (sexo).
-
-  - [x] partialFilterExpression | https://www.mongodb.com/docs/manual/core/index-partial (no puedo filtrar por el numero de documento, string :/)
-
-- [~] Ver tema del campo de Responsable en Pacientes.
-  Agregar ademas del documento del Responsable: tipoDocumento (resp_tipo_doc), numeroDocumento(doc_responsable), fechaNacimiento(resp_fec_nac), apellido(resp_apellido), nombre(resp_nombre), sexo(resp_sexo).
-
-  - [ ] Responsable de Paciente en Rutas Cipres.
-  - [ ] Boton que cargue datos de la DB local con tipoDoc,Doc y Sexo, en formulario paciente.
-
 - [ ] ‼️ PACIENTE - UNIFICACION -> ASIGNAR A UN PACIENTE, las id del otro (ref: "Paciente") y luego BORRARLO al otro.
 
   - [ ] Permiso Admin General | Permisos en cada modulo con modificacion en solo su modulo y lectura de los demas.

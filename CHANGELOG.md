@@ -27,6 +27,14 @@
 
 ---
 
+### [1.7.20251217] - 2025-12-17
+
+- 🎄 Changed a Sistema - Navidad => Ahora los logos y el sonido de error tiene un estilo navideño.
+- ✨ Added a Sistema - Paciente => Se agregaron datos a cargar sobre el responsable del paciente, los cuales son opcionales si es mayor de 1 año, siendo necesarios para la carga en CIPRES de Vacunas.
+- 🚨 Changed a Sistema - Paciente => Ahora el Documento repetido se permite si es de diferente sexo. (tipo_doc, documento, sexo).
+
+- ✨ Added a Vacunas - Aplicacion => Al realizar una Vacunacion se le pregunta al vacunador si desea realizar otra vacunacion, esto acelera la carga de aplicaciones a la misma persona pero con diferente fecha de aplicacion. Propuesto por la Maternidad Estela de Carlotto.
+
 ### [1.7.20251210] - 2025-12-10
 
 - ✨ Added a Sistema - Contraseñas => Se agrego la posibilidad de que el usuario pueda ver lo tipeado en sus campos de contraseña.
