@@ -480,6 +480,8 @@ db.getCollection("VacunaAplicaciones")
       MAIL A CIPRES CONSULTA POR LA RESPUESTA "Internal Server Error".
       Persona Creada en CIPRES, SIN CODIGO DE CIPRES(SUMAR) y SIN RESPONSABLE o.o, creo que es lo que me esta generando el error.
 
+- [ ] ‼️ MongoDB Script - BackUp -> Ver de comprimirlo directamente en servidor cuando backupea.
+
 - [ ] ‼️ PACIENTE - UNIFICACION -> ASIGNAR A UN PACIENTE, las id del otro (ref: "Paciente") y luego BORRARLO al otro.
 
   - [ ] Permiso Admin General | Permisos en cada modulo con modificacion en solo su modulo y lectura de los demas.

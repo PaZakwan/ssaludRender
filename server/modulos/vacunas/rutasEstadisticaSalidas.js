@@ -135,6 +135,7 @@ app.get(
 
       // Total Nominal - Vacunaciones
       let vacunacionesDB = [];
+      let vacunatorioPacienteDB = [];
       if (modelos?.vac) {
         let detallado = modelos.vac.nd
           ? null
@@ -247,6 +248,45 @@ app.get(
               pacienteTelefonoDB: {
                 $ifNull: ["$pacienteDB.telefono", "$pacienteDB.telefono_alt", "$vacio"],
               },
+            });
+        } else {
+          // Agrupar por vacunatorio - paciente -> Total Pacientes Atendidos + Total Aplicaciones
+          vacunatorioPacienteDB = VacunaAplicacion.aggregate()
+            .match(filtroIndividual)
+            // agrupar area - paciente - fecha -> paciente atendido
+            .group({
+              _id: {
+                area: "$origen",
+                fecha: "$fecha",
+                paciente: {
+                  $ifNull: ["$paciente", "$ps_paciente"],
+                },
+              },
+              "Total Aplicaciones": {$sum: 1},
+            })
+            // agrupar area -> contar pacientes atendidos
+            .group({
+              _id: {
+                area: "$_id.area",
+              },
+              "Total Pacientes": {$sum: 1},
+              "Total Aplicaciones": {$sum: "$Total Aplicaciones"},
+            })
+            .project({
+              _id: 0,
+              area: "$_id.area",
+              "Total Pacientes": 1,
+              "Total Aplicaciones": 1,
+            })
+            .lookup({
+              from: "areas",
+              localField: "area",
+              foreignField: "_id",
+              as: "areaDB",
+            })
+            .unwind({path: "$areaDB", preserveNullAndEmptyArrays: true})
+            .addFields({
+              areaDB: {$ifNull: ["$areaDB.area", {$toString: "$area"}]},
             });
         }
 
@@ -567,15 +607,43 @@ app.get(
       }
 
       // Esperar que se concluyan las consultas a la BD
-      [vacunacionesDB, descartesDB, transferenciaOutDB] = await Promise.all([
+      [vacunacionesDB, descartesDB, transferenciaOutDB, vacunatorioPacienteDB] = await Promise.all([
         vacunacionesDB,
         descartesDB,
         transferenciaOutDB,
+        vacunatorioPacienteDB,
       ]);
 
       // INTEGRAR EGRESOS
       // VACUNACIONES
       let egresosDB = [...vacunacionesDB];
+      // TOTALES vacunatorioPacienteDB
+      // si egresos esta vacio... tambien lo estaran los totales .-.
+      if (egresosDB.length !== 0) {
+        // sino recorrer vacunatorioPacienteDB y agregar los totales ("Total Pacientes" | "Total Aplicaciones")
+        for (let index = 0; index < vacunatorioPacienteDB.length; index++) {
+          egresosDB.push(
+            structuredClone({
+              areaDB: vacunatorioPacienteDB[index].areaDB,
+              // ante-ultimo
+              categoriaDB: "ZZ0",
+              insumoDB: "Total Pacientes",
+              _id: `${vacunatorioPacienteDB[index].areaDB}-Total Pacientes`,
+              total: vacunatorioPacienteDB[index]["Total Pacientes"],
+            })
+          );
+          egresosDB.push(
+            structuredClone({
+              areaDB: vacunatorioPacienteDB[index].areaDB,
+              // ultimo
+              categoriaDB: "ZZ1",
+              insumoDB: "Total Aplicaciones",
+              _id: `${vacunatorioPacienteDB[index].areaDB}-Total Aplicaciones`,
+              total: vacunatorioPacienteDB[index]["Total Aplicaciones"],
+            })
+          );
+        }
+      }
       // DESCARTES
       // si egresos sigue vacio agregar los descartes.
       if (egresosDB.length === 0) {

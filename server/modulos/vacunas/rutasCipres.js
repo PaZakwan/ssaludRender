@@ -726,15 +726,16 @@ const matchCIPRES = async ({vacunacionDB, CIPRES}) => {
       registro.planVacunacion = `/api/vacunacion/plan_vacunacion/${registro.planVacunacion[0].id_plan}`;
     } else if (registro.planVacunacion.length > 1) {
       // tiene mas de un plan que coincide con los datos
-      // poblacion especial -> peso de seleccion
-      if (
-        registro.planVacunacion[0].poblacion_especial >
-        registro.planVacunacion[1].poblacion_especial
-      ) {
-        registro.planVacunacion = `/api/vacunacion/plan_vacunacion/${registro.planVacunacion[0].id_plan}`;
-      } else {
-        registro.planVacunacion.err = `Plan de Vacunacion: Mas de un plan coincidente encontrado (${registro.planVacunacion.length}) en CIPRES.`;
-      }
+      // selecciona segun como fue ordenado y filtrado
+      // ordenado por poblacion_especial (descendente), edad_desde (descendente), edad_hasta (ascendente) y coincidencias === 100.
+      // if (
+      //   registro.planVacunacion[0].poblacion_especial >
+      //   registro.planVacunacion[1].poblacion_especial
+      // ) {
+      registro.planVacunacion = `/api/vacunacion/plan_vacunacion/${registro.planVacunacion[0].id_plan}`;
+      // } else {
+      //   registro.planVacunacion.err = `Plan de Vacunacion: Mas de un plan coincidente encontrado (${registro.planVacunacion.length}) en CIPRES.`;
+      // }
     } else {
       // ningun plan coincidio con los datos
       registro.planVacunacion.err =
@@ -1265,6 +1266,8 @@ const matchPlanesVacunasCIPRES = async ({vacunacionDB, CIPRES}) => {
       coincidencias: 0,
       // poblacion especial -> peso de seleccion
       poblacion_especial: 0,
+      edad_desde: 0,
+      edad_hasta: 0,
       si: {},
       no: {},
       tal_vez: {},
@@ -1481,6 +1484,8 @@ const matchPlanesVacunasCIPRES = async ({vacunacionDB, CIPRES}) => {
         tempDosis.dosis = dosis["dosis"]["descripcionDosis"];
         tempDosis.edad_days_desde = `${dosis["edadDesde"]} (dias).`;
         tempDosis.edad_days_hasta = `${dosis["edadHasta"]} (dias).`;
+        planTemp.edad_desde = dosis["edadDesde"];
+        planTemp.edad_hasta = dosis["edadHasta"];
 
         // console.log("## SI dosis: ", dosis.dosis.descripcionDosis);
       } else if (
@@ -1569,9 +1574,13 @@ const matchPlanesVacunasCIPRES = async ({vacunacionDB, CIPRES}) => {
     };
   }
 
-  // ordenar los planes por poblacion_especial (descendente) y por mayores coincidencias (descendente)
+  // ordenar los planes por poblacion_especial (descendente), edad_desde (descendente), edad_hasta (ascendente) y por mayores coincidencias (descendente).
   planCipres.sort(
-    (a, b) => b.poblacion_especial - a.poblacion_especial || b.coincidencias - a.coincidencias
+    (a, b) =>
+      b.poblacion_especial - a.poblacion_especial ||
+      b.edad_desde - a.edad_desde ||
+      a.edad_hasta - b.edad_hasta ||
+      b.coincidencias - a.coincidencias
   );
 
   // console.error("### planCipres: ", planCipres);

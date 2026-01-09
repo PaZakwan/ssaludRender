@@ -72,28 +72,35 @@ const errorAxios = function ({serverName, code}) {
   if (code === "ERR_NETWORK") {
     return {
       message: `Problema con la Conexion a ${serverName}.
-     Revise la conexion (acceso a internet) y pruebe nuevamente.
+     Revise la conexion (acceso a internet), el estado del Servicio con el que quiere conectar y pruebe nuevamente.
      Si el problema persiste, Llame a Informatica para mas informacion.`,
       status: 503,
     };
   } else if (code === "ECONNABORTED") {
     return {
       message: `Conexion cancelada a ${serverName}, el tiempo de espera de respuesta se excedio.
-     Revise la conexion (acceso a internet) y pruebe nuevamente.
+     Revise la conexion (acceso a internet), el estado del Servicio con el que quiere conectar y pruebe nuevamente.
      Si el problema persiste, Llame a Informatica para mas informacion.`,
       status: 503,
     };
   } else if (code === "ENOTFOUND") {
     return {
       message: `Problema con la Conexion a ${serverName}, servidor no encontrado.
-     Revise la conexion (acceso a internet) y pruebe nuevamente.
+     Revise la conexion (acceso a internet), el estado del Servicio con el que quiere conectar y pruebe nuevamente.
+     Si el problema persiste, Llame a Informatica para mas informacion.`,
+      status: 503,
+    };
+  } else if (code === "ETIMEDOUT") {
+    return {
+      message: `Se agoto el tiempo de espera al Conectar con ${serverName}.
+     Revise la conexion (acceso a internet), el estado del Servicio con el que quiere conectar y pruebe nuevamente.
      Si el problema persiste, Llame a Informatica para mas informacion.`,
       status: 503,
     };
   } else {
     return {
       message: `Hubo un problema al intentar Conectar con ${serverName}.
-     Revise la conexion (acceso a internet) y pruebe nuevamente.
+     Revise la conexion (acceso a internet), el estado del Servicio con el que quiere conectar y pruebe nuevamente.
      Si el problema persiste, Llame a Informatica para mas informacion.`,
       status: 503,
     };

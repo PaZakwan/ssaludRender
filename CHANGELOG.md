@@ -27,6 +27,17 @@
 
 ---
 
+### [1.7.20260109] - 2026-01-09
+
+- 🌲 Changed a Sistema - No Navidad => Ahora los logos y el sonido de error no tienen un estilo navideño.
+- 🩹 Fixed a Sistema - Usuarios => Editar Usuarios, si tenia un permiso comun y no tenia un permiso especial de los generales (Farmacia/Vacunas), entonces al editar no aparecia la opcion de agregarle los permisos generales.
+- 🩹 Fixed a Sistema - PDFs => Se arreglo que cuando se clickeaba en "Descargar PDF", si luego se cancelaba la descarga y por ultimo se clickeaba en "Mostrar PDF", el PDF que se mostraba tenia el doble de contenido. (ahora pdfGen({}) usa parametros en formato de objeto)
+
+- 🚨 Changed a Bromatologia - Formulario => Los campos donde decian "Barrio" ahora dicen "Localidad" y es un Select con las siguientes opciones: Moreno, Paso del Rey, La Reja, Trujui, Cuartel V, Francisco Alvarez y Otros.
+
+- ✨ Added a Vacunas - Aplicaciones => En el Reporte "Vacunaciones" se agrego el Total de Pacientes Atendidos y el Total de Aplicaciones realizadas por Vacunatorio. Propuesto por Ariel, de Casasco.
+- 🚨 Changed a Vacunas - CIPRES => Cuando los planes de Vacunacion coincidentes son mas de uno, ahora se selecciona siempre uno, teniendo en cuenta la poblacion especial y el rango de edad en que la dosis aplicada pertenece. Improve seleccion de Neumococo (20) Conjugada (Nomivac 216)
+
 ### [1.7.20251217] - 2025-12-17
 
 - 🎄 Changed a Sistema - Navidad => Ahora los logos y el sonido de error tiene un estilo navideño.
