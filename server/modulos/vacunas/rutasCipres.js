@@ -719,23 +719,12 @@ const matchCIPRES = async ({vacunacionDB, CIPRES}) => {
     registro.planesVacunasCipres = [
       ...registro.planVacunacion.map((plan) => `\n\n${plan.descripcion}`),
     ];
-    // filtrar y ver si queda uno solo con coincidencia 100
+    // filtrar y ver si quedan coincidencias con 100
     registro.planVacunacion = registro.planVacunacion.filter((plan) => plan.coincidencias === 100);
-    if (registro.planVacunacion.length === 1) {
-      // si quedo un solo elemento autoseleccionarlo
-      registro.planVacunacion = `/api/vacunacion/plan_vacunacion/${registro.planVacunacion[0].id_plan}`;
-    } else if (registro.planVacunacion.length > 1) {
-      // tiene mas de un plan que coincide con los datos
-      // selecciona segun como fue ordenado y filtrado
+    if (registro.planVacunacion.length >= 1) {
+      // selecciona el primero segun como fue ordenado y filtrado
       // ordenado por poblacion_especial (descendente), edad_desde (descendente), edad_hasta (ascendente) y coincidencias === 100.
-      // if (
-      //   registro.planVacunacion[0].poblacion_especial >
-      //   registro.planVacunacion[1].poblacion_especial
-      // ) {
       registro.planVacunacion = `/api/vacunacion/plan_vacunacion/${registro.planVacunacion[0].id_plan}`;
-      // } else {
-      //   registro.planVacunacion.err = `Plan de Vacunacion: Mas de un plan coincidente encontrado (${registro.planVacunacion.length}) en CIPRES.`;
-      // }
     } else {
       // ningun plan coincidio con los datos
       registro.planVacunacion.err =

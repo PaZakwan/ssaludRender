@@ -27,15 +27,22 @@
 
 ---
 
+### [1.7.20260114] - 2026-01-14
+
+- ✨ Improved a Sistema - requestAPI => Al realizar envios al servidor se bloquean las posteriores solo si son repetidas y estan esperando respuesta, se desbloquea la posibilidad de realizar otro envio despues de 1 segundo de recibir la respuesta (para evitar problemas cuando el usuario "ametralle" el botón de envios).
+
+- ✨ Improved a Vacunas - Aplicacion => Cuando se le pregunta al vacunador si desea realizar otra vacunacion, ahora tiene opciones: "Misma Persona", "Otra Persona" y "No". Propuesto por Laura del Vacunatorio Central.
+- 🩹 Fixed a Vacunas - CIPRES => Verificacion previa al realizar la aplicacion: Cuando los planes de Vacunacion coincidentes son mas de uno, ahora se selecciona siempre uno, teniendo en cuenta la poblacion especial y el rango de edad en que la dosis aplicada pertenece. Improve seleccion de Neumococo (20) Conjugada (Nomivac 216)
+
 ### [1.7.20260109] - 2026-01-09
 
 - 🌲 Changed a Sistema - No Navidad => Ahora los logos y el sonido de error no tienen un estilo navideño.
 - 🩹 Fixed a Sistema - Usuarios => Editar Usuarios, si tenia un permiso comun y no tenia un permiso especial de los generales (Farmacia/Vacunas), entonces al editar no aparecia la opcion de agregarle los permisos generales.
 - 🩹 Fixed a Sistema - PDFs => Se arreglo que cuando se clickeaba en "Descargar PDF", si luego se cancelaba la descarga y por ultimo se clickeaba en "Mostrar PDF", el PDF que se mostraba tenia el doble de contenido. (ahora pdfGen({}) usa parametros en formato de objeto)
 
-- 🚨 Changed a Bromatologia - Formulario => Los campos donde decian "Barrio" ahora dicen "Localidad" y es un Select con las siguientes opciones: Moreno, Paso del Rey, La Reja, Trujui, Cuartel V, Francisco Alvarez y Otros.
+- 🚨 Changed a Bromatologia - Formulario => Los campos donde decian "Barrio" ahora dicen "Localidad" y es un Select con las siguientes opciones: Moreno, Paso del Rey, La Reja, Trujui, Cuartel V, Francisco Alvarez y Otros. Propuesto por Jasid Sebastian, Director.
 
-- ✨ Added a Vacunas - Aplicaciones => En el Reporte "Vacunaciones" se agrego el Total de Pacientes Atendidos y el Total de Aplicaciones realizadas por Vacunatorio. Propuesto por Ariel, de Casasco.
+- ✨ Added a Vacunas - Aplicaciones => En el Reporte "Vacunaciones" se agrego el Total de Pacientes Atendidos y el Total de Aplicaciones realizadas por Vacunatorio. Propuesto por Ariel de Casasco.
 - 🚨 Changed a Vacunas - CIPRES => Cuando los planes de Vacunacion coincidentes son mas de uno, ahora se selecciona siempre uno, teniendo en cuenta la poblacion especial y el rango de edad en que la dosis aplicada pertenece. Improve seleccion de Neumococo (20) Conjugada (Nomivac 216)
 
 ### [1.7.20251217] - 2025-12-17
@@ -44,7 +51,7 @@
 - ✨ Added a Sistema - Paciente => Se agregaron datos a cargar sobre el responsable del paciente, los cuales son opcionales si es mayor de 1 año, siendo necesarios para la carga en CIPRES de Vacunas.
 - 🚨 Changed a Sistema - Paciente => Ahora el Documento repetido se permite si es de diferente sexo. (tipo_doc, documento, sexo).
 
-- ✨ Added a Vacunas - Aplicacion => Al realizar una Vacunacion se le pregunta al vacunador si desea realizar otra vacunacion, esto acelera la carga de aplicaciones a la misma persona pero con diferente fecha de aplicacion. Propuesto por la Maternidad Estela de Carlotto.
+- ✨ Added a Vacunas - Aplicacion => Al realizar una Vacunacion se le pregunta al vacunador si desea realizar otra vacunacion, esto acelera la carga de aplicaciones a la misma persona pero con diferente fecha de aplicacion. Propuesto por Marisa de la Maternidad Estela de Carlotto.
 
 ### [1.7.20251210] - 2025-12-10
 
@@ -113,9 +120,9 @@
 - ‼️🗑️ Removed a Vacunas - Alta Vacuna => Se quito la Dosis Posible -> Refuerzo 4to.
 
 - 📈 Improved a Farmacia - Entregas => Ahora la Seleccion de "Origen" solamente muestra las areas con permiso del usuario.
-- 🚨 Changed a Farmacia - Descartes => Ahora todos los motivos de descarte tienen la opcion de "Justificacion" siendo para "Error" obligatoria. Propuesto por Marcos Ludueña
+- 🚨 Changed a Farmacia - Descartes => Ahora todos los motivos de descarte tienen la opcion de "Justificacion" siendo para "Error" obligatoria. Propuesto por Marcos Ludueña, Director.
 
-- ✨ Added a Lab Bromatologico - FisicoQuimico => Se agrego el Campo Opcional -> Cloro Residual (CAA 0.2 - 2.0). Propuesto por Jasid Sebastian
+- ✨ Added a Lab Bromatologico - FisicoQuimico => Se agrego el Campo Opcional -> Cloro Residual (CAA 0.2 - 2.0). Propuesto por Jasid Sebastian, Director.
 - 🚨 Changed a Lab Bromatologico - Validacion => Ahora la validacion de los rangos del CAA los marca en rojo si estan en el limite.
 
 ### [1.7.20250404] - 2025-04-04
@@ -134,7 +141,7 @@
 - 🩹 Fixed a HICLEM - Peso => El peso al nacer guardado previamente no se mostraba correctamente seleccionado en segunda carga.
 - 🚨 Changed a HICLEM - Antecedentes => "Diabetes (DM)" -> "Diabetes Tipo 1 (DM1)", "Diabetes Tipo 2 (DM2)".
 
-- ✨ Added a Farmacia - Entregas => Nuevo "paso" al realizar Entregas de medicacion que solicita la carga de datos para el Historial Clinico de la persona (HICLEM). Propuesto por Macorin Natalia
+- ✨ Added a Farmacia - Entregas => Nuevo "paso" al realizar Entregas de medicacion que solicita la carga de datos para el Historial Clinico de la persona (HICLEM). Propuesto por Macorin Natalia, Subsecretaria.
 - ✨ Added a Farmacia - Entregas => Los Excels de Entregas Nominales (Detallados) ahora tienen las columnas del Historial Clinico de la persona (HICLEM).
 
 - 🩹 Fixed a Patrimonio - Insumos => Entregas permitia entregar cualquier cantidad del insumo cuando el stock estaba en 0, ahora tiene en cuenta la cantidad 0 al igual que cuando habia insumos que no dejaba realizar entregas que superaran el stock; ademas Ingresos permitia ingresar insumos con cantidad en 0 lo cual no tenia sentido, ya solucionado.
