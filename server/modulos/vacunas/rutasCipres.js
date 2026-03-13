@@ -1,11 +1,11 @@
 const express = require("express");
 const axios = require("axios");
 
-const {verificaToken, verificaArrayPropValue} = require(process.env.MAIN_FOLDER +
-  "/middlewares/autenticacion");
+const {verificaToken, verificaArrayPropValue} = require(
+  process.env.MAIN_FOLDER + "/middlewares/autenticacion"
+);
 const {errorMessage, errorAxios} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
-const {isVacio, getDiferenciaDias, objectSetUnset, isObjectIdValid} = require(process.env
-  .MAIN_FOLDER + "/tools/object");
+const {isVacio, getDiferenciaDias} = require(process.env.MAIN_FOLDER + "/tools/object");
 const {guardarFile, leerFile} = require(process.env.MAIN_FOLDER + "/tools/file");
 const {groupBy} = require(process.env.MAIN_FOLDER + "/tools/object");
 const {checkIsValidJson} = require(process.env.MAIN_FOLDER + "/tools/string");
@@ -221,8 +221,9 @@ app.put(
       return errorMessage(res, {message: "Error no contemplado."}, 400);
     } catch (err) {
       // SI CIPRES RESPONDE CON ERROR DARLE FORMATO
+      let errorFormat = err;
       if (err.response) {
-        err = errorCIPRES({respuesta: err.response});
+        errorFormat = errorCIPRES({respuesta: err.response});
         // guardar respuesta de CIPRES
         await VacunaAplicacion.findOneAndUpdate(
           {
@@ -230,7 +231,7 @@ app.put(
           },
           {
             cipres_fecha: new Date(),
-            cipres_msg: err.message,
+            cipres_msg: errorFormat.message,
           },
           {
             new: true,
@@ -238,7 +239,7 @@ app.put(
           }
         ).exec();
       }
-      return errorMessage(res, err, err.status ?? err.code);
+      return errorMessage(res, errorFormat, errorFormat.status ?? errorFormat.code);
     }
   }
 );
@@ -289,9 +290,11 @@ const getDataBaseCipres = async () => {
         error: {message: "El sistema no cuenta con acceso a CIPRES al momento.", status: 501},
       };
 
+    let respuesta = null;
+
     // verifica token y lo recarga si proximo a vencer (duracion token 3 hs -> 180 => recarga cada 2hs 55m -> 175m )
     if (!CIPRES_TKN || new Date().getTime() - CIPRES_Date >= 175 * 60 * 1000) {
-      let respuesta = await axios.post(
+      respuesta = await axios.post(
         `${process.env.CIPRES_URL}/login`,
         {
           username: process.env.CIPRES_USR,
@@ -659,18 +662,16 @@ const matchCIPRES = async ({vacunacionDB, CIPRES}) => {
     registro.paciente = vacunacionDB.paciente.cipres_id;
   } else {
     // Buscar en CIPRES => paciente.documento/paciente.tipo_doc/sexo -> id;
-    registro.paciente = await matchPacienteCIPRES(
-      ({
-        fec_nac,
-        sexo,
-        paciente,
-        ps_tipo_doc,
-        ps_doc,
-        ps_doc_resp,
-        ps_fecha_nacimiento,
-        ps_nombreC,
-      } = vacunacionDB)
-    );
+    registro.paciente = await matchPacienteCIPRES({
+      fec_nac: vacunacionDB.fec_nac,
+      sexo: vacunacionDB.sexo,
+      paciente: vacunacionDB.paciente,
+      ps_tipo_doc: vacunacionDB.ps_tipo_doc,
+      ps_doc: vacunacionDB.ps_doc,
+      ps_doc_resp: vacunacionDB.ps_doc_resp,
+      ps_fecha_nacimiento: vacunacionDB.ps_fecha_nacimiento,
+      ps_nombreC: vacunacionDB.ps_nombreC,
+    });
     if (vacunacionDB.paciente?._id && registro.paciente && !registro.paciente.err) {
       // guardar ID del CIPRES del paciente
       await Paciente.findOneAndUpdate(
@@ -742,14 +743,14 @@ const matchCIPRES = async ({vacunacionDB, CIPRES}) => {
         vacunacionDB.embarazada_semana
           ? "Embarazada"
           : vacunacionDB.puerpera
-          ? "Puerpera"
-          : vacunacionDB.riesgo || vacunacionDB.estrategia === "Grupo de Riesgo"
-          ? "Grupo de Riesgo"
-          : vacunacionDB.personal_salud
-          ? "Personal de Salud"
-          : vacunacionDB.personal_esencial
-          ? "Personal de Esencial"
-          : "Default"
+            ? "Puerpera"
+            : vacunacionDB.riesgo || vacunacionDB.estrategia === "Grupo de Riesgo"
+              ? "Grupo de Riesgo"
+              : vacunacionDB.personal_salud
+                ? "Personal de Salud"
+                : vacunacionDB.personal_esencial
+                  ? "Personal de Esencial"
+                  : "Default"
       }.` +
       `\nDosis: ${vacunacionDB.dosis}.` +
       `\nEdad Paciente: ${vacunacionDB.paciente.edad_days_aplicacion} (dias).\n`;
@@ -811,8 +812,8 @@ const matchPacienteCIPRES = async ({
             ? true
             : false
           : paciente.resp_tipo_doc === "DNI" || !paciente.resp_tipo_doc
-          ? true
-          : false,
+            ? true
+            : false,
         esDocumentoPropio: true,
         incluirRelaciones: paciente.doc_responsable && !paciente.documento ? true : false,
         tipoDocumento: `/api/paciente/referencias/tipo_documento/${
@@ -821,8 +822,8 @@ const matchPacienteCIPRES = async ({
               ? "1"
               : "0"
             : paciente.resp_tipo_doc === "DNI"
-            ? "1"
-            : "0"
+              ? "1"
+              : "0"
         }`,
         incluirDomicilio: false,
         // establecimiento: "",
@@ -989,8 +990,8 @@ const matchPacienteCIPRES = async ({
               paciente.sexo[0].toUpperCase() === "M"
                 ? "1"
                 : paciente.sexo[0].toUpperCase() === "F"
-                ? "2"
-                : "0"
+                  ? "2"
+                  : "0"
             }`,
             nacionalidad: "/api/referencias/nacionalidades/4",
             responsable: {
@@ -1000,8 +1001,8 @@ const matchPacienteCIPRES = async ({
                 pacienteCipres?.data?.["hydra:member"]?.[0]?.paciente?.sexo?.inicial === "M"
                   ? "P"
                   : pacienteCipres?.data?.["hydra:member"]?.[0]?.paciente?.sexo?.inicial === "F"
-                  ? "M"
-                  : "T"
+                    ? "M"
+                    : "T"
               }`,
             },
           },
@@ -1017,6 +1018,7 @@ const matchPacienteCIPRES = async ({
     }
   } catch (error) {
     if (error.status === 404 || !(paciente.documento && paciente.doc_responsable)) {
+      let pacienteCipres = null;
       if (!paciente.documento && paciente.doc_responsable) {
         // no encontrado responsable
         // obetener datos locales del responsable con el documento
@@ -1057,7 +1059,7 @@ const matchPacienteCIPRES = async ({
         responsable.fec_nac = new Date(responsable.fec_nac).toISOString().slice(0, 10);
 
         // Registrar responsable
-        let pacienteCipres = await axios.post(
+        pacienteCipres = await axios.post(
           `${process.env.CIPRES_URL}/api/patient`,
           {
             tipoDocumento: `/api/paciente/referencias/tipo_documento/${
@@ -1071,8 +1073,8 @@ const matchPacienteCIPRES = async ({
               responsable.sexo[0].toUpperCase() === "M"
                 ? "1"
                 : responsable.sexo[0].toUpperCase() === "F"
-                ? "2"
-                : "0"
+                  ? "2"
+                  : "0"
             }`,
             nacionalidad: "/api/referencias/nacionalidades/4",
           },
@@ -1096,8 +1098,8 @@ const matchPacienteCIPRES = async ({
               paciente.sexo[0].toUpperCase() === "M"
                 ? "1"
                 : paciente.sexo[0].toUpperCase() === "F"
-                ? "2"
-                : "0"
+                  ? "2"
+                  : "0"
             }`,
             nacionalidad: "/api/referencias/nacionalidades/4",
             responsable: {
@@ -1107,8 +1109,8 @@ const matchPacienteCIPRES = async ({
                 pacienteCipres?.data?.sexo?.inicial === "M"
                   ? "P"
                   : pacienteCipres?.data?.sexo?.inicial === "F"
-                  ? "M"
-                  : "T"
+                    ? "M"
+                    : "T"
               }`,
             },
           },
@@ -1137,8 +1139,8 @@ const matchPacienteCIPRES = async ({
             paciente.sexo[0].toUpperCase() === "M"
               ? "1"
               : paciente.sexo[0].toUpperCase() === "F"
-              ? "2"
-              : "0"
+                ? "2"
+                : "0"
           }`,
           nacionalidad: "/api/referencias/nacionalidades/4",
         },

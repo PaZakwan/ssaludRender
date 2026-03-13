@@ -227,9 +227,9 @@ const startServer = async () => {
       name: "Base de Datos",
       evento: `Creando Indices`,
     });
-    let index = await DB.syncIndexes({continueOnError: true});
+    let _index = await DB.syncIndexes({continueOnError: true});
     // {key : value} => {Modelo : Error}
-    // console.log("index", index);
+    // console.log("_index", _index);
     // Espera que se Terminen de crear los index de la DB
     clgEvento({
       name: "Base de Datos",

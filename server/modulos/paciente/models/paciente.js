@@ -73,6 +73,9 @@ let pacienteSchema = new mongoose.Schema(
       type: String,
       required: [true, "La Fecha de Nacimiento del Paciente es necesaria."],
     },
+    doc_tramite: {
+      type: String,
+    },
     telefono: {
       type: String,
     },
@@ -81,7 +84,7 @@ let pacienteSchema = new mongoose.Schema(
     },
     email: {
       type: String,
-      match: [/^([\w-\.]+@([\w-]+\.)+[\w-]{2,12})?$/, "El e-mail no es valido."],
+      match: [/^([\w-.]+@([\w-]+\.)+[\w-]{2,12})?$/, "El e-mail no es valido."],
     },
     // Direccion
     dir_calle: {
@@ -213,8 +216,8 @@ let pacienteSchema = new mongoose.Schema(
 
 pacienteSchema.index(
   {
-    sexo: 1,
     documento: 1,
+    sexo: 1,
     tipo_doc: 1,
   },
   {
@@ -222,7 +225,7 @@ pacienteSchema.index(
     unique: true,
     sparse: true,
     partialFilterExpression: {
-      $and: [{sexo: {$exists: true}}, {tipo_doc: {$exists: true}}, {documento: {$exists: true}}],
+      $and: [{documento: {$exists: true}}, {sexo: {$exists: true}}, {tipo_doc: {$exists: true}}],
     },
   }
 );

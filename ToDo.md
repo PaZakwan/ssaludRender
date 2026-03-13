@@ -30,18 +30,18 @@
 |         |    SERVER    | OFFICE  |  HOME   |
 | :------ | :----------: | :-----: | :-----: |
 | S.O.    | Ubuntu 20.04 |  W 10   |  W 11   |
-| Node    |   20.19.5    | 20.19.5 | 20.17.0 |
-| NPM     |    10.9.2    | 10.9.2  | 10.9.2  |
 | MongoDB |    5.0.31    | 5.0.28  | 5.0.28  |
-| Nodemon |     ---      |  3.1.9  |  3.1.9  |
+| Node    |   20.19.5    | 20.20.0 | 20.20.0 |
+| NPM     |    10.9.2    | 10.9.4  | 10.9.4  |
+| Nodemon |     ---      | 3.1.11  | 3.1.11  |
 | PM2     |    5.4.0     |         |         |
 | Nginx   |              |         |         |
-| NVM     |              |         |         |
+| NVS(Dev)|     ---      |  1.7.1  |  1.7.1  |
 
 ```bat
 # Go into the repository
 $ npm update / npm update --legacy-peer-deps
-$ npm install -g npm@10.9.2
+$ npm install -g npm@10.9.4
 $ npx update-browserslist-db@latest
 
 $ npm install -g @vue/cli
@@ -55,411 +55,20 @@ $ npm ls
 
 --- -->
 
-<!-- ##### Consultas MONGODB
-
-```js
-// Consulta la cantidad de Entregas de Medicamentos segun la Hora Durante el 2024
-db.getCollection("InsumoEntregas").aggregate([
-  {$match: {retirado: {$gte: new Date(2024, 1, 1), $lt: new Date(2025, 1, 1)}}},
-  {
-    $group: {
-      _id: {$hour: "$retirado"},
-      cargas: {$sum: 1},
-    },
-  },
-  {
-    $project: {
-      _id: 0,
-      hora_UTC: "$_id",
-      hora_local: {$add: ["$_id", -3]},
-      cargas: 1,
-    },
-  },
-  {
-    $sort: {
-      hora_UTC: 1,
-    },
-  },
-]);
-
-// Consulta para correcion de Aplicaciones de Vacunas con fechas de Aplicacion improbables.
-db.getCollection("VacunaAplicaciones")
-  .find(
-    {
-      ps_id: {$exists: 1},
-      $or: [{fecha: {$gte: new Date()}}, {fecha: {$lte: ISODate("1900-01-01T00:00:00.000Z")}}],
-    },
-    {
-      fecha_aplicacion: {$dateToString: {format: "%Y-%m-%d", date: "$fecha"}},
-      fecha_nacimiento: {$dateToString: {format: "%Y-%m-%d", date: "$ps_fecha_nacimiento"}},
-      tipo_doc: "$tipo_doc",
-      documento: "$documento",
-      apelido_nombre: "$ps_nombreC",
-      _id: 0,
-    }
-  )
-  .sort({fecha: -1, ps_fecha_nacimiento: -1, _id: 1});
-
-// Consulta para correcion de Pacientes con fechas de Nacimiento improbables.
-db.getCollection("pacientes")
-  .find(
-    {
-      $or: [
-        {fec_nac: {$gte: new Date().toISOString().substr(0, 10)}},
-        {fec_nac: {$lte: "1900-01-01"}},
-      ],
-    },
-    {
-      fecha_nacimiento: "$fec_nac",
-      tipo_doc: "$tipo_doc",
-      documento: "$documento",
-      apellido: "$apellido",
-      nombre: "$nombre",
-      documento_responsable: "$doc_responsable",
-      _id: 0,
-    }
-  )
-  .sort({fec_nac: -1, doc_responsable: -1, _id: 1});
-
-// Consulta para agrupar Pacientes con mismo Responsable.
-db.getCollection("pacientes").aggregate(
-  [
-    {$match: {doc_responsable: {$exists: 1}}},
-    {
-      $sort: {
-        fec_nac: -1,
-        _id: 1,
-      },
-    },
-    {
-      $group: {
-        _id: "$doc_responsable",
-        aCargoDe: {
-          $push: "$$ROOT",
-        },
-        totalCargo: {$sum: 1},
-      },
-    },
-    {$match: {totalCargo: {$gt: 1}}},
-    {
-      $sort: {
-        totalCargo: 1,
-        _id: 1,
-      },
-    },
-    // { $count: "totalResponsables" }
-  ],
-  {allowDiskUse: true}
-);
-
-// Consulta para agrupar Pacientes con mismo ps_id.
-db.getCollection("pacientes").aggregate(
-  [
-    {$match: {ps_id: {$exists: 1}}},
-    {
-      $sort: {
-        fec_nac: -1,
-        _id: 1,
-      },
-    },
-    {$unwind: {path: "$ps_id"}},
-    {$match: {ps_id: {$ne: "salud_adulto"}}},
-    {
-      $group: {
-        _id: "$ps_id",
-        mismoPS: {
-          $push: "$$ROOT",
-        },
-        repetido: {$sum: 1},
-      },
-    },
-    {$match: {repetido: {$gt: 1}}},
-    {
-      $sort: {
-        repetido: -1,
-        _id: 1,
-      },
-    },
-    // { $count: "psRepetidos" }
-  ],
-  {allowDiskUse: true}
-);
-
-// Consulta para agrupar Pacientes con mismo ps_id. CUENTA CANTIDAD DE PS REPETIDOS
-db.getCollection("pacientes").aggregate(
-  [
-    {$match: {ps_id: {$exists: 1}}},
-    {$unwind: {path: "$ps_id"}},
-    {$match: {ps_id: {$ne: "salud_adulto"}}},
-    {
-      $group: {
-        _id: "$ps_id",
-        repetido: {$sum: 1},
-      },
-    },
-    {$match: {repetido: {$gt: 1}}},
-    {$count: "psRepetidos"},
-  ],
-  {allowDiskUse: true}
-);
-
-// Consulta para agrupar Pacientes (sin Documento) con mismo ps_id y fec_nac. (Se cargaron por duplicado?)
-db.getCollection("pacientes").aggregate(
-  [
-    {$match: {documento: {$exists: 0}, ps_id: {$exists: 1}}},
-    {
-      $sort: {
-        _id: 1,
-      },
-    },
-    {$unwind: {path: "$ps_id"}},
-    {$match: {ps_id: {$ne: "salud_adulto"}}},
-    {
-      $group: {
-        _id: {ps_id: "$ps_id", fec_nac: "$fec_nac"},
-        mismoPS: {
-          $push: "$$ROOT",
-        },
-        repetido: {$sum: 1},
-      },
-    },
-    {$match: {repetido: {$gt: 1}}},
-    {$addFields: {ps_id: "$_id.ps_id", fec_nac: "$_id.fec_nac"}},
-    {
-      $sort: {
-        repetido: -1,
-        "_id.ps_id": 1,
-      },
-    },
-    //{ $count: "psRepetidosNoDocumento" }
-  ],
-  {allowDiskUse: true}
-);
-
-// Consulta para obtener pacientes que faltan vacunar entre edad
-db.getCollection("VacunaAplicaciones").aggregate(
-  [
-    {
-      $match: {
-        paciente: {$exists: 1},
-        $or: [
-          {
-            ps_fecha_nacimiento: {
-              $gte: ISODate("2020-07-04T00:00:00.000Z"),
-              $lte: ISODate("2025-01-04T00:00:00.000Z"),
-            },
-          },
-          {ps_fecha_nacimiento: null},
-        ],
-      },
-    },
-    {$sort: {_id: -1}},
-    {
-      $group: {
-        _id: "$paciente",
-        aplicaciones: {
-          $push: {
-            origen: "$origen",
-            insumo: "$insumo",
-            estrategia: "$estrategia",
-          },
-        },
-        //totalAplicaciones: { $sum: 1 },
-      },
-    },
-    {
-      $match: {
-        "aplicaciones.insumo": {$ne: ObjectId("64a56ec37d749887ed6aa73b")},
-      },
-    },
-    {
-      $lookup: {
-        from: "pacientes",
-        localField: "_id",
-        foreignField: "_id",
-        as: "pacienteDB",
-      },
-    },
-    {
-      $match: {
-        "pacienteDB.fec_nac": {$gte: "2020-07-04", $lte: "2025-01-04"},
-      },
-    },
-    {$addFields: {areaMasReciente: {$arrayElemAt: ["$aplicaciones.origen", 0]}}},
-    {
-      $project: {
-        _id: 0,
-        aplicaciones: 0,
-      },
-    },
-    {
-      $lookup: {
-        from: "areas",
-        localField: "areaMasReciente",
-        foreignField: "_id",
-        as: "areaMasReciente",
-      },
-    },
-    {
-      $addFields: {
-        areaMasReciente: {$arrayElemAt: ["$areaMasReciente.area", 0]},
-        zonaMasReciente: {$arrayElemAt: ["$areaMasReciente.zona_us", 0]},
-      },
-    },
-    {$unwind: {path: "$pacienteDB", preserveNullAndEmptyArrays: true}},
-    {
-      $addFields: {
-        "paciente-apellido": "$pacienteDB.apellido",
-        "paciente-nombre": "$pacienteDB.nombre",
-        "paciente-sexo": "$pacienteDB.sexo",
-        "paciente-fec_nac": "$pacienteDB.fec_nac",
-        "paciente-tipo_doc": "$pacienteDB.tipo_doc",
-        "paciente-documento": "$pacienteDB.documento",
-        "paciente-doc_responsable": "$pacienteDB.doc_responsable",
-        "paciente-telefono": "$pacienteDB.telefono",
-        "paciente-telefono_alt": "$pacienteDB.telefono_alt",
-        "paciente-email": "$pacienteDB.email",
-        "paciente-dir_calle": "$pacienteDB.dir_calle",
-        "paciente-dir_numero": "$pacienteDB.dir_numero",
-        "paciente-dir_barrio": "$pacienteDB.dir_barrio",
-      },
-    },
-    {$project: {pacienteDB: 0}},
-    {$sort: {areaMasReciente: 1, "paciente-fec_nac": 1}},
-    //{ $skip: 0 },
-    //{ $limit: 50 },
-    //{ $count: "totalPaciente6M-5ASinVacuna" },
-  ],
-  {allowDiskUse: true}
-);
-
-// ACTUALIZAR DATA DE CAMPOS
-db.getCollection("tabla").updateMany({field: "Val"}, {$set: {field: "NewVal"}});
-
-// COPIAR DATA DE UN CAMPO A OTRO
-db.getCollection("tabla").updateMany({field: {$exists: true}}, {$set: {NewField: "$field"}});
-
-// MODIFICAR DATA DE LOS DOCUMENTOS PERSONALIZADO
-db.getCollection("tabla")
-  .find({
-    // CAMPOS EXISTENTES Y NO NULL
-    $and: [{field: {$ne: null}}, {field: {$exists: true}}]
-    })
-  .forEach(function (doc) {
-    let upDoc = {$set: {}, $unset:{}};
-    // to String
-    upDoc.$set.field = "" + doc.field;
-    // to Number
-    upDoc.$set.field = Number(doc.field);
-    // to Boolean
-    upDoc.$set.field = true;
-    // String to Date
-    upDoc.$set.field = new Date(doc.field);
-    // Date to String YYYY-MM-DD
-    upDoc.$set.field = doc.field.toISOString().slice(0, 10);
-
-    // RENOMBRAR CAMPOS
-    if (doc.field) {
-      upDoc.$set["newField"] = doc.field;
-      upDoc.$unset["field"] = 1;
-    }
-    // console.log
-    print(doc)
-    print(upDoc)
-    db.getCollection("tabla").updateOne({_id: doc._id}, upDoc);
-  });
-
-// REMOVER CAMPOS EXISTENTES
-db.getCollection("tabla").updateMany(
-  {ubicacion_anterior: {$exists: true}},
-  {$unset: {ubicacion_anterior: 1}}
-);
-
-// RENOMBRAR CAMPOS EXISTENTES
-db.getCollection("tabla").updateMany(
-  {field: {$exists: true}},
-  {$rename: {field: "NewFieldName"}}
-);
-
-// COPIAR DATA DE UNA TABLA (Collection) -> another Collection
-db.getCollection("tabla")
-  .aggregate([{$match: {categoria: "Value"}}, {$merge: "tablaDestino"}])
-
-// BORRAR DOCUMENTOS deja primeros 20 y borra en tandas de 500.000
-db.getCollection("tabla").remove({
-  _id: {
-    $in: db
-      .getCollection("tabla")
-      .find({})
-      .skip(20)
-      .limit(500000)
-      .map((doc) => doc._id),
-  },
-});
-
-// Exportar desde Robo3T agregar a las consultas "toArray" y cambiar vista para copiar como json.
-.toArray();
-
-// ACTUALIZAR VacunaAplicaciones 2025-08-11 LISTO ADAPTAR PARA QUE ACTUALICE fec_nac de los que no tienen ps_id?
-db.getCollection("VacunaAplicaciones")
-  .find({})
-   .skip(1000000)
-  // .skip(1100000)
-  // .skip(1200000)
-  // .skip(1300000)
-  // .skip(1400000)
-  // .skip(1500000)
-  // .skip(1600000)
-  // .skip(1700000)
-  // .skip(1800000)
-  // .skip(1900000)
-  // 7 min (380+ seg) aprox cada 100k de documentos
-  .limit(100000)
-  .forEach(function (doc) {
-    let upDoc = { $set: {}, $unset: {} };
-    //SI ps_id existe ->
-        //tipo_doc, documento -> +ps_tipo_doc, +ps_doc
-        //doc_responsable -> +ps_doc_resp.
-    //ps_fecha_nacimiento (historico) agregar +fec_nac (reportes).
-
-    if (doc.tipo_doc) {
-        if (doc.ps_id) {
-            upDoc.$set["ps_tipo_doc"] = doc.tipo_doc;
-        }
-      upDoc.$unset["tipo_doc"] = 1;
-    }
-    if (doc.documento) {
-        if (doc.ps_id) {
-            upDoc.$set["ps_doc"] = doc.documento;
-        }
-      upDoc.$unset["documento"] = 1;
-    }
-    if (doc.doc_responsable) {
-        if (doc.ps_id) {
-            upDoc.$set["ps_doc_resp"] = doc.doc_responsable;
-        }
-      upDoc.$unset["doc_responsable"] = 1;
-    }
-    if (doc.ps_fecha_nacimiento) {
-      upDoc.$set["fec_nac"] = doc.ps_fecha_nacimiento.toISOString().slice(0, 10);
-    }
-    print(upDoc)
-    db.getCollection("VacunaAplicaciones").updateOne({_id: doc._id}, upDoc);
-  });
-```
-
---- -->
-
 <!-- TEMPORAL EJEMPLOS
 
-- BACK
-  1. [ ] Mercury
-  1. [x] ‼️ Venus
-  1. [ ] Earth (Orbit/Moon)
-         +some item
-         +another item
-  1. [ ] Mars
-- FRONT
+  - [ ] Mercury
+    <progress value="0" max="100"></progress> 0%
+    - [ ] BACK
+    - [ ] FRONT
+  - [x] ‼️ Venus
+  - [ ] Earth (Orbit/Moon)
+        +some item
+        +another item
+  - [/] Mars
+    <progress value="50" max="100"></progress> 50%
+    - [x] BACK
+    - [ ] FRONT
   - [x] Saturn
         +some item
   - [x] Uranus
@@ -472,28 +81,42 @@ db.getCollection("VacunaAplicaciones")
 
 ### En Progreso - W.I.P. (Work in Progress)
 
-- [ ] Actualizar - MongoDB => 5.0 -> 6.0 -> [Compatibility](https://www.mongodb.com/docs/v6.0/release-notes/6.0-compatibility/)
-- [ ] Actualizar - Vue-Cli => Vue-Cli -> Vite -> [Migrate](https://vueschool.io/articles/vuejs-tutorials/how-to-migrate-from-vue-cli-to-vite/)
-
 - [ ] ‼️ CIPRES - ERROR -> Paciente: Internal Server Error. or Paciente: CIPRES Internal Server Error.
       Posible documento del responsable esta mal? ver casos de mayores del año, consultar a CIPRES
       MAIL A CIPRES CONSULTA POR LA RESPUESTA "Internal Server Error".
       Persona Creada en CIPRES, SIN CODIGO DE CIPRES(SUMAR) y SIN RESPONSABLE o.o, creo que es lo que me esta generando el error.
 
 - [ ] ‼️ PACIENTE - UNIFICACION -> ASIGNAR A UN PACIENTE, las id del otro (ref: "Paciente") y luego BORRARLO al otro.
+  - [ ] Permiso Admin General, no cualquiera pueda unificar.
 
-  - [ ] Permiso Admin General | Permisos en cada modulo con modificacion en solo su modulo y lectura de los demas.
+  - [/] Dialog paciente Unificar -> Select Paciente 2 -> Pantalla Union Datos Basicos -> Datos Especiales.
+    <progress value="68.99" max="100"></progress> 68.99%
+    - [x] Select Paciente
+    - [x] Datos Basicos (formPacienteUnir)
+      - [x] Form Basicos - Requeridos dinamicos.
+    - [/] Datos Especiales (expandPacienteUnionEspecial) (Posibilidad de borrar por item)
+      - [/] Form Especiales (formHistorialUnir)
+      - [x] Form Especiales (expandInsumosRecibidos)
+      - [x] Form Especiales (expandVacunaciones)
+      - [x] Form Especiales (expandMotivos)
+      - [ ] Form Especiales (expandMedicacion)
+            y adaptar como el expandMotivos para los dialogs.
+            agregar boton de borrar
+      - [-] Form Especiales (formTurnoUnir)
+      - [-] Form Especiales (formTuberculosisUnir)
 
-  - [ ] Boton en dialog paciente -> Select Paciente 2 -> Pantalla Union | Marcar (futura union).
+  - [ ] FARMACIA - Fracciones de productos (blíster o envase vs unidades sueltas)
+    - [ ] Ingreso de Insumos -> agregar nuevo campo para hacer inequivoco el producto en stock "unidades por blíster o envase".
+    - [ ] Ingreso de Insumos -> validacion o informar?, cantidad multiplo de "unidades por blíster o envase".
+    - [ ] transferencia de Insumos -> validacion o informar?, cantidad multiplo de "unidades por blíster o envase".
+
   - [ ] Herramienta Admin General ->
+    - [ ] Boton Reportar Duplicado (Origen -> Duplicado).
+    - [ ] Mostrar Posibles Duplicados (posibilidad export csv) -> Apellido y Fec Nac coincidan (Mellizos | Gemelos).
+          Dialog de union
+          Quitar del reporte
 
-    - [ ] Auto Marcar Duplicados (script baches) -> Apellido y Fec Nac coincidan (Mellizos | Gemelos).
-    - [ ] Duplicados Manual -> Select Paciente 1 y Select Paciente 2 -> Opciones: Pantalla Union | Marcar (futura union).
-    - [ ] Gestion Duplicados (Marcados previamente) -> Pantalla Union con posibilidad de ver el siguiente Marcado.
-
-  - [~] Select Paciente
-  - [ ] Pantalla Union -> Desmarcar (si estaban Marcados) | Unificar (and complete finish function if exist)
-  - [ ] Paciente Marca -> Una Marca por Paciente
+- [ ] PACIENTE - ALTA -> Nuevo metodo de alta/busqueda con Pistola lectora QR?.
 
 - [ ] ‼️ Farmacia/Vacunas -> Estado de Insumos (solo utilizables para reportes, historica).
 
@@ -524,196 +147,14 @@ db.getCollection("VacunaAplicaciones")
 ### En Progreso Secundario
 
 - BACK
-  1. [ ] Revisar y borrar libreria lodash => \_pick , \_merge. [youmightnotneed lodash](https://youmightnotneed.com/lodash)
-  1. [ ] ‼️ Independizar y crear script para generar los ssl certificated for ip intranet.
-         [SSL LOCAL](https://deliciousbrains.com/ssl-certificate-authority-for-local-https-development/)
-         [generate-a-self-signed-SSL](https://stackoverflow.com/questions/10175812/how-to-generate-a-self-signed-ssl-certificate-using-openssl?answertab=trending#tab-top)
-         [How SSL LOCAL](https://www.section.io/engineering-education/how-to-get-ssl-https-for-localhost/)
+  - [ ] Revisar y borrar libreria lodash => \_pick , \_merge (sumarProps?). [youmightnotneed lodash](https://youmightnotneed.com/lodash)
+  - [ ] Revisar y modificar => Object.assign -> structuredClone() || {...structuredClone(), ...{}}.
+  - [ ] ‼️ Independizar y crear script para generar los ssl certificated for ip intranet.
+        [SSL LOCAL](https://deliciousbrains.com/ssl-certificate-authority-for-local-https-development/)
+        [generate-a-self-signed-SSL](https://stackoverflow.com/questions/10175812/how-to-generate-a-self-signed-ssl-certificate-using-openssl?answertab=trending#tab-top)
+        [How SSL LOCAL](https://www.section.io/engineering-education/how-to-get-ssl-https-for-localhost/)
 - FRONT
-  1. [ ] Revisar y borrar libreria lodash => get , merge, clonedeep -> structuredClone({... , ...}). [youmightnotneed lodash](https://youmightnotneed.com/lodash)
-
-### Vacunas
-
-1. [x] Agregar Permisos a Vacunas => Aplicacion Vacunas. (como Entregas)
-       usuario, navegacion, pagina de Aplicaciones.
-       Permisos para crear/editar Pacientes.
-
-2. [x] Crear Modelo Vacunas => Aplicacion Vacunas. (como Entregas)
-       +Datos Paciente Estadistica
-       +Dosis
-       +Estrategia
-
-3. [x] Crear Rutas Vacunas => Aplicacion Vacunas. (como Entregas)
-4. [x] Vacunas Insumos con Categoria Vacunas =>
-       Dosis => Unica, Neonatal, 1era, 2da, 3era, 4ta, 5ta, 6ta, 7ma, Refuerzo, 2do Refuerzo, 3er Refuerzo. (Segun Vacuna al crear el Insumo)
-       Condiciones => NO Aplicable? NO se debe aplicar a embarazadas / puerperas / grupoRiesgo. (Segun Vacuna al crear el Insumo)
-       Estrategia => Calendario, Campaña, Contactos, Terreno, Internacion, Pre Exposicion, Post Exposicion. (General)
-
-5. [x] Agregar Pagina Vacunas => Aplicacion Vacunas. (como Entregas)
-       Busqueda, Nuevo Dialog.
-
-6. [x] Agregar a Hiclem,
-       Embarazada (semanas) => puerpera: Boolean (Excluyentes).
-       prematuro: Boolean.
-       peso_nacer_menor_2500: Boolean.
-       peso_nacer_mayor_3800: Boolean.
-       zona_sanitaria.
-       riesgo: Boolean.
-       personal_salud: Boolean.
-       personal_esencial: Boolean.
-
-7. [x] PDF vacunas como entregas nominal.
-
-8. [x] Migrar PSVACUNAS... uploads excel, unificar Pacientes,
-
-9. [x] Vacunas -> No_Provista <=> Vacuna aplicada ¿por la institucion? pero el insumo traido por el paciente (sin fecha de retirar),
-       Permitir Vacunar sin Vacuna (sin descontar de Stock) para actualizar carne vacunatorio,
-       Ver tema Origen de donde se carga, y vacunadorName (Instituto)
-
-10. [x] Vacunas Permisos -> Separar de farmacia. Gestion area/general - Ver area/general - config gral - Solicitud Motivo "Vacunas".
-
-    - [x] Front
-          solicitudes.config => Motivo -> Destino [Todos-opcional-area] (area Gestion)
-    - [x] BACK
-          Migrar Insumos Categoria Vacuna -> VacunaInsumo
-
-```js
-db.getCollection("Insumos")
-  .find({categoria: "Vacuna"})
-  .forEach(function (obj) {
-    db.getCollection("VacunaInsumos").insertOne(obj);
-  });
-db.getCollection("Insumos").deleteMany({categoria: "Vacuna"});
-```
-
-11. [x] Reporte Nominal (Estilo CIPRES) -> select Vacunatorio(5max) -> fec_apl + Datos del Paciente (apynm,doc(tip,num),domicilio,telefono,municipio,fec.nac,edad(v,u),sexo,estra,emba,puerp,pers sal/ese,riesg) vacuna-dosis, total dosis por paciente. +totales
-
-12. [x] TESTING de permisos.
-
-13. [x] Crear/Editar Vacuna Insumo, verificar si hay aplicaciones con nombre similar y si existe aplicacion vincularla con el nuevo Insumo Vacuna.
-
-14. [x] Reporte Vacuna Etario -> select Vacuna(1) -> fila Vacunatorio, columnas Grupo Etario segun vacuna y dosis + especiales +totales.
-        Fecha del reporte, entre fechas seleccionadas.
-
-15. [x] Reporte Vacunas por Vacunatorio (Hoja2) -> select fecha(rango) -> fila vacunatorios, columnas vacuna/dosis + especiales +pacientes(fecha+pacienteID).
-
-16. [ ] Vacuna Integracion con CIPRES.
-
-17. [x] ‼️ Insumos -> categoria "Agujas"-"Diluyente"-"Descartadores", por utilizados (vacuna no permitir el utilizados).
-        NO => Desde Alta Vacuna seleccionar su "Diluyente" y su "Agujas" correspondientes.
-        NO => Alta Vacuna -> Alta Insumos
-        Al Aplicar Vacunas Seleccionar tambien Agujas, Diluyentes, Descartadores -> al aplicar ver su categoria.. si es vacuna aplicar, sino Egresar.
-
-18. [ ] Auditorias (Supervision de Practicas) - Usuario Auditor General (Crear informes), Usuario Lector (General o Vacunatorio).
-        Cadena de Frio Si/No, Heladera Ordenada Si/No, Conservadora Preparada Si/No, Vacunas Rotuladas Si/No, Inventario Mensual Si/No.
-        Observacion.
-
-19. [ ] REPORTES en Steps -> Boton Nombre Reporte -> select filtros -> PDF / xls.
-
-20. [ ] Reporte Vacunatorio Mensual -> select Vacunatorio(1) -> fila vacunas/dosis +especiales, columnas meses.
-        Residentes Moreno, Menores(15a), varones, mujeres, embarazo, puerpera, pers salud/esencial, riesgo?, vacuna/dosis total mensual
-        Fecha del reporte, Anual entre meses seleccionados.
-        Fecha del reporte, entre fechas seleccionadas.
-
-21. [ ] Reporte Nominal -> select vacuna -> inicia [dosis] aplicacion entre <fechas> -> completa esquema [dosis] entre <fechas>.
-
-22. [ ] Plan de Contingencia, Stock en StandBy (Remito). Quitar de stock momentaneamente. Destino que cuidara los insumos.
-
-- [ ] Vacunas - Reportes -> Agregar filtro Edades (años), para sacar reporte nominal agrupado por edad.
-
-- [ ] VACUNAS - MIGRACION => Vacunaciones sin paciente ID pero con tipo_doc y documento, luego buscar si existe paciente y linkearlo.
-- [ ] VACUNAS - MIGRACION => Vacunaciones sin paciente ID posibilidad de seleccionar paciente para linkearlo.
-
-- [ ] Vacunas 2.0 -> Tabla con botones para dar vacunas segun calendario vacunatorio.
-      colores-> Rojo: edad pasada y no aplicada, Verde: aplicada, Azul: sin aplicar y en edad recomendada.
-
-- [ ] Calendario Regular, Edad por Vacuna.
-      (Opcional) 2 meses de holgura.. Proxima fecha de aplicacion, en alta Vacuna.
-
-### Farmacia
-
-```bat
-    (STOCK De US, similar a patrimonio insumos).
-
-    - VER -> Capacidad de verificación de stocks en un solo programa.
-    - VER -> Precios Unidad y Total.
-
-    MODELOS EN DRAW.IO
-
-[Back] (Front)
-
-    - [X](X)  Modificacion de usuarios, propiedad para permiso
-        farmacia: {
-            crear Insumo [0/1] (Farmacia Central, Dios de farmacia)
-            entrega a terceros [Area desde] (medicos, gestion y Dios de farmacia)
-            ver stock [Area] (medicos, gestion y Dios de farmacia)
-            gestion [Area] [
-                opciones,
-                solicitar y ver sus solicitudes, tambien las generales,
-                ingreso, (ex entradas)
-                transferencias (clearing),
-                egresos (ex descartes),
-                reportes locales
-                ] (gestion, Dios de farmacia)
-            general stock [0/1] (Supervisores de Central)
-            general reporte [0/1] (Supervisores de Central)
-            general admin [0/1] (Dios...)
-        }
-
-    - [X](X)  Navegacion agregar y mostrar solo rutas permitidas.
-
-    - [X](X)  Farmacia Stock
-                (stock, gestion, general stock, dios)
-                - [X](X) En base a los minimos, mostrar insumo en cantidad cero en caso de que no haya.
-                - [X](X) Filtrar solamente Vencidos/PorVencer, poco Stock (avisar).
-                - [X](X) Ver tema de colores del background, vencidos | porVencer (red (negrita) | orange).
-                - [X](X) Ver tema de colores del background, Minimo | porLlegarMinimo (Rosa (negrita) | no diferencia).
-                - [X](X) Ver tema de colores del background, en cero con Minimo (Fucsia (negrita)).
-                - [X] Reporte - Vencimiento/Minimos => [Area]-[Medicamento] = [Cantidad]-[minimo_opciones]
-                    - [Cantidad]-[vencimiento/por_vencer]
-
-    - [X](X)  Medicamento Entrega (consumidor final)
-                (entrega, dios)
-                (X) Ver tema de pacientes (busqueda dinamica por steps)...
-
-    - [X](X)  Farmacia Egresos (ex Descarte)
-                (gestion, dios)
-
-    - [X](X)  Farmacia Solicitud
-                (gestion, dios)
-
-    - [X](X)  Farmacia Transferencia (Clearing)
-                (gestion, dios)
-                - [X] Reporte Transferencia PDF (Total Origen / Destino)
-
-    - [~](~)  ‼️ Farmacia Opciones
-                (gestion, dios)
-                - [X](X) Similar a Insumo...
-                - [X](X) Minimos de Stock...
-                [ ]( ) Cantidad a Solicitar Standard... (Boton nuevo en Solicitud para cargar la plantilla)
-
-    [X](X)  Farmacia Reportes (Vencimiento/Minimos o Estadistica)
-                (gestion, general report, dios)
-                Similar a Hiclem Control.
-                - [X] Estadistica => [Area]-[Medicamento] = + [Ingreso] +- [Clearing] ~ [Stock]
-                    - [Entrega] - [Descarte] ~ [Solicitud]
-                - [X] Stock Total del Sistema => [Medicamento] = [Procedencia-Cantidad]-[Total]
-
-    - [~]( )  Farmacia Solicitud Consolidados (cada programa tiene una planilla) Para provincia
-            Lista de Pacientes incluidos en los programas
-                Datos Paciente
-                Insumo
-                Fecha de declaracion jurada (entrada al programa)
-                Duracion del programa para avisar que necesita renovacion.
-
-    (X)  Stock Estadistica, subtotal Buenos / subtotal por vencer / subtotal vencido / TOTAL.
-    (X)  Ingresos Estadistica, carga propia (orden_compra, inicial) / clearing (remito interno) / TOTAL.
-    (X)  Egresos Estadistica, nominal (entregas)/ clearing (remito interno) / descarte (motivo utilizado, otros) / TOTAL.
-    (X)  Solicitudes Estadistica, Pendientes Rutina / Urgencia / Emergencia / TOTAL / Stock.
-
-    - [X](X)  Manual PDF.
-              - [ ] Actualizar Video Tutorial...
-```
+  - [ ] Revisar/modificar/quitar => vue-axios -> axios centralizado en un archivo con interceptores -> usarlo en Store y Router.
 
 #### REUNION 2024-10-18
 
@@ -735,35 +176,151 @@ db.getCollection("Insumos").deleteMany({categoria: "Vacuna"});
 - [ ] Insumo - Alta -> Poder Unificar Insumos Eliminando uno y cambiar su ID por el nuevo.
 - [ ] Peticion de Insumos de Farmacia Central a sus Proveedores-> en base al minimo, conusmido en ultimos 2 meses + n% (5-10).
 
+### Vacunas
+
+- [ ] PSVACUNAS - MIGRACION => Areas de Historial.
+- [ ] VACUNAS - MIGRACION => Vacunaciones sin paciente ID pero con tipo_doc y documento, luego buscar si existe paciente y linkearlo.
+- [ ] VACUNAS - MIGRACION => Vacunaciones sin paciente ID posibilidad de seleccionar paciente para linkearlo.
+
+- [ ] Unificar Pacientes.
+
+- [ ] Auditorias (Supervision de Practicas).
+      Permiso de Crear -> Auditor General (Crear informes).
+      Permiso de Leer -> Vacunatorio General o de su gestion.
+      Cadena de Frio Si/No, Heladera Ordenada Si/No, Conservadora Preparada Si/No, Vacunas Rotuladas Si/No, Inventario Mensual Si/No.
+      Observacion.
+
+- [ ] Plan de Contingencia, Stock en StandBy (Remito). Quitar de stock momentaneamente. Destino que cuidara los insumos.
+
+- [ ] Reporte Vacunatorio Mensual -> select Vacunatorio(1) -> fila vacunas/dosis +especiales, columnas meses.
+      Residentes Moreno, Menores(15a), varones, mujeres, embarazo, puerpera, pers salud/esencial, riesgo?, vacuna/dosis total mensual
+      Fecha del reporte, Anual entre meses seleccionados.
+      Fecha del reporte, entre fechas seleccionadas.
+
+- [ ] Reporte en Steps -> Boton Nombre Reporte -> select filtros -> PDF / xls.
+
+- [ ] Reporte Nominal Personalizado -> select vacuna -> inicia [dosis] aplicacion entre <fechas> -> completa esquema [dosis] entre <fechas>.
+
+- [ ] Vacunas - Reportes -> Agregar filtro Edades (años), para sacar reporte nominal agrupado por edad.
+
+- [ ] Vacunas 2.0 -> Tabla con botones para dar vacunas segun calendario vacunatorio.
+      get vacunas de la API del CIPRES.
+      colores-> Rojo: edad pasada y no aplicada, Verde: aplicada, Azul: sin aplicar y en edad recomendada.
+
+- [ ] Alta Vacuna - Calendario Regular, Edad por Vacuna.
+      (Opcional) 2 meses de holgura.. Proxima fecha de aplicacion, en alta Vacuna.
+
+### Farmacia
+
+- FRONT
+  - [ ] Farmacia Solicitud Consolidados (cada programa tiene una planilla) Para provincia
+        Lista de Pacientes incluidos en los programas
+        Datos Paciente
+        Insumo
+        Fecha de declaracion jurada (entrada al programa)
+        Duracion del programa para avisar que necesita renovacion.
+
+  - [ ] Farmacia Opciones - Solicitar Standard... (Boton nuevo en Solicitud para cargar la plantilla)
+
+- BACK
+  - [ ] Farmacia Solicitud Consolidados (cada programa tiene una planilla) Para provincia
+        Lista de Pacientes incluidos en los programas
+        Datos Paciente
+        Insumo
+        Fecha de declaracion jurada (entrada al programa)
+        Duracion del programa para avisar que necesita renovacion.
+
+  - [ ] Farmacia Opciones - Solicitar Standard... (Boton nuevo en Solicitud para cargar la plantilla)
+
+- [ ] Actualizar PDF/Video Tutorial...
+
+- VER -> Precios Unidad y Total.
+
 ### Pacientes
 
 - FRONT
   - [ ] Migrar O.Social y Numero O.Soc a Array de objeto con mas datos y multiples OSoc {rnos, name, [planes]}...
-  - [~] opciones JSON
-    - [ ] quitar Zonas (uso interno para las salas)
+  - [/] opciones JSON
+    <progress value="33" max="100"></progress> 33%
     - [x] Localidades
-    - [ ] Barrios
-    - [ ] calles
+    - [ ] Lista de Barrios de Moreno?.
+    - [ ] Lista de Calles de Moreno?.
   - [ ] Agregar funcionalidad RENAPER.
   - [ ] Agregar funcionalidad de carga con camara en el codigo del dni (lector de codigo de barra / camara QR).
 - BACK
-  - [ ] ‼️ ‼️ BACK MIGRAR COMORBALIDADES de paciente a HICLEM.
   - [ ] Agregar funcionalidad RENAPER.
+
+### Bromatologia
+
+- FRONT
+  - [ ] Agregar funcionalidad descarga de PDF por Bulks.
+  - [ ] Permisos diferidos por origen y tipo de analisis.
+- BACK
+  - [ ] Permisos diferidos por origen y tipo de analisis.
+
+### PATRIMONIO
+
+- Feedback
+  - [ ] ‼️ ‼️ Modelo SELECT compus modelo de micro I3, I5, I7;
+  - [ ] ‼️ ‼️ Transferencias cambiar estado a "funcionando", excluir informatica/ y lugares de tirar cosas o transicion;
+  - [ ] ‼️ ‼️ Reportes(N° inv, Descripcion);
+        Bienes Reales, Transferencias y Bajas(motivo y anexo informe tecnico).
+  - [ ] Hacer varias transferencias a la vez.
+  - [ ] Planillas de carga en dialogs.
+  - [ ] Opciones de planilla de carga "Selects" (modulos de memoria).
+  - [ ] Mostrar Monitor INV en PCs Info... (consultar monitores con esa pc, array)
+  - [ ] Planillas de entrega.. seleccionar varios bienes al hacer la entrega..
+        campos opcionales de quien recibe y completar la transferencia al ya ser entregado..
+
+- FRONT
+  - [ ] bodyDataTableDinamic, agregar numeros y stylos para cantidades.
+  - [ ] ENTREGA DE INSUMOS AUTOCOMPLETE DE MODELOS DE IMPRESORA
+  - [ ] Reporte de Insumos..
+        subcategoria (Toner,Periferico,Repuesto,Otros)
+        CONSUMO, CUANTOS QUEDAN.
+        Compras, Ultimas entradas.
+        pdf/excel totales por modelos.
+
+- VER
+  - Mejorar Declaraciones con la dinamic-table
+  - soloLecturaStore
+  - Mejorar filtros del back.. populate no para busquedas...
+  - Determinar Bienes de Informatica, para filtrar del resto.
+    Orden de compra <-> Donacion (diferenciarlos).
+  - Tema de permisos de las cuentas de Patrimonio y PatrimonioArea.
+    Ninguna vera Insumos, eso lo maneja informatica (insumos permiso).
+    - Area, solo lectura de sus bienes.
+    - Patrimonio,
+      - Solo Lect
+        +Lectura de todos los bienes.
+      - Lect/Escri
+        +Carga/edicion de bienes no informaticos
+        +Movimientos
+        +Validar
+      - Admin
+        +Borrar(visibilidad)
+        +Ver tema de estadisticas
+        +Sacar reportes
+  - Patrimonio... Mostrar ultimo, cuando y que Modifico(admins).
+  - Agregar categorias de BD al combobox de las que no estan en la lista.
+    categorias en opciones BD
+  - Filtrar por zonas de areas.
+  - Informes Tecnicos de Baja.
+    (Problema, Posible Solucion, Motivo del Rechazo de la solucion)
+  - Baja - informacion de Solicitud de Baja.
+    (Motivo: resumen del Informe Tecnico).
+  - Baja - Oficial Nro Decreto.
 
 ### HICLEM
 
 Improvement PSMORENO (PRESTACIONES de cada profesional, US, Zonas, Estadistica Gral).
 
 - HICLEM
-
   - [ ] Control Mejorar Filtros.
   - [ ] Control PDF INFORME.
-  - [ ] Lista de Barrios de Moreno.
-  - [ ] Lista de Calles de Moreno.
   - [ ] Algunos estudios en historial general.
 
 - CONTROL
-
   - [ ] "Metas" en Motivo y ver si las cumplieron.
   - [ ] PDF INFORME.
   - [ ] Excel INFORME.
@@ -772,14 +329,12 @@ Improvement PSMORENO (PRESTACIONES de cada profesional, US, Zonas, Estadistica G
   - [ ] Ver Control/Estadistica Lista de permiso del usuario.
 
 - PROBLEMA (MOTIVO)
-
   - [ ] Cargar actualizarLecturas desde stores state.
   - [x] Motivos Unique los cuatro juntos persona/estado(Activo)/motivo_especialidad/programa-sintoma-descripcion.
   - [x] Atendido por varias especialidad(Hojas2) Consultas.
   - [x] Consultas Grupales atendido por varios profesionales.
 
 - CONSULTA
-
   - [x] Combobox Derivado de.. US, El Hospital, La Maternidad.
         Combobox, con los nombres de las US no las ID.. y permitir completar verdura.
   - [x] Motivos Fecha para cuando cambia de estado "ACTIVO".
@@ -794,13 +349,15 @@ Improvement PSMORENO (PRESTACIONES de cada profesional, US, Zonas, Estadistica G
 
 - FRONT
   - [x] formConsulGeneral
-  - [~] formEspecialidades
+  - [/] formEspecialidades
+    <progress value="20" max="100"></progress> 20%
     - [x] Nutricion.
     - [ ] Diabetes.
     - [ ] Tuberculosis.
     - [ ] Medicamentos.
     - [ ] Estudios
-  - [~] Opciones JSON
+  - [/] Opciones JSON
+    <progress value="70" max="100"></progress> 70%
     - [x] especialidad (tablas BD).
           ['Nutricion', 'Diabetes', 'Tuberculosis']
           ['Pediatria', 'Clinica Medica', 'Obstetricia', 'Ginecologia'] Medicina General (GENERALISTA)
@@ -820,8 +377,6 @@ Improvement PSMORENO (PRESTACIONES de cada profesional, US, Zonas, Estadistica G
           rnos, name, [planes]
     - [x] Localidades.
     - [x] Zonas.
-    - [ ] Barrios.
-    - [ ] calles.
   - [x] opciones noJSON
     - [x] severidad ['Leve', 'Moderada', 'Critica', 'Incapaz de evaluar' ].
     - [x] estados.
@@ -901,7 +456,7 @@ FRONT
 
 - VER cuando se agregue el modulo de medicamentos
 
-### HICLEM - ETS/TUBERCULOSIS
+### HICLEM - ETS/TUBERCULOSIS (Usan el de Nacion HSI)
 
 - VER
   - Caso Indice.
@@ -918,83 +473,10 @@ FRONT
 - BACK
   - [ ] Migrar a HICLEM.
 
-### Bromatologia
+### TURNERO (Usan uno desarrollado por INEGRAM)
 
-- FRONT
-  - [ ] Agregar funcionalidad descarga de PDF por Bulks.
-  - [ ] Permisos diferidos por origen y tipo de analisis.
-- BACK
-  - [ ] Permisos diferidos por origen y tipo de analisis.
-
-### PATRIMONIO
-
-- Feedback
-
-  - [ ] ‼️ ‼️ Modelo SELECT compus modelo de micro I3, I5, I7;
-  - [ ] ‼️ ‼️ Transferencias cambiar estado a "funcionando", excluir informatica/ y lugares de tirar cosas o transicion;
-  - [ ] ‼️ ‼️ Reportes(N° inv, Descripcion);
-        Bienes Reales, Transferencias y Bajas(motivo y anexo informe tecnico).
-  - [ ] Hacer varias transferencias a la vez.
-  - [ ] Planillas de carga en dialogs.
-  - [ ] Opciones de planilla de carga "Selects" (modulos de memoria).
-  - [ ] Mostrar Monitor INV en PCs Info... (consultar monitores con esa pc, array)
-  - [ ] Planillas de entrega.. seleccionar varios bienes al hacer la entrega..
-        campos opcionales de quien recibe y completar la transferencia al ya ser entregado..
-
-- FRONT
-
-  - [ ] bodyDataTableDinamic, agregar numeros y stylos para cantidades.
-  - [ ] ENTREGA DE INSUMOS AUTOCOMPLETE DE MODELOS DE IMPRESORA
-  - [ ] Reporte de Insumos..
-        subcategoria (Toner,Periferico,Repuesto,Otros)
-        CONSUMO, CUANTOS QUEDAN.
-        Compras, Ultimas entradas.
-        pdf/excel totales por modelos.
-
-- VER
-
-  - Mejorar Declaraciones con la dinamic-table
-  - soloLecturaStore
-  - Mejorar filtros del back.. populate no para busquedas...
-  - Determinar Bienes de Informatica, para filtrar del resto.
-    Orden de compra <-> Donacion (diferenciarlos).
-  - Tema de permisos de las cuentas de Patrimonio y PatrimonioArea.
-    Ninguna vera Insumos, eso lo maneja informatica (insumos permiso).
-    - Area, solo lectura de sus bienes.
-    - Patrimonio,
-      - Solo Lect
-        +Lectura de todos los bienes.
-      - Lect/Escri
-        +Carga/edicion de bienes no informaticos
-        +Movimientos
-        +Validar
-      - Admin
-        +Borrar(visibilidad)
-        +Ver tema de estadisticas
-        +Sacar reportes
-  - Patrimonio... Mostrar ultimo, cuando y que Modifico(admins).
-  - Agregar categorias de BD al combobox de las que no estan en la lista.
-    categorias en opciones BD
-  - Filtrar por zonas de areas.
-  - Informes Tecnicos de Baja.
-    (Problema, Posible Solucion, Motivo del Rechazo de la solucion)
-  - Baja - informacion de Solicitud de Baja.
-    (Motivo: resumen del Informe Tecnico).
-  - Baja - Oficial Nro Decreto.
-
-### PROFESIONALES (RR.HH)
-
-- VER
-  Nombre, Apellido, Email, Matriculas P/N, Legajo, Documento
-  Dia Laboral - Horarios - duracion TURNOS
-  Especialidad, US,
-  Licensias/No trabajados.(tipos de ausensia)
-
-### TURNERO
-
-- ‼️ REVISAR Y RE-PLANTEAR...
-- VER
-  - [ ] ‼️ BUSCAR/EMITIR -> INHABILITADO -> CORREGIR BUSQUEDAS MUCHOS PACIENTES...
+- REVISAR Y RE-PLANTEAR...
+  - [ ] BUSCAR/EMITIR -> INHABILITADO -> CORREGIR BUSQUEDAS MUCHOS PACIENTES...
   - [ ] Tomar datos de Profesionales
   - [ ] Profesionales con estado Borrado no aparecer en busqueda...
         marcar las Ausencia de los profesionales, feriados(Licencias a futuro).
@@ -1009,7 +491,7 @@ FRONT
   - [ ] Solicitud de Turnos
   - [ ] TABLA DE TURNOS BORRADOS CON MOTIVO Y QUIEN BORRO
 
-### CONECTIVIDAD
+### CONECTIVIDAD (Monitor Desarrollado por Pablo)
 
 - VER
   Conectividad de Unidades, NMAP - ping - [[arpping]], IP Red de Areas,
@@ -1026,18 +508,77 @@ FRONT
   CORREO DE VERIFICACION en produccion tengo los puertos('587', '465') bloqueados :/ 😞
   [Example](https://dev.to/christopherliedtke/how-to-verify-your-users-email-addresses-node-js-express-dg0)
 
+### PROFESIONALES (RR.HH)
+
+- VER
+  Nombre, Apellido, Email, Matriculas Provincia/Nacion, Legajo, Documento
+  Dia Laboral - Horarios - duracion TURNOS
+  Especialidad, US,
+  Licensias/No trabajados.(tipos de ausensia)
+
 ### Sistema General
 
-- [ ] Ver Front Cuando caduca sesion - abrir dialog de logueo)?
+- [ ] ‼️ FRONT - Actualizar (VUE 2, Vuetify 1 -> VUE 3, Vuetify 2-3) =>
+      <progress value="12" max="100"></progress> 12%
+  - [/] Fase 1: Preparacion
+    - [x] Actualizar a VUE 2.7
+    - [x] Instalar ESLint: eslint-plugin-vue
+    - [ ] Migrar de Vuex a Pinia
+  - [ ] Fase 2: Hibrido
+    - [ ] Instalar @vue/compat
+    - [ ] Configurar Webpack para VUE 3
+    - [ ] Corregir Errores de VUE
+  - [ ] Fase 3: VISUAL
+    - [ ] Vuetify 3
+    - [ ] Codemods / ESLint: Usa eslint-plugin-vuetify
+  - [ ] Fase 4: Limpieza
+    - [ ] Eliminar @vue/compat
+    - [ ] Instalar VUE 3
+    - [ ] Webpack a Vite (Borra webpack.config.js y core-js, e instala @vitejs/plugin-vue) [Migrate](https://vueschool.io/articles/vuejs-tutorials/how-to-migrate-from-vue-cli-to-vite/)
 
-- [ ] Ver Front Exportar -> i-frame/dialog con opciones -> csv (excel), PDF (read/download).
-- [ ] Ver Front Exportar -> i-frame/dialog -> cerrarlo desde el mismo iframe (contextos diferentes).
+- [ ] ‼️ SERVIDOR - Actualizar (Ubuntu, Node, MongoDB(5 -> 8), PM2, Nginx?) =>
+      <progress value="0" max="100"></progress> 0%
+  - [ ] Fase 1: Preparación y Node.js (Semana 1)
+    - [ ] ‼️ Node => 20.19.5 -> 24.x.x (Remove the old repository, add new repository, sudo apt-get install -y nodejs)
+    - [ ] PM2 => 5.4.0 -> 6.x.x
+
+  - [ ] Fase 2: El primer salto de Sistema Operativo (Semana 2)
+    - [ ] ‼️ Ubuntu Server => 20.04 -> 22.04 (1 week test before the next update)
+
+  - [ ] Fase 3: Base de Datos y Segundo salto de S.O. (Semana 3-4)
+    - [ ] ‼️ MongoDB => 5.0 -> 6.0 (7 dias) -> [Compatibility](https://www.mongodb.com/docs/v6.0/release-notes/6.0-compatibility/)
+    - [ ] Ubuntu Server => 22.04 -> 24.04 (7 dias)
+
+  - [ ] Fase 4: Instalación de Nginx y Estabilización (Semana 5)
+    - [ ] Nginx => x.x
+    - [ ] SSL: Configura Certbot (Let's Encrypt) para HTTPS
+    - [ ] MongoDB => 6.0 -> 7.0 (7 dias)
+    - [ ] MongoDB => 7.0 -> 8.0 (7 dias)
+
+- [ ] ‼️ BACK - Actualizar (Express, Mongoose) =>
+      <progress value="0" max="100"></progress> 0%
+  - [ ] Fase: Desarrollar Steps
+    - [x] Instalar ESLint.
+    - [ ] express => 4.21.2 -> 5.2.1 (Breaking Changes, Rutas changes)
+    - [ ] Mongoose => 8.21.0 -> 9.x.x (MongoDB v6.0+)
+
+- [ ] Areas -> Migrar subsecretarias a areas y borrar el campo subsecretaria.
+
+- [ ] Cambiar Libreria de xlsx (Excel..)
+      Por el momento usa una libreria en el server...
+      "vue-xlsx" para el front xlsx to json...
+
+- [/] Front -> Fontawesome ??
+  https://stackoverflow.com/questions/52030435/fontawesome-with-vuetify-how-to-include-font-awesome-icons-within-the-v-icon-c
+  https://v15.vuetifyjs.com/es-MX/framework/icons
+  Tener en cuenta.. VER
+  https://fontawesome.com/docs/web/add-icons/svg-symbols
+  https://v2.vuejs.org/v2/style-guide/?redirect=true#Self-closing-components-strongly-recommended
 
 - [ ] Ver Express (Server) route middleware
       https://expressjs.com/en/4x/api.html#router.route
 
 - [ ] Ver Express (Server) redirect with res.redirect and req.. options of express
-
   - Crear nueva app de express para redirect..
     https://stackoverflow.com/questions/8605720/how-to-force-ssl-https-in-express-js/8634055#8634055
     https://stackoverflow.com/questions/7450940/automatic-https-connection-redirect-with-node-js-express/46852350#46852350
@@ -1064,52 +605,37 @@ FRONT
 - [ ] Ver Mongoose (Server) -> uniqueCaseInsensitive: true, en modelos correspondiente.
       https://stackoverflow.com/questions/33736192/mongo-unique-index-case-insensitive/41501310#41501310
 
-- [ ] Ver Develop Front -> Agregar Lint para mejorar deteccion de errores y consejos/recomendaciones/estilos de tipeo de programacion.
-      https://eslint.vuejs.org/user-guide/#usage
-      vue add @vue/cli-plugin-eslint
+### Sistema Secundario
 
-- [~] Front -> Fontawesome ??
-  https://stackoverflow.com/questions/52030435/fontawesome-with-vuetify-how-to-include-font-awesome-icons-within-the-v-icon-c
-  https://v15.vuetifyjs.com/es-MX/framework/icons
-  Tener en cuenta.. VER
-  https://fontawesome.com/docs/web/add-icons/svg-symbols
-  https://v2.vuejs.org/v2/style-guide/?redirect=true#Self-closing-components-strongly-recommended
-
-- [ ] Areas -> Migrar subsecretarias a areas y borrar el campo subsecretaria.
-
-- [ ] Name Domain para el sitio a futuro online e intranet
-      secretariadesaludmoreno
-      preparar los certificados correspondientes
-
-- [ ] Cambiar Libreria de xlsx (Excel..)
-      Por el momento usa una libreria en el server...
-      "vue-xlsx" para el front xlsx to json...
-
-- [x] ‼️ WireShark Comprobar seguridad de datos
-
-- [ ] ‼️ Migrar de Vue 2 al... Vue 3..
-
-- [ ] ‼️ Migrar de Vuetify 1 al... Vuetify 2 o 3..
-
-- [ ] Sistema Tickets (Pablo).
-
-- [ ] Sistema de CHAT.
+- [ ] Seasonal Branding...
+      Fecha | Evento -> Estilo (SVG para logos - sonidos)
+  - [ ] 01 Ene | Año Nuevo -> Logo con destellos dorados. Fondo con gradiente festivo suave.
+  - [ ] 04 Feb | Día Mundial contra el Cáncer -> Cinta color lavanda en el logo. Notificación de chequeo preventivo.
+  - [ ] 08 Mar | Día de la Mujer -> Detalles en color violeta. Banner de salud femenina.
+  - [ ] 24 Mar | Día de la Memoria -> Estilo sobrio (escala de grises o blanco/negro). Pañuelo blanco sutil.
+  - [ ] 02 Abr | Día del Veterano y de los Caídos -> Colores celeste y blanco. Silueta de las Malvinas en el footer.
+  - [ ] 07 Abr | Día Mundial de la Salud -> Estilo institucional fuerte. Sonido de pulso cardíaco rítmico al iniciar.
+  - [ ] 25 May | Revolución de Mayo -> Escarapela en el logo. Bordes de botones en celeste/blanco.
+  - [ ] 30 May | Día de la Donación de Órganos -> Ícono de corazón verde. Estilo enfocado en "vida/esperanza".
+  - [ ] 20 Jun | Día de la Bandera -> Logo con bandera argentina. Fondo con sutil textura de sol de mayo.
+  - [ ] 09 Jul | Día de la Independencia -> Versión del logo "Patria". Sonido de campanas sutil al login.
+  - [ ] 17 Ago | Paso a la Inmortalidad de San Martín -> Estilo épico/histórico. Tonos azules oscuros y bronce.
+  - [ ] 21 Sep | Día de la Sanidad / Primavera -> Flores en el logo. Sonido de naturaleza. Agradecimiento al personal.
+  - [ ] 12 Oct | Día de la Diversidad Cultural -> Estilo multi-color (wiphala) integrado sutilmente en el footer.
+  - [ ] 19 Oct | Día lucha contra el Cáncer de Mama -> Todo el sistema con acentos rosa. Logo con la cinta rosa.
+  - [ ] 14 Nov | Día Mundial de la Diabetes -> Círculo azul en el logo. Acentos en azul brillante.
+  - [ ] 01 Dic | Día Mundial del SIDA -> Cinta roja en el logo. Alertas de prevención en rojo médico.
+  - [ ] 08 Dic | Día de la Virgen -> Estilo celeste claro y blanco nve.
+  - [ ] 25 Dic | Navidad -> Gorro de papá Noel en el logo. Sonido de cascabel muy suave (blip).
 
 - [ ] Multi Languaje, migrar Front Strings and errorHandlers too...
       https://github.com/i18next/i18next-vue/tree/vue-2
 
-### Sistema Secundario
+- [ ] Aviso de uso de Cookies (localStorage) (Snackbar, bottom?).
 
-- [ ] Aviso de uso de Cookies(localStorage)
+- [ ] TESTS Units BACK with node:test (NodeJS 20+), FRONT with JEST (VUE 2) -> Vitest (VUE 3).
 
-- [~] RUTAS PARA EL COPYLEFT Y PAGINA DE CONTACTO.
-
-- [ ] TESTS WITH MOCHA O ALGO PARECIDO.
-
-- [ ] ‼️ VER EL TEMA DE CORS EN PRODUCCION.
-
-- [ ] v-system-bar para el close de dialogs :D
-
-- [ ] sort de arrays de autocomplete
-
-- [ ] navegacion con v-for
+- [ ] Name Domain para el sitio a futuro online e intranet
+      secretariadesaludmoreno
+      preparar los certificados correspondientes
+  - [ ] VER EL TEMA DE CORS EN PRODUCCION (cuando tenga nombre de dominio).

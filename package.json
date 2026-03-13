@@ -15,7 +15,9 @@
     "build": "set NODE_OPTIONS=--max_old_space_size=2048 && ncc build server/server.js -o dist",
     "testB": "nodemon dist/index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "heroku-postbuild": "echo Skip build on Heroku"
+    "heroku-postbuild": "echo Skip build on Heroku",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "nodemonConfig": {
     "ignore": [
@@ -26,24 +28,33 @@
   "author": "Paz Juan",
   "license": "AGPL-3.0-only",
   "dependencies": {
-    "axios": "^1.8.4",
-    "bcrypt": "^5.1.1",
+    "axios": "^1.13.3",
+    "bcrypt": "^6.0.0",
     "connect-history-api-fallback": "^2.0.0",
     "cors": "^2.8.5",
-    "csvtojson": "^2.0.10",
+    "csvtojson": "^2.0.14",
     "detect-file-encoding-and-language": "^2.4.0",
     "express": "^4.21.2",
-    "helmet": "^8.0.0",
-    "jsonwebtoken": "^9.0.2",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.3",
     "lodash": "^4.17.21",
-    "mongoose": "^8.9.5",
+    "mongoose": "^8.21.0",
     "mongoose-unique-validator": "^5.0.1",
-    "morgan": "^1.10.0",
-    "multer": "^1.4.5-lts.1",
+    "morgan": "^1.10.1",
+    "multer": "^2.0.2",
     "node-schedule": "^2.1.1",
-    "nodemailer": "^7.0.10",
+    "nodemailer": "^7.0.12",
     "simple-xml-to-json": "^1.2.3",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.3",
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-n": "^17.23.2",
+    "eslint-plugin-prettier": "^5.5.5",
+    "eslint-plugin-promise": "^7.2.1",
+    "globals": "^17.3.0"
   },
   "engines": {
     "node": "20.x",

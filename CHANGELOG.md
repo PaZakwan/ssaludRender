@@ -27,6 +27,18 @@
 
 ---
 
+### [1.7.20260313] - 2026-03-13
+
+- 📈 Improved a Sistema - Tablas => El campo de busqueda "filtro" (search local) no era muy visible, se le agrego colores de fondo para que tenga mas contraste.
+
+- ✨ Added a Sistema - Paciente => Se agrego el campo opcional "DNI N° Tramite" para los casos de tipo de documento DNI, siendo solicitado por Farmacia para las entregas del PAMI.
+
+- ✨ Added a Farmacia - Entregas => Nuevo Paso(Step) de carga para revisar las entregas previas recibidas por el Paciente. Propuesto por Direccion de Farmacia.
+
+- ✨ Added a Farmacia - Entregas => Se agrego el campo "DNI N° Tramite", siendo requerido para las entregas del PAMI, editable desde el formulario del Paciente.
+
+- 📈 Improved a Vacunas - Aplicacion => Antes de guardar la aplicacion se verifica si ya se encuentra una "similar" aplicada a ese paciente en la fecha de aplicacion seleccionada (Fecha, Paciente, Vacuna, Dosis), comunica el error en caso de que ya se encuentre aplicada.
+
 ### [1.7.20260114] - 2026-01-14
 
 - ✨ Improved a Sistema - requestAPI => Al realizar envios al servidor se bloquean las posteriores solo si son repetidas y estan esperando respuesta, se desbloquea la posibilidad de realizar otro envio despues de 1 segundo de recibir la respuesta (para evitar problemas cuando el usuario "ametralle" el botón de envios).

@@ -1,4 +1,6 @@
-const {ObjectId} = require("mongodb");
+const {
+  Types: {ObjectId},
+} = require("mongoose");
 const _get = require("lodash/get");
 
 const isObjectIdValid = (id) => {
@@ -228,6 +230,8 @@ const getEdadUnidades = ({edad_valor, edad_unidad}) => {
 // console.log("### TEST ", getEdadUnidades(test));
 
 const isVacio = (payload) => {
+  // Si BORRAR es true y payload.dato es un objeto que contiene Funciones, una instancia de clase o elemento del DOM,
+  // La funcion modificara el objeto original porque no crea una copia
   try {
     let {
       dato,
@@ -242,6 +246,7 @@ const isVacio = (payload) => {
       inArr = false,
       inObj = false,
       borrar = false,
+      visited = new WeakSet(),
     } = payload;
     // if (!mainValue) {
     //   console.log("dato", dato);
@@ -279,20 +284,48 @@ const isVacio = (payload) => {
         }
         return {dato: dato, vacio: false};
 
-      case "object":
+      case "object": {
         if (dato === null) {
           if (vacioNull) {
             return {dato: dato, vacio: true};
           }
           return {dato: dato, vacio: false};
         }
+        if (dato instanceof Date || dato instanceof RegExp)
+          return {
+            // es una fecha
+            dato: dato,
+            vacio: false,
+          };
+        if (dato instanceof Set || dato instanceof Map) {
+          // es un Set o Map
+          return {dato: dato, vacio: dato.size === 0};
+        }
+        const paraBorrar = Symbol("borrarIn");
+
+        if (mainValue && borrar) {
+          try {
+            dato = structuredClone(dato);
+          } catch (error) {
+            // return {
+            //   dato: dato,
+            //   vacio: "error",
+            //   error: "Objeto no clonable (contiene funciones o tipos especiales)",
+            // };
+          }
+        }
+
+        if (visited.has(dato)) {
+          return {dato: dato, vacio: false};
+        }
+        visited.add(dato);
 
         let todovacio = true;
         if (mainValue || (inArr && Array.isArray(dato)) || (inObj && !Array.isArray(dato))) {
           // Recorrer Objeto para borrar dentro
           for (const key in dato) {
-            if (dato.hasOwnProperty(key)) {
-              let vacioTemp = isVacio({...payload, dato: dato[key], mainValue: false});
+            if (Object.hasOwn(dato, key)) {
+              let vacioTemp = isVacio({...payload, dato: dato[key], mainValue: false, visited});
               // console.log("vacioTemp", vacioTemp);
               if (vacioTemp.error) {
                 return {
@@ -304,7 +337,7 @@ const isVacio = (payload) => {
               if (vacioTemp.vacio === true) {
                 if (borrar) {
                   if (Array.isArray(dato) && !vacioUndefined) {
-                    dato[key] = Symbol("borrarIn");
+                    dato[key] = paraBorrar;
                   } else {
                     delete dato[key];
                   }
@@ -327,7 +360,7 @@ const isVacio = (payload) => {
             if (vacioUndefined) {
               dato = dato.filter((v) => v !== undefined);
             } else {
-              dato = dato.filter((v) => !(typeof v === "symbol" && v.description === "borrarIn"));
+              dato = dato.filter((v) => v !== paraBorrar);
             }
           }
 
@@ -347,6 +380,7 @@ const isVacio = (payload) => {
             return {dato: dato, vacio: mainValue || inObj ? todovacio : false};
           }
         }
+      }
 
       case "function":
         return {dato: dato, vacio: false};
@@ -355,14 +389,14 @@ const isVacio = (payload) => {
         return {dato: dato, vacio: "errorType", error: "tipo de valor desconocido"};
     }
   } catch (error) {
-    return {dato: dato, vacio: "error", error};
+    return {dato: payload.dato, vacio: "error", error};
   }
 };
 
 // let temp = {
-//   // func: () => {
-//   //   console.log("hola temp");
-//   // },
+//   func: () => {
+//     console.log("hola temp");
+//   },
 //   und: undefined,
 //   null: null,
 //   bool1: true,
@@ -386,15 +420,15 @@ const isVacio = (payload) => {
 //     [0, 3],
 //     {},
 //     {hola: "chau"},
-//     // () => {
-//     //   console.log("hola temp");
-//     // },
+//     () => {
+//       console.log("hola temp");
+//     },
 //   ],
 //   obje: {},
 //   obj: {
-//     // func: () => {
-//     //   console.log("hola temp");
-//     // },
+//     func: () => {
+//       console.log("hola temp");
+//     },
 //     und: undefined,
 //     null: null,
 //     bool1: true,
@@ -418,33 +452,35 @@ const isVacio = (payload) => {
 //       [0, 3],
 //       {},
 //       {hola: "chau"},
-//       // () => {
-//       //   console.log("hola temp");
-//       // },
+//       () => {
+//         console.log("hola temp");
+//       },
 //     ],
 //     obje: {},
 //   },
 // };
+// temp.recurisvo = temp;
 
-// TESTEAR VACIOS
+// // TESTEAR VACIOS
 // console.log(
 //   "isVacio: ",
 //   isVacio({
 //     dato: temp,
 //     // dato: [undefined, ,],
 //     // opciones: new value // default value
-//     vacioUndefined: false, // true,
-//     vacioNull: false, // true,
+//     // vacioUndefined: false, // true,
+//     // vacioNull: false, // true,
 //     vacioCero: true, // false,
 //     vacioBoolean: true, // false,
-//     vacioEmptyStr: false, // true,
-//     vacioEmptyArr: false, // true,
-//     vacioEmptyObj: false, // true,
+//     // vacioEmptyStr: false, // true,
+//     // vacioEmptyArr: false, // true,
+//     // vacioEmptyObj: false, // true,
 //     inArr: true, // false,
 //     inObj: true, // false,
 //     borrar: true, // false,
 //   })
 // );
+// console.log("Original: ", temp);
 
 const objectSetUnset = ({dato, unsetCero = false, unsetBoolean = false}) => {
   try {
@@ -452,7 +488,7 @@ const objectSetUnset = ({dato, unsetCero = false, unsetBoolean = false}) => {
     let $set = {};
     let $unset = {};
     for (const key in dato) {
-      if (dato.hasOwnProperty(key)) {
+      if (Object.hasOwn(dato, key)) {
         if (unsetCero && (dato[key] === 0 || dato[key] === "0")) {
           $unset[key] = 1;
         } else if (unsetBoolean && (dato[key] === false || dato[key] === "false")) {
@@ -557,7 +593,7 @@ const objectToFind = ({dato, mainValue = true, mainKey = false}) => {
             delete dato.elemMatch;
             let temp = {$elemMatch: {}};
             for (const key in dato) {
-              if (dato.hasOwnProperty(key)) {
+              if (Object.hasOwn(dato, key)) {
                 temp["$elemMatch"][key] = objectToFind({
                   dato: dato[key],
                   mainValue: false,
@@ -580,7 +616,7 @@ const objectToFind = ({dato, mainValue = true, mainKey = false}) => {
           if (mainValue) {
             let temp = {};
             for (const key in dato) {
-              if (dato.hasOwnProperty(key)) {
+              if (Object.hasOwn(dato, key)) {
                 temp[key] = objectToFind({dato: dato[key], mainValue: false, mainKey: key});
                 if (temp[key].error) {
                   return {
@@ -594,7 +630,7 @@ const objectToFind = ({dato, mainValue = true, mainKey = false}) => {
                 if (temp[key].deleteMain) {
                   delete temp[key].deleteMain;
                   for (const key2 in temp[key]) {
-                    if (temp[key].hasOwnProperty(key2)) {
+                    if (Object.hasOwn(temp[key], key2)) {
                       temp[key2] = temp[key][key2];
                     }
                   }
@@ -606,7 +642,7 @@ const objectToFind = ({dato, mainValue = true, mainKey = false}) => {
           } else if (mainKey) {
             let temp = {deleteMain: true};
             for (const key in dato) {
-              if (dato.hasOwnProperty(key)) {
+              if (Object.hasOwn(dato, key)) {
                 temp[`${mainKey}.${key}`] = objectToFind({
                   dato: dato[key],
                   mainValue: false,
@@ -626,7 +662,7 @@ const objectToFind = ({dato, mainValue = true, mainKey = false}) => {
                 if (temp[`${mainKey}.${key}`].deleteMain) {
                   delete temp[`${mainKey}.${key}`].deleteMain;
                   for (const key2 in temp[`${mainKey}.${key}`]) {
-                    if (temp[`${mainKey}.${key}`].hasOwnProperty(key2)) {
+                    if (Object.hasOwn(temp[`${mainKey}.${key}`], key2)) {
                       temp[key2] = temp[`${mainKey}.${key}`][key2];
                     }
                   }
@@ -638,7 +674,7 @@ const objectToFind = ({dato, mainValue = true, mainKey = false}) => {
           } else {
             let temp = {};
             for (const key in dato) {
-              if (dato.hasOwnProperty(key)) {
+              if (Object.hasOwn(dato, key)) {
                 temp[key] = objectToFind({
                   dato: dato[key],
                   mainValue: false,

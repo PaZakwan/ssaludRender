@@ -331,6 +331,26 @@ app.put(
           delete insumo.qty_dosis;
         }
 
+        // Revisar si ya esta cargada... (fecha, paciente, insumo, dosis)
+        vacunacionesDB = await VacunaAplicacion.findOne({
+          fecha: body.fecha,
+          paciente: body.paciente,
+          insumo: insumo.insumo?.insumo ?? insumo.insumo?.id,
+          dosis: insumo.dosis,
+        })
+          .lean()
+          .exec();
+        if (vacunacionesDB !== null) {
+          errors.push({
+            message: `El paciente ya registra la dosis de ${
+              insumo.insumo?.insumoDB ?? insumo.vacunaName
+            } ese dia de aplicacion - Error al Guardar Vacunacion`,
+            type: "Guardar Vacunacion",
+          });
+          continue;
+        }
+        vacunacionesDB = null;
+
         if (body.No_Provista || insumo.No_Provista) {
           stockDB = true;
         } else {
@@ -350,50 +370,51 @@ app.put(
             }.`,
             type: "Modificar Stock",
           });
+          continue;
+        }
+        // modifico stock sin error
+
+        // es vacuna o body.No_Provista === "Paciente | Historial"
+        if (body.No_Provista || insumo?.insumo?.insumoCategoriaDB === "Vacuna") {
+          // si es Vacuna (guarda vacunacion)
+          vacunacionesDB = await new VacunaAplicacion({
+            ...body,
+            vacunaName: insumo.insumo?.insumoDB ?? insumo.vacunaName,
+            procedencia: insumo.insumo?.procedencia ?? body.No_Provista,
+            insumo: insumo.insumo?.insumo ?? insumo.insumo?.id,
+            lote: insumo.insumo?.lote ?? insumo.lote,
+            vencimiento: insumo.insumo?.vencimiento ?? insumo.vencimiento,
+            dosis: insumo.dosis,
+            qty_dosis: insumo.qty_dosis ?? undefined,
+            completa: insumo.completa ? true : undefined,
+            estrategia: insumo.estrategia,
+            retirado: body.No_Provista || insumo.No_Provista ? undefined : retiradoDate,
+          }).save();
+          if (vacunacionesDB === null) {
+            errors.push({
+              message: `${insumo.insumo?.insumoDB ?? insumo.vacunaName} - Guardar Vacunacion Error`,
+              type: "Guardar Vacunacion",
+            });
+            continue;
+          }
         } else {
-          // modifico stock sin error
-          // es vacuna o body.No_Provista === "Paciente | Historial"
-          if (body.No_Provista || insumo?.insumo?.insumoCategoriaDB === "Vacuna") {
-            // si es Vacuna (guarda vacunacion)
-            vacunacionesDB = await new VacunaAplicacion({
-              ...body,
-              vacunaName: insumo.insumo?.insumoDB ?? insumo.vacunaName,
-              procedencia: insumo.insumo?.procedencia ?? body.No_Provista,
-              insumo: insumo.insumo?.insumo ?? insumo.insumo?.id,
-              lote: insumo.insumo?.lote ?? insumo.lote,
-              vencimiento: insumo.insumo?.vencimiento ?? insumo.vencimiento,
-              dosis: insumo.dosis,
-              qty_dosis: insumo.qty_dosis ?? undefined,
-              completa: insumo.completa ? true : undefined,
-              estrategia: insumo.estrategia,
-              retirado: body.No_Provista || insumo.No_Provista ? undefined : retiradoDate,
-            }).save();
-            if (vacunacionesDB === null) {
-              errors.push({
-                message: `${
-                  insumo.insumo?.insumoDB ?? insumo.vacunaName
-                } - Guardar Vacunacion Error`,
-                type: "Guardar Vacunacion",
-              });
-            }
-          } else {
-            // si no es Vacuna (guardar descarte)
-            descarteDB = await new VacunaDescarte({
-              ...body,
-              insumo: insumo.insumo?.insumo,
-              procedencia: insumo.insumo?.procedencia,
-              lote: insumo.insumo?.lote,
-              vencimiento: insumo.insumo?.vencimiento,
-              retirado: body.No_Provista || insumo.No_Provista ? undefined : retiradoDate,
-              motivo: "Utilizado",
-              cantidad: insumo.cantidad,
-            }).save();
-            if (descarteDB === null) {
-              errors.push({
-                message: `${insumo.insumo?.insumoDB} - Guardar Descarte Error`,
-                type: "Guardar Descarte",
-              });
-            }
+          // si no es Vacuna (guardar descarte)
+          descarteDB = await new VacunaDescarte({
+            ...body,
+            insumo: insumo.insumo?.insumo,
+            procedencia: insumo.insumo?.procedencia,
+            lote: insumo.insumo?.lote,
+            vencimiento: insumo.insumo?.vencimiento,
+            retirado: body.No_Provista || insumo.No_Provista ? undefined : retiradoDate,
+            motivo: "Utilizado",
+            cantidad: insumo.cantidad,
+          }).save();
+          if (descarteDB === null) {
+            errors.push({
+              message: `${insumo.insumo?.insumoDB} - Guardar Descarte Error`,
+              type: "Guardar Descarte",
+            });
+            continue;
           }
         }
       }

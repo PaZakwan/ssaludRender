@@ -2,8 +2,9 @@ const express = require("express");
 const mongoose = require("mongoose");
 
 // Middleware de Permisos
-const {verificaToken, verificaAdmin_Role} = require(process.env.MAIN_FOLDER +
-  "/middlewares/autenticacion");
+const {verificaToken, verificaAdmin_Role} = require(
+  process.env.MAIN_FOLDER + "/middlewares/autenticacion"
+);
 const {uploadSingleRoute} = require(process.env.MAIN_FOLDER + "/middlewares/upload");
 // tools
 const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
@@ -123,6 +124,7 @@ const PacienteProperties = [
   "nombre",
   "tipo_doc",
   "documento",
+  "doc_tramite",
   "sexo",
   "fec_nac",
   "telefono",
@@ -232,7 +234,7 @@ const PacienteFormat = async ({json, totales, line, logFile, csvErrors, csvFix})
 
     // apellido REQUERIDO
     if (json.apellido) {
-      json.apellido = json.apellido.trim().replaceAll(/[_\-]/g, " ").replaceAll(/[.]/g, "");
+      json.apellido = json.apellido.trim().replaceAll(/[_-]/g, " ").replaceAll(/[.]/g, "");
       json.apellido = capitalize(json.apellido);
       if (!/^[A-Za-z\sÀ-ÿ\u00f1\u00d1'`´¨-]+$/.test(json.apellido)) {
         errores += ` apellido Validation (${json.apellido}).`;
@@ -242,7 +244,7 @@ const PacienteFormat = async ({json, totales, line, logFile, csvErrors, csvFix})
     }
     // nombre REQUERIDO
     if (json.nombre) {
-      json.nombre = json.nombre.trim().replaceAll(/[_\-]/gi, " ").replaceAll(/[.]/g, "");
+      json.nombre = json.nombre.trim().replaceAll(/[_-]/gi, " ").replaceAll(/[.]/g, "");
       json.nombre = capitalize(json.nombre);
       if (!/^[A-Za-z\sÀ-ÿ\u00f1\u00d1'`´¨-]+$/.test(json.nombre)) {
         errores += ` nombre Validation (${json.nombre}).`;
@@ -370,7 +372,7 @@ const PacienteFormat = async ({json, totales, line, logFile, csvErrors, csvFix})
     }
 
     // email
-    if (json.email && !/^([\w-\.]+@([\w-]+\.)+[\w-]{2,12})?$/.test(json.email)) {
+    if (json.email && !/^([\w-.]+@([\w-]+\.)+[\w-]{2,12})?$/.test(json.email)) {
       advertencia += ` email Validation (${json.email}).`;
     }
     // dir_calle

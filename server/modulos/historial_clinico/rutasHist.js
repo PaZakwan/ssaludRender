@@ -2,10 +2,13 @@ const express = require("express");
 
 const _pick = require("lodash/pick");
 
-const {verificaToken, verificaArrayPropValue} = require(process.env.MAIN_FOLDER +
-  "/middlewares/autenticacion");
+const {verificaToken, verificaArrayPropValue} = require(
+  process.env.MAIN_FOLDER + "/middlewares/autenticacion"
+);
 const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
-const {isVacio, objectSetUnset} = require(process.env.MAIN_FOLDER + "/tools/object");
+const {isVacio, objectSetUnset, isObjectIdValid} = require(
+  process.env.MAIN_FOLDER + "/tools/object"
+);
 
 const HistorialClinico = require("./models/historial_clinico_universal");
 const HistorialMotivo = require("./models/historial_motivo");
@@ -77,22 +80,25 @@ async function buscarConsultas(motivoId) {
   try {
     // realizar todas las busquedas en las BD de las especialidades y juntarlas.
     let consultasDB = [];
-    consultasDB = [...consultasDB, ...(await Nutricion.find({motivo: motivoId}).exec())];
+    consultasDB = [
+      ...consultasDB,
+      ...(await Nutricion.find({motivo: motivoId}).sort({fecha: -1, _id: -1}).exec()),
+    ];
 
     return consultasDB;
   } catch (error) {
-    if (!!error.errors) {
-      return error;
-    }
-    return false;
+    return error;
   }
 }
 
 async function crearConsulta(body) {
   try {
+    let consultaTemp = null;
+    if (body._id && !isObjectIdValid(body._id)) {
+      return {errors: true, message: "El ID del Consulta no es valida.", code: 400};
+    }
     switch (body.especialidad) {
       case "Nutricion":
-        let consultaTemp = null;
         if (body._id) {
           // update
           body = objectSetUnset({dato: body, unsetCero: false, unsetBoolean: true}).dato;
@@ -110,19 +116,20 @@ async function crearConsulta(body) {
           }).dato;
           consultaTemp = await new Nutricion(body).save();
         }
-
         if (!consultaTemp) {
-          return errorMessage(res, {message: "Consulta no encontrada."}, 404);
+          return {errors: true, message: "Consulta no Guardada.", code: 404};
         }
         return consultaTemp;
+
       default:
-        return false;
+        return {
+          errors: true,
+          message: "Consulta no creada..\nSe encuentra en Desarrollo.",
+          code: 501,
+        };
     }
   } catch (error) {
-    if (!!error.errors) {
-      return error;
-    }
-    return false;
+    return error;
   }
 }
 
@@ -150,23 +157,20 @@ app.get(
   ],
   async (req, res) => {
     try {
-      let id = req.params.pacienteId;
-
-      if (!id) {
+      if (!req.params.pacienteId) {
         return errorMessage(res, {message: "Falta información para proceder."}, 412);
       }
-
-      if (!/^[a-fA-F\d]{24}$/.test(id)) {
+      if (!isObjectIdValid(req.params.pacienteId)) {
         return errorMessage(res, {message: "El ID del Paciente no es valido."}, 400);
       }
 
-      let historialDB = await HistorialClinico.findOne({paciente: id}).exec();
+      let historialDB = await HistorialClinico.findOne({paciente: req.params.pacienteId}).exec();
 
       // if (!historialDB) {
       //   return errorMessage(res, {message: "Historial no encontrado."}, 404);
       // }
 
-      res.json({
+      return res.json({
         ok: true,
         historial: historialDB,
       });
@@ -205,15 +209,14 @@ app.put(
       }
       body = body.dato;
 
-      if (!!body._id && body._id !== null && !/^[a-fA-F\d]{24}$/.test(body._id)) {
-        return errorMessage(res, {message: "El ID del Historial no es valido."}, 400);
-      }
-
       body["usuario_modifico"] = req.usuario._id;
 
       let historialDB = null;
       if (body._id) {
         // update
+        if (!isObjectIdValid(body._id)) {
+          return errorMessage(res, {message: "El ID del Historial no es valido."}, 400);
+        }
         body = objectSetUnset({dato: body, unsetCero: true, unsetBoolean: true}).dato;
         let _id = body.$set._id;
         delete body.$set._id;
@@ -231,7 +234,7 @@ app.put(
       }
 
       if (!historialDB) {
-        return errorMessage(res, {message: "Historial no encontrado."}, 404);
+        return errorMessage(res, {message: "Historial no Guardado."}, 400);
       }
 
       return res.status(201).json({
@@ -259,19 +262,18 @@ app.get(
   ],
   async (req, res) => {
     try {
-      let id = req.params.pacienteId;
-
-      if (!id) {
+      if (!req.params.pacienteId) {
         return errorMessage(res, {message: "Falta información para proceder."}, 412);
       }
-
-      if (!/^[a-fA-F\d]{24}$/.test(id)) {
+      if (!isObjectIdValid(req.params.pacienteId)) {
         return errorMessage(res, {message: "El ID del Paciente no es valido."}, 400);
       }
 
-      let motivosDB = await HistorialMotivo.find({paciente: id}).exec();
+      let motivosDB = await HistorialMotivo.find({paciente: req.params.pacienteId})
+        .sort({createdAt: -1, _id: -1})
+        .exec();
 
-      res.json({
+      return res.json({
         ok: true,
         motivos: motivosDB,
       });
@@ -296,9 +298,6 @@ app.put(
   ],
   async (req, res) => {
     try {
-      // #############################
-      // DESARROLLAR DE ACA
-      // #############################
       let body = isVacio({
         dato: _pick(req.body, listaMotivo),
       });
@@ -307,15 +306,14 @@ app.put(
       }
       body = body.dato;
 
-      if (!!body._id && body._id !== null && !/^[a-fA-F\d]{24}$/.test(body._id)) {
-        return errorMessage(res, {message: "El ID del Motivo no es valido."}, 400);
-      }
-
       body["usuario_modifico"] = req.usuario._id;
 
       let motivoDB = null;
       if (body._id) {
         // update
+        if (!isObjectIdValid(body._id)) {
+          return errorMessage(res, {message: "El ID del Motivo no es valido."}, 400);
+        }
         body = objectSetUnset({dato: body, unsetCero: true, unsetBoolean: true}).dato;
         let _id = body.$set._id;
         delete body.$set._id;
@@ -333,12 +331,54 @@ app.put(
       }
 
       if (!motivoDB) {
-        return errorMessage(res, {message: "Motivo no encontrado."}, 404);
+        return errorMessage(res, {message: "Motivo no Guardado."}, 404);
       }
 
       return res.status(201).json({
         ok: true,
         motivo: motivoDB,
+      });
+    } catch (err) {
+      return errorMessage(res, err, err.code);
+    }
+  }
+);
+
+// ============================
+// Borrar Motivo por id
+// ============================
+app.delete(
+  "/HistorialClinico/motivo/:id",
+  [
+    verificaToken,
+    (req, res, next) => {
+      req.verificacionArray = [{prop: "historial_clinico", value: 2}];
+      next();
+    },
+    verificaArrayPropValue,
+  ],
+  async (req, res) => {
+    try {
+      if (!req.params.id) {
+        return errorMessage(res, {message: "Falta información para proceder."}, 412);
+      }
+      if (!isObjectIdValid(req.params.id)) {
+        return errorMessage(res, {message: "El ID del Motivo no es valido."}, 400);
+      }
+
+      // Borrar Consultas del Motivo
+      // Nutricion
+      await Nutricion.deleteMany({motivo: req.params.id}).exec();
+
+      // Borrar Motivo;
+      let motivoBorrado = await HistorialMotivo.findOneAndDelete({_id: req.params.id}).exec();
+      if (!motivoBorrado) {
+        return errorMessage(res, {message: "Motivo no encontrado."}, 404);
+      }
+
+      return res.status(200).json({
+        ok: true,
+        motivoBorrado,
       });
     } catch (err) {
       return errorMessage(res, err, err.code);
@@ -364,25 +404,17 @@ app.get(
       if (!req.params.motivoId) {
         return errorMessage(res, {message: "Falta información para proceder."}, 412);
       }
-
-      if (!/^[a-fA-F\d]{24}$/.test(req.params.motivoId)) {
+      if (!isObjectIdValid(req.params.motivoId)) {
         return errorMessage(res, {message: "El ID del Motivo no es valido."}, 400);
       }
 
       // Funcion de busqueda de todas las consultas del motivo
       let consultasDB = await buscarConsultas(req.params.motivoId);
-      if (consultasDB === false) {
-        return errorMessage(
-          res,
-          {message: "Consulta no creada..\nSe encuentra en Desarrollo."},
-          501
-        );
-      }
       if (!!consultasDB.errors) {
         return errorMessage(res, consultasDB, consultasDB.code);
       }
 
-      res.json({
+      return res.json({
         ok: true,
         consultas: consultasDB,
       });
@@ -415,25 +447,10 @@ app.put(
       }
       body = body.dato;
 
-      if (!body.motivo) {
-        return errorMessage(res, {message: "Falta información para proceder."}, 412);
-      }
-
-      if (!!body._id && body._id !== null && !/^[a-fA-F\d]{24}$/.test(body._id)) {
-        return errorMessage(res, {message: "El ID de la Consulta no es valida."}, 400);
-      }
-
       body["usuario_modifico"] = req.usuario._id;
 
       // Funcion que crea y/o guarda cambios de la consulta
       let ConsultaDB = await crearConsulta(body);
-      if (ConsultaDB === false) {
-        return errorMessage(
-          res,
-          {message: "Consulta no creada..\nSe encuentra en Desarrollo."},
-          501
-        );
-      }
       if (!!ConsultaDB.errors) {
         return errorMessage(res, ConsultaDB, ConsultaDB.code);
       }
@@ -463,17 +480,16 @@ app.get(
   ],
   async (req, res) => {
     try {
-      let id = req.params.pacienteId;
-
-      if (!id) {
+      if (!req.params.pacienteId) {
         return errorMessage(res, {message: "Falta información para proceder."}, 412);
       }
-
-      if (!/^[a-fA-F\d]{24}$/.test(id)) {
-        return errorMessage(res, {message: "El ID del Paciente no es valido."}, 400);
+      if (!isObjectIdValid(req.params.pacienteId)) {
+        return errorMessage(res, {message: "El ID del Motivo no es valido."}, 400);
       }
 
-      let medicacionesDB = await HistorialMedicacion.find({paciente: id}).exec();
+      let medicacionesDB = await HistorialMedicacion.find({paciente: req.params.pacienteId})
+        .sort({fecha_inicio: -1, _id: -1})
+        .exec();
 
       res.json({
         ok: true,
@@ -488,7 +504,6 @@ app.get(
 // ============================
 // Modificar Medicacion o crearla en caso de no existir
 // ============================
-// Testear
 app.put(
   "/HistorialClinico/medicacion/guardar",
   [
@@ -509,15 +524,14 @@ app.put(
       }
       body = body.dato;
 
-      if (!!body._id && body._id !== null && !/^[a-fA-F\d]{24}$/.test(body._id)) {
-        return errorMessage(res, {message: "El ID de la Medicacion no es valido."}, 400);
-      }
-
       body["usuario_modifico"] = req.usuario._id;
 
       let medicacionDB = null;
       if (body._id) {
         // update
+        if (!isObjectIdValid(body._id)) {
+          return errorMessage(res, {message: "El ID de la Medicacion no es valido."}, 400);
+        }
         body = objectSetUnset({dato: body, unsetCero: true, unsetBoolean: true}).dato;
         let _id = body.$set._id;
         delete body.$set._id;
@@ -535,7 +549,7 @@ app.put(
       }
 
       if (!medicacionDB) {
-        return errorMessage(res, {message: "Medicacion no encontrada."}, 404);
+        return errorMessage(res, {message: "Medicacion no guardada."}, 404);
       }
 
       return res.status(201).json({

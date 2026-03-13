@@ -2,8 +2,9 @@ const express = require("express");
 
 const _pick = require("lodash/pick");
 
-const {verificaToken, verificaArrayPropValue} = require(process.env.MAIN_FOLDER +
-  "/middlewares/autenticacion");
+const {verificaToken, verificaArrayPropValue} = require(
+  process.env.MAIN_FOLDER + "/middlewares/autenticacion"
+);
 const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
 const {isVacio, isObjectIdValid, dateUTC} = require(process.env.MAIN_FOLDER + "/tools/object");
 
@@ -141,6 +142,9 @@ app.get(
               },
               "$vacio",
             ],
+          },
+          pacienteDocTramiteDB: {
+            $ifNull: ["$pacienteDB.doc_tramite", "$vacio"],
           },
           pacienteTelefonoDB: {
             $ifNull: ["$pacienteDB.telefono", "$pacienteDB.telefono_alt", "$vacio"],

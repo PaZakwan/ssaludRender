@@ -253,9 +253,9 @@ HistorialMotivoSchema.pre("save", async function (next) {
       .select("_id id")
       .exec();
     if (DB?.some?.((mot) => mot._id !== this._id)) {
-      throw (err = {
+      throw {
         message: `Ya existe un Mismo Motivo (Programa) "Activo", evolucione con consultas el existente.`,
-      });
+      };
     }
   }
 
@@ -270,7 +270,7 @@ HistorialMotivoSchema.pre("save", async function (next) {
 HistorialMotivoSchema.pre("findOneAndUpdate", async function (next) {
   // No mismo Motivo Activo (paciente / estado : "Activo" / motivo_especialidad / descripcion)
   if (this.getUpdate().$set.estado === "Activo") {
-    let DB = await await this.model
+    let DB = await this.model
       .find({
         paciente: this.getUpdate().$set.paciente,
         estado: "Activo",
@@ -280,9 +280,9 @@ HistorialMotivoSchema.pre("findOneAndUpdate", async function (next) {
       .select("_id id")
       .exec();
     if (DB?.some?.((mot) => mot._id != this.getUpdate().$set._id)) {
-      throw (err = {
+      throw {
         message: `Ya existe un Mismo Motivo (Programa) "Activo", evolucione con consultas el existente.`,
-      });
+      };
     }
   }
 

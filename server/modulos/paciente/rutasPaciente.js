@@ -3,21 +3,26 @@ const axios = require("axios");
 
 const _pick = require("lodash/pick");
 
-const {verificaToken, verificaArrayPropValue} = require(process.env.MAIN_FOLDER +
-  "/middlewares/autenticacion");
+const {verificaToken, verificaArrayPropValue} = require(
+  process.env.MAIN_FOLDER + "/middlewares/autenticacion"
+);
 const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
-const {isVacio, objectSetUnset, isObjectIdValid, objectToFind, getEdad} = require(process.env
-  .MAIN_FOLDER + "/tools/object");
+const {isVacio, objectSetUnset, isObjectIdValid, objectToFind, getEdad} = require(
+  process.env.MAIN_FOLDER + "/tools/object"
+);
 const {capitalize} = require(process.env.MAIN_FOLDER + "/tools/string");
 const Paciente = require("./models/paciente");
 
 // Para Borrar, verificar donde se usa ref: "Paciente"
-const FarmaciaEntrega = require(process.env.MAIN_FOLDER +
-  "/modulos/farmacia/models/insumo_entrega");
-const VacunaAplicacion = require(process.env.MAIN_FOLDER +
-  "/modulos/vacunas/models/vacuna_aplicacion");
-const HistorialClinico = require(process.env.MAIN_FOLDER +
-  "/modulos/historial_clinico/models/historial_clinico_universal");
+const FarmaciaEntrega = require(
+  process.env.MAIN_FOLDER + "/modulos/farmacia/models/insumo_entrega"
+);
+const VacunaAplicacion = require(
+  process.env.MAIN_FOLDER + "/modulos/vacunas/models/vacuna_aplicacion"
+);
+const HistorialClinico = require(
+  process.env.MAIN_FOLDER + "/modulos/historial_clinico/models/historial_clinico_universal"
+);
 const Turno = require(process.env.MAIN_FOLDER + "/modulos/turnero/models/turno");
 
 const app = express();
@@ -29,6 +34,7 @@ let listaPaciente = [
   "nombre",
   "tipo_doc",
   "documento",
+  "doc_tramite",
   "dir_calle",
   "dir_numero",
   "dir_piso",
@@ -317,11 +323,11 @@ app.put(
                 break;
 
               case "Hora":
-                vacunacionDB.edad_valor = vacunacionDB.edad_valor;
+                vacunacionDB.edad_valor;
                 break;
 
               default:
-                vacunacionDB.edad_valor = vacunacionDB.edad_valor;
+                vacunacionDB.edad_valor;
                 break;
             }
           }
@@ -459,41 +465,41 @@ app.put(
       // Borrar Paciente "Repetido"
       return errorMessage(res, {message: "Unificacion de Paciente en DESARROLLO."}, 501);
 
-      let body = isVacio({
-        dato: _pick(req.body, listaPaciente),
-        borrar: req.body._id ? false : true,
-      });
-      if (body.vacio === true) {
-        return errorMessage(res, {message: "No se envió ningún dato."}, 412);
-      }
-      body = body.dato;
+      // let body = isVacio({
+      //   dato: _pick(req.body, listaPaciente),
+      //   borrar: req.body._id ? false : true,
+      // });
+      // if (body.vacio === true) {
+      //   return errorMessage(res, {message: "No se envió ningún dato."}, 412);
+      // }
+      // body = body.dato;
 
-      body["usuario_modifico"] = req.usuario._id;
+      // body["usuario_modifico"] = req.usuario._id;
 
-      let pacienteDB = null;
-      if (body._id) {
-        // Update
-        delete body._id;
-        // Delete del campo si esta como null / "" / undefined /array vacio
-        body = objectSetUnset({dato: body}).dato;
-        // Modificando la BD
-        pacienteDB = await Paciente.findOneAndUpdate({_id: req.body._id}, body, {
-          new: true,
-          runValidators: true,
-        }).exec();
-      } else {
-        // Nuevo
-        pacienteDB = await new Paciente(body).save();
-      }
+      // let pacienteDB = null;
+      // if (body._id) {
+      //   // Update
+      //   delete body._id;
+      //   // Delete del campo si esta como null / "" / undefined /array vacio
+      //   body = objectSetUnset({dato: body}).dato;
+      //   // Modificando la BD
+      //   pacienteDB = await Paciente.findOneAndUpdate({_id: req.body._id}, body, {
+      //     new: true,
+      //     runValidators: true,
+      //   }).exec();
+      // } else {
+      //   // Nuevo
+      //   pacienteDB = await new Paciente(body).save();
+      // }
 
-      if (!pacienteDB) {
-        return errorMessage(res, {message: "Paciente no encontrado."}, 404);
-      }
+      // if (!pacienteDB) {
+      //   return errorMessage(res, {message: "Paciente no encontrado."}, 404);
+      // }
 
-      return res.json({
-        ok: true,
-        paciente: pacienteDB,
-      });
+      // return res.json({
+      //   ok: true,
+      //   paciente: pacienteDB,
+      // });
     } catch (err) {
       return errorMessage(res, err, err.code);
     }
@@ -774,6 +780,12 @@ app.get(
       //   "codigo": 99,
       //   "mensaje": "DNI/PAS Firmado"
       // }
+
+      // ============================
+      // XXXXXX  Desarrollar  XXXXXXX
+      // ============================
+      // VER
+      // doc_tramite <-> id_tramite_principal o id_ciudadano
 
       return res.json({
         ok: true,

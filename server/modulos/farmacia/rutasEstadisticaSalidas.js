@@ -1,7 +1,8 @@
 const express = require("express");
 
-const {verificaToken, verificaArrayPropValue} = require(process.env.MAIN_FOLDER +
-  "/middlewares/autenticacion");
+const {verificaToken, verificaArrayPropValue} = require(
+  process.env.MAIN_FOLDER + "/middlewares/autenticacion"
+);
 const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
 const {isObjectIdValid, sumarProps, dateUTC} = require(process.env.MAIN_FOLDER + "/tools/object");
 
@@ -175,6 +176,9 @@ app.get(
               pacienteSexoDB: {
                 $ifNull: ["$pacienteDB.sexo", "$vacio"],
               },
+              pacienteDocTramiteDB: {
+                $ifNull: ["$pacienteDB.doc_tramite", "$vacio"],
+              },
               pacienteTelefonoDB: {
                 $ifNull: ["$pacienteDB.telefono", "$pacienteDB.telefono_alt", "$vacio"],
               },
@@ -321,6 +325,7 @@ app.get(
                   fecha: {$dateToString: {format: "%Y-%m-%d", date: "$fecha"}},
                   pacienteDB: "$pacienteDB",
                   pacienteDocDB: "$pacienteDocDB",
+                  pacienteDocTramiteDB: "$pacienteDocTramiteDB",
                   pacienteSexoDB: "$pacienteSexoDB",
                   pacienteTelefonoDB: "$pacienteTelefonoDB",
                   oSocial: "$oSocial",
@@ -355,6 +360,7 @@ app.get(
                   fecha: {$dateToString: {format: "%Y-%m-%d", date: "$fecha"}},
                   pacienteDB: "$pacienteDB",
                   pacienteDocDB: "$pacienteDocDB",
+                  pacienteDocTramiteDB: "$pacienteDocTramiteDB",
                   pacienteSexoDB: "$pacienteSexoDB",
                   pacienteTelefonoDB: "$pacienteTelefonoDB",
                   oSocial: "$oSocial",
@@ -427,6 +433,9 @@ app.get(
               fecha: {$ifNull: ["$detalle_entregas.fecha", "$noRetornaNada"]},
               pacienteDB: {$ifNull: ["$detalle_entregas.pacienteDB", "$noRetornaNada"]},
               pacienteDocDB: {$ifNull: ["$detalle_entregas.pacienteDocDB", "$noRetornaNada"]},
+              pacienteDocTramiteDB: {
+                $ifNull: ["$detalle_entregas.pacienteDocTramiteDB", "$noRetornaNada"],
+              },
               pacienteSexoDB: {$ifNull: ["$detalle_entregas.pacienteSexoDB", "$noRetornaNada"]},
               pacienteTelefonoDB: {
                 $ifNull: ["$detalle_entregas.pacienteTelefonoDB", "$noRetornaNada"],
