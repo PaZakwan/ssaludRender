@@ -27,6 +27,14 @@
 
 ---
 
+### [1.7.20260401] - 2026-04-01
+
+- ✨ Added a Sistema - Upload => Se agrego la posibilidad de arrastrar y soltar archivos (drag and drop).
+
+- 🩹 Fixed a Farmacia - Alta Insumos => Error al completar datos de alta y edicion (Front).
+
+- 🩹 Fixed a Vacunas - Alta Vacunas => Error al completar datos de alta y edicion (Front).
+
 ### [1.7.20260313] - 2026-03-13
 
 - 📈 Improved a Sistema - Tablas => El campo de busqueda "filtro" (search local) no era muy visible, se le agrego colores de fondo para que tenga mas contraste.

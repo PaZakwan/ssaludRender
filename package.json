@@ -57,7 +57,7 @@
     "globals": "^17.3.0"
   },
   "engines": {
-    "node": "20.x",
-    "npm": "10.x"
+    "node": "24.x",
+    "npm": "11.x"
   }
 }

@@ -29,11 +29,11 @@
 
 |         |    SERVER    | OFFICE  |  HOME   |
 | :------ | :----------: | :-----: | :-----: |
-| S.O.    | Ubuntu 20.04 |  W 10   |  W 11   |
-| MongoDB |    5.0.31    | 5.0.28  | 5.0.28  |
-| Node    |   20.19.5    | 20.20.0 | 20.20.0 |
-| NPM     |    10.9.2    | 10.9.4  | 10.9.4  |
-| Nodemon |     ---      | 3.1.11  | 3.1.11  |
+| S.O.    | Ubuntu 20.04 |  W 11   |  W 11   |
+| MongoDB |    5.0.32    | 5.0.32  | 5.0.32  |
+| Node    |   20.20.1    | 24.14.0 | 24.14.0 |
+| NPM     |    10.9.2    | 11.9.0  | 11.9.0  |
+| Nodemon |     ---      | 3.1.14  | 3.1.14  |
 | PM2     |    5.4.0     |         |         |
 | Nginx   |              |         |         |
 | NVS(Dev)|     ---      |  1.7.1  |  1.7.1  |
@@ -96,6 +96,7 @@ $ npm ls
       - [x] Form Basicos - Requeridos dinamicos.
     - [/] Datos Especiales (expandPacienteUnionEspecial) (Posibilidad de borrar por item)
       - [/] Form Especiales (formHistorialUnir)
+        Seguir con Store hist_clinico
       - [x] Form Especiales (expandInsumosRecibidos)
       - [x] Form Especiales (expandVacunaciones)
       - [x] Form Especiales (expandMotivos)
@@ -538,8 +539,8 @@ FRONT
 
 - [ ] ‼️ SERVIDOR - Actualizar (Ubuntu, Node, MongoDB(5 -> 8), PM2, Nginx?) =>
       <progress value="0" max="100"></progress> 0%
-  - [ ] Fase 1: Preparación y Node.js (Semana 1)
-    - [ ] ‼️ Node => 20.19.5 -> 24.x.x (Remove the old repository, add new repository, sudo apt-get install -y nodejs)
+  - [/] Fase 1: Preparación y Node.js (Semana 1)
+    - [/] ‼️ Node => 20.19.5 -> 24.x.x (Remove the old repository, add new repository, sudo apt-get install -y nodejs)
     - [ ] PM2 => 5.4.0 -> 6.x.x
 
   - [ ] Fase 2: El primer salto de Sistema Operativo (Semana 2)
