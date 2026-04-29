@@ -1,13 +1,13 @@
 const {readFile} = require("fs/promises");
 const express = require("express");
 
-const _pick = require("lodash/pick");
-
-const {verificaToken, verificaArrayPropValue} = require(process.env.MAIN_FOLDER +
-  "/middlewares/autenticacion");
+const {verificaToken, verificaArrayPropValue} = require(
+  process.env.MAIN_FOLDER + "/middlewares/autenticacion"
+);
 const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
-const {isObjectIdValid, arrayFromSumarPropsInArrays} = require(process.env.MAIN_FOLDER +
-  "/tools/object");
+const {isObjectIdValid, arrayFromSumarPropsInArrays, pickObject} = require(
+  process.env.MAIN_FOLDER + "/tools/object"
+);
 
 const {modificarStockInc} = require("./vacunaHelper");
 const Area = require(process.env.MAIN_FOLDER + "/modulos/main/models/area");
@@ -36,7 +36,7 @@ app.put(
   ],
   async (req, res) => {
     try {
-      let filtro = _pick(req.body, ["id", "remito_compra", "remito"]);
+      let filtro = pickObject({obj: req.body, arr: ["id", "remito_compra", "remito"]});
       let ingresoDB = null;
 
       // Buscar Ingresos
@@ -100,22 +100,14 @@ app.put(
             {
               _id: filtro.id,
             },
-            {insumos: ingresoDB.insumos},
-            {
-              new: true,
-              runValidators: true,
-            }
+            {insumos: ingresoDB.insumos}
           ).exec();
         } else if (filtro.remito_compra) {
           recibidoDB = await VacunaIngreso.findOneAndUpdate(
             {
               _id: filtro.id,
             },
-            {insumos: ingresoDB.insumos},
-            {
-              new: true,
-              runValidators: true,
-            }
+            {insumos: ingresoDB.insumos}
           ).exec();
         }
         if (recibidoDB === null) {
@@ -325,8 +317,12 @@ app.get(
                   _id: JSON.parse(req.query.areas),
                 }
               : {vacunatorio: true}
-          ).exec(),
-          VacunaInsumo.find({_id: JSON.parse(req.query.insumos)}).exec(),
+          )
+            .lean()
+            .exec(),
+          VacunaInsumo.find({_id: JSON.parse(req.query.insumos)})
+            .lean()
+            .exec(),
         ]);
         areaDB.forEach((area) => {
           insumosDB.forEach((insumo) => {
@@ -730,9 +726,14 @@ app.get(
             $sum: {$cond: [{$eq: ["$procedencia", `${procedencia}`]}, "$cantidad", 0]},
           };
         });
-      } catch (err) {
-        console.error(
-          "rutasStock.js - /vacunas/stock/total -> no existe el archivo: vacunas-base.json"
+      } catch (error) {
+        return errorMessage(
+          res,
+          {
+            message:
+              "rutasStock.js - /vacunas/stock/total -> no existe el archivo: vacunas-base.json",
+          },
+          404
         );
       }
 
@@ -875,11 +876,7 @@ app.put(
           {
             remito: req.body.remito,
           },
-          {insumos: transferenciaDB.insumos},
-          {
-            new: true,
-            runValidators: true,
-          }
+          {insumos: transferenciaDB.insumos}
         ).exec();
         if (retiradoDB === null) {
           errors.push({

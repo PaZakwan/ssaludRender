@@ -1,52 +1,38 @@
 const mongoose = require("mongoose");
 const uniqueValidator = require("mongoose-unique-validator");
 
-let schemaOptions = {
-  toObject: {
-    getters: true,
+const VacunaStockSchema = new mongoose.Schema({
+  area: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Area",
+    required: [true, "El Area en donde se encuentra es necesaria."],
   },
-  toJSON: {
-    getters: true,
+  insumo: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "VacunaInsumo",
+    required: [true, "El Insumo es necesario."],
   },
-};
-
-let Schema = mongoose.Schema;
-
-let VacunaStockSchema = new Schema(
-  {
-    area: {
-      type: Schema.Types.ObjectId,
-      ref: "Area",
-      required: [true, "El Area en donde se encuentra es necesaria."],
-    },
-    insumo: {
-      type: Schema.Types.ObjectId,
-      ref: "VacunaInsumo",
-      required: [true, "El Insumo es necesario."],
-    },
-    procedencia: {
-      type: String,
-      default: "Carga inicial",
-    },
-    lote: {
-      type: String,
-    },
-    vencimiento: {
-      type: Date,
-    },
-    cantidad: {
-      type: Number,
-      required: [true, "La Cantidad es necesaria."],
-    },
-
-    //todos
-    updatedAt: {
-      type: Date,
-      default: Date.now,
-    },
+  procedencia: {
+    type: String,
+    default: "Carga inicial",
   },
-  schemaOptions
-);
+  lote: {
+    type: String,
+  },
+  vencimiento: {
+    type: Date,
+  },
+  cantidad: {
+    type: Number,
+    required: [true, "La Cantidad es necesaria."],
+  },
+
+  //todos
+  updatedAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
 
 VacunaStockSchema.index(
   {area: 1, insumo: 1, procedencia: 1, lote: 1, vencimiento: 1},
@@ -56,7 +42,7 @@ VacunaStockSchema.index(
   }
 );
 
-VacunaStockSchema.pre("findOneAndUpdate", function (next) {
+VacunaStockSchema.pre(["findOneAndUpdate", "updateOne", "updateMany"], function (next) {
   if (this.getUpdate().$set) {
     this.getUpdate().$set.updatedAt = new Date();
   } else {

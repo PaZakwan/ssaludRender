@@ -1,9 +1,8 @@
 const express = require("express");
 
-const _pick = require("lodash/pick");
-
-const {verificaToken, verificaAdmin_Role} = require(process.env.MAIN_FOLDER +
-  "/middlewares/autenticacion");
+const {verificaToken, verificaAdmin_Role} = require(
+  process.env.MAIN_FOLDER + "/middlewares/autenticacion"
+);
 const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
 const {isVacio, objectToFind, objectSetUnset} = require(process.env.MAIN_FOLDER + "/tools/object");
 
@@ -29,7 +28,8 @@ const listaLugar = [
 app.post("/lugar/:nombre", [verificaToken, verificaAdmin_Role], async (req, res) => {
   try {
     let body = isVacio({
-      dato: _pick(req.body, listaLugar),
+      dato: req.body,
+      pickDato: listaLugar,
     });
     if (body.vacio === true) {
       return errorMessage(res, {message: "No se envió ningún dato."}, 412);
@@ -46,10 +46,7 @@ app.post("/lugar/:nombre", [verificaToken, verificaAdmin_Role], async (req, res)
       body = objectSetUnset({dato: body}).dato;
       // actualiza el lugar, si se esta editando
       delete body.$set._id;
-      lugarDB = await Lugar.findOneAndUpdate({_id}, body, {
-        new: true,
-        runValidators: true,
-      }).exec();
+      lugarDB = await Lugar.findOneAndUpdate({_id}, body).exec();
 
       if (!lugarDB) {
         return errorMessage(res, {message: "Lugar no encontrado."}, 404);
@@ -68,10 +65,7 @@ app.post("/lugar/:nombre", [verificaToken, verificaAdmin_Role], async (req, res)
       body = objectSetUnset({dato: body}).dato;
       delete body.$set._id;
       // actualiza el lugar por el nombre(para uploads o cuando se crea con el mismo nombre del lugar)
-      lugarDB = await Lugar.findOneAndUpdate({nombre: req.params.nombre}, body, {
-        new: true,
-        runValidators: true,
-      }).exec();
+      lugarDB = await Lugar.findOneAndUpdate({nombre: req.params.nombre}, body).exec();
 
       return res.json({
         ok: true,
@@ -186,7 +180,7 @@ app.delete("/lugar/:nombre", [verificaToken, verificaAdmin_Role], async (req, re
         nombre: lugarDB.nombre + " (BORRADA)",
         estado: false,
       },
-      {new: true}
+      {runValidators: false}
     ).exec();
 
     return res.json({

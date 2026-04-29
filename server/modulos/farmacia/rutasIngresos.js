@@ -1,12 +1,12 @@
 const express = require("express");
 
-const _pick = require("lodash/pick");
-
-const {verificaToken, verificaArrayPropValue} = require(process.env.MAIN_FOLDER +
-  "/middlewares/autenticacion");
+const {verificaToken, verificaArrayPropValue} = require(
+  process.env.MAIN_FOLDER + "/middlewares/autenticacion"
+);
 const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
-const {isVacio, objectSetUnset, isObjectIdValid, sumarProps, dateUTC} = require(process.env
-  .MAIN_FOLDER + "/tools/object");
+const {isVacio, objectSetUnset, isObjectIdValid, sumarProps, dateUTC} = require(
+  process.env.MAIN_FOLDER + "/tools/object"
+);
 
 // const {modificarStockInc} = require("./farmaciaHelper");
 const FarmaciaTransferencia = require("./models/farmacia_transferencia");
@@ -14,7 +14,7 @@ const FarmaciaIngreso = require("./models/farmacia_ingreso");
 
 const app = express();
 
-let listaIngreso = [
+const listaIngreso = [
   "_id",
   // "fecha",
   "remito_compra",
@@ -352,7 +352,8 @@ app.put(
   async (req, res) => {
     try {
       let body = isVacio({
-        dato: _pick(req.body, listaIngreso),
+        dato: req.body,
+        pickDato: listaIngreso,
       });
       if (body.vacio === true) {
         return errorMessage(res, {message: "No se envió ningún dato."}, 412);
@@ -394,10 +395,7 @@ app.put(
         body = objectSetUnset({dato: body, unsetCero: true}).dato;
 
         // Modificando la BD
-        ingresoDB = await FarmaciaIngreso.findOneAndUpdate({_id: body.$set._id}, body, {
-          new: true,
-          runValidators: true,
-        }).exec();
+        ingresoDB = await FarmaciaIngreso.findOneAndUpdate({_id: body.$set._id}, body).exec();
       }
 
       // Si es Carga inicial autorecibir stock
@@ -435,11 +433,7 @@ app.put(
       //     {
       //       _id: ingresoDB.id,
       //     },
-      //     {insumos: ingresoDB.insumos},
-      //     {
-      //       new: true,
-      //       runValidators: true,
-      //     }
+      //     {insumos: ingresoDB.insumos}
       //   ).exec();
       //   if (recibidoDB === null) {
       //     errors.push({
@@ -849,7 +843,6 @@ app.get(
         estadistica,
       });
     } catch (err) {
-      console.log("err", err);
       return errorMessage(res, err, err.code);
     }
   }
@@ -874,7 +867,8 @@ app.put(
   async (req, res) => {
     try {
       let body = isVacio({
-        dato: _pick(req.body, listaIngreso),
+        dato: req.body,
+        pickDato: listaIngreso,
       });
       if (body.vacio === true) {
         return errorMessage(res, {message: "No se envió ningún dato."}, 412);
@@ -923,10 +917,10 @@ app.put(
         body = objectSetUnset({dato: body, unsetCero: true}).dato;
 
         // Modificando la BD
-        transferenciaDB = await FarmaciaTransferencia.findOneAndUpdate({_id: body.$set._id}, body, {
-          new: true,
-          runValidators: true,
-        }).exec();
+        transferenciaDB = await FarmaciaTransferencia.findOneAndUpdate(
+          {_id: body.$set._id},
+          body
+        ).exec();
       }
 
       if (transferenciaDB === null) {

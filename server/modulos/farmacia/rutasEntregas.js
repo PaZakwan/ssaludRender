@@ -1,7 +1,5 @@
 const express = require("express");
 
-const _pick = require("lodash/pick");
-
 const {verificaToken, verificaArrayPropValue} = require(
   process.env.MAIN_FOLDER + "/middlewares/autenticacion"
 );
@@ -13,7 +11,7 @@ const InsumoEntrega = require("./models/insumo_entrega");
 
 const app = express();
 
-let listaEntregas = [
+const listaEntregas = [
   "_id",
   "fecha",
   "origen",
@@ -193,7 +191,8 @@ app.put(
   async (req, res) => {
     try {
       let body = isVacio({
-        dato: _pick(req.body, listaEntregas),
+        dato: req.body,
+        pickDato: listaEntregas,
       });
       if (body.vacio === true) {
         return errorMessage(res, {message: "No se envió ningún dato."}, 412);

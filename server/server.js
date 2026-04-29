@@ -215,7 +215,7 @@ const startServer = async () => {
     // Espera que se creen los modelos en las RUTAS
     clgEvento({
       name: "Base de Datos",
-      evento: `Creando Modelos`,
+      evento: "Creando Modelos",
     });
     if (process.env.NODE_ENV === "dev") {
       await new Promise((resolve) => setTimeout(resolve, 1 * 1000));
@@ -225,7 +225,7 @@ const startServer = async () => {
     // Crea los INDEX de la BD.
     clgEvento({
       name: "Base de Datos",
-      evento: `Creando Indices`,
+      evento: "Creando Indices",
     });
     let _index = await DB.syncIndexes({continueOnError: true});
     // {key : value} => {Modelo : Error}
@@ -233,7 +233,7 @@ const startServer = async () => {
     // Espera que se Terminen de crear los index de la DB
     clgEvento({
       name: "Base de Datos",
-      evento: `Terminando de Crear los Indices`,
+      evento: "Terminando de Crear los Indices",
     });
     if (process.env.NODE_ENV === "dev") {
       await new Promise((resolve) => setTimeout(resolve, 1 * 1000));

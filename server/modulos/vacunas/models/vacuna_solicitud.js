@@ -1,83 +1,74 @@
 const mongoose = require("mongoose");
 
-let schemaOptions = {
-  toObject: {
-    getters: true,
+const VacunaSolicitudSchema = new mongoose.Schema({
+  fecha: {
+    type: Date,
+    default: Date.now,
   },
-  toJSON: {
-    getters: true,
+  origen: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Area",
+    required: [true, "El Area que solicita es necesaria."],
   },
-};
+  destino: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Area",
+  },
 
-let Schema = mongoose.Schema;
-
-let VacunaSolicitudSchema = new Schema(
-  {
-    fecha: {
-      type: Date,
-      default: Date.now,
-    },
-    origen: {
-      type: Schema.Types.ObjectId,
-      ref: "Area",
-      required: [true, "El Area que solicita es necesaria."],
-    },
-    destino: {
-      type: Schema.Types.ObjectId,
-      ref: "Area",
-    },
-
-    insumos: {
-      type: [
-        {
-          _id: false,
-          insumo: {
-            type: Schema.Types.ObjectId,
-            ref: "VacunaInsumo",
-            required: [true, "El Insumo a solicitar es necesario."],
-          },
-          cantidad: {
-            type: Number,
-            required: [true, "La Cantidad a solicitar es necesaria."],
-          },
+  insumos: {
+    type: [
+      {
+        _id: false,
+        insumo: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "VacunaInsumo",
+          required: [true, "El Insumo a solicitar es necesario."],
         },
-      ],
-      validate: {
-        validator: (v) => Array.isArray(v) && v.length > 0,
-        message: "Por lo menos un Insumo a solicitar es requerido.",
+        cantidad: {
+          type: Number,
+          required: [true, "La Cantidad a solicitar es necesaria."],
+        },
       },
-    },
-
-    estado: {
-      type: String,
-      required: [true, "El Estado de la solicitud es necesario."],
-    },
-    motivo: {
-      type: String,
-      required: [true, "El Motivo de la solicitud es necesario."],
-    },
-    categoria: {
-      type: String,
-    },
-
-    fec_resolucion: {
-      type: Date,
-    },
-    condicion_aceptada: {
-      type: String,
-    },
-    motivo_rechazo: {
-      type: String,
-    },
-
-    //todos
-    updatedAt: {
-      type: Date,
-      default: Date.now,
-    },
+    ],
+    required: [true, "La lista de Insumos a solicitar es necesaria."],
+    validate: [
+      {
+        validator: function (val) {
+          return Array.isArray(val) && val.length > 0;
+        },
+        message: "{PATH} al menos uno es requerido.",
+      },
+    ],
   },
-  schemaOptions
-);
+
+  estado: {
+    type: String,
+    required: [true, "El Estado de la solicitud es necesario."],
+  },
+  motivo: {
+    type: String,
+    required: [true, "El Motivo de la solicitud es necesario."],
+  },
+  categoria: {
+    type: String,
+  },
+
+  fec_resolucion: {
+    type: Date,
+  },
+  condicion_aceptada: {
+    type: String,
+  },
+  motivo_rechazo: {
+    type: String,
+  },
+
+  //todos
+  updatedAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
 
 VacunaSolicitudSchema.virtual("id_time").get(function () {
   try {
@@ -87,7 +78,7 @@ VacunaSolicitudSchema.virtual("id_time").get(function () {
   }
 });
 
-VacunaSolicitudSchema.pre("findOneAndUpdate", function (next) {
+VacunaSolicitudSchema.pre(["findOneAndUpdate", "updateOne", "updateMany"], function (next) {
   if (this.getUpdate().$set) {
     this.getUpdate().$set.updatedAt = new Date();
   } else {

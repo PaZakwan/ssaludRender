@@ -1,16 +1,16 @@
 const express = require("express");
 
-const _pick = require("lodash/pick");
-
-const {verificaToken, verificaAdmin_Role} = require(process.env.MAIN_FOLDER +
-  "/middlewares/autenticacion");
+const {verificaToken, verificaAdmin_Role} = require(
+  process.env.MAIN_FOLDER + "/middlewares/autenticacion"
+);
 const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
+const {isVacio, objectSetUnset} = require(process.env.MAIN_FOLDER + "/tools/object");
 
 const Profesional = require("./models/profesional");
 
 const app = express();
 
-let listaProfesional = [
+const listaProfesional = [
   // 'usuario_modifico',
   "apellido",
   "nombre",
@@ -23,10 +23,10 @@ let listaProfesional = [
   "estado",
 ];
 
-function especialidadBusqueda(filtro, todovacio) {
+const especialidadBusqueda = function (filtro, todovacio) {
   if (filtro["especialidades"]) {
     for (const key2 in filtro["especialidades"]) {
-      if (filtro["especialidades"].hasOwnProperty(key2)) {
+      if (Object.hasOwn(filtro["especialidades"], key2)) {
         // console.log(`key: ${key2} - value: ${filtro['especialidades'][key2]}`);
         // console.log(`Type: ${typeof filtro['especialidades'][key2]}`);
 
@@ -60,34 +60,25 @@ function especialidadBusqueda(filtro, todovacio) {
       delete filtro["especialidades.$exists"];
     }
   }
-  return (respuesta = {
+  return {
     filtro,
     todovacio,
-  });
-}
+  };
+};
 
 // ============================
 // Crear Profesional
 // ============================
 app.post("/profesional", [verificaToken, verificaAdmin_Role], async (req, res) => {
   try {
-    let listaProfesionalCrear = listaProfesional.slice();
-
-    let body = _pick(req.body, listaProfesionalCrear);
-
-    let todovacio = true;
-    for (let key in body) {
-      if (body.hasOwnProperty(key)) {
-        let element = body[key];
-        if (element !== "") {
-          todovacio = false;
-          break;
-        }
-      }
-    }
-    if (todovacio === true) {
+    let body = isVacio({
+      dato: req.body,
+      pickDato: listaProfesional,
+    });
+    if (body.vacio === true) {
       return errorMessage(res, {message: "No se envió ningún dato."}, 412);
     }
+    body = body.dato;
 
     body["usuario_modifico"] = req.usuario._id;
 
@@ -133,7 +124,7 @@ app.get("/profesional/buscar", [verificaToken], async (req, res) => {
     // Revisa que se haya enviado por lo menos un filtro y elimina propiedades vacias.
     let todovacio = true;
     for (const key in filtro) {
-      if (filtro.hasOwnProperty(key)) {
+      if (Object.hasOwn(filtro, key)) {
         if (key === "id") {
           todovacio = false;
           filtro["_id"] = filtro[key];
@@ -145,7 +136,6 @@ app.get("/profesional/buscar", [verificaToken], async (req, res) => {
           filtro = especialidad.filtro;
         } else if (typeof filtro[key] !== "string") {
           todovacio = false;
-          filtro[key] = filtro[key];
         } else if (filtro[key] !== "" && filtro[key] !== null) {
           todovacio = false;
           // name: { $regex: '(?i)+palabra' } (?i) es para buscar minusculas y mayusculas
@@ -159,11 +149,11 @@ app.get("/profesional/buscar", [verificaToken], async (req, res) => {
         }
       }
     }
-    // if (todovacio === true) {
-    //   return errorMessage(res, {message: "No se envió ningún filtro."}, 412);
-    // }
     // Revisa permisos del cliente
     if (req.usuario.role !== "ADMIN_ROLE") {
+      if (todovacio === true) {
+        return errorMessage(res, {message: "No se envió ningún filtro."}, 412);
+      }
       filtro.estado = true;
     }
 
@@ -197,66 +187,22 @@ app.put("/profesional/:id", [verificaToken, verificaAdmin_Role], async (req, res
       return errorMessage(res, {message: "No se envió el ID."}, 412);
     }
 
-    let listaProfesionalCrear = listaProfesional.slice();
-
-    let body = _pick(req.body, listaProfesionalCrear);
-
-    let todovacio = true;
-    for (let key in body) {
-      if (body.hasOwnProperty(key)) {
-        let element = body[key];
-        if (element !== "") {
-          todovacio = false;
-          break;
-        }
-      }
+    let body = isVacio({
+      dato: req.body,
+      pickDato: listaProfesional,
+    });
+    if (body.vacio === true) {
+      return errorMessage(res, {message: "No se envió ningún dato."}, 412);
     }
-    if (todovacio === true) {
-      return errorMessage(res, {message: "No se envió ningún filtro."}, 412);
-    }
+    body = body.dato;
 
     body["usuario_modifico"] = req.usuario._id;
 
-    // Delete del campo si esta como "null" o ""
-    let $set = {};
-    let $unset = {};
-    for (const key in body) {
-      if (body.hasOwnProperty(key)) {
-        if (key === "especialidades") {
-          // Delete del campo si esta como "null" o "" en especialidades
-          body["especialidades"].forEach((especial) => {
-            for (let key2 in especial) {
-              if (especial.hasOwnProperty(key2)) {
-                if (
-                  especial[key2] === null ||
-                  especial[key2] === "" ||
-                  especial[key2].length === 0
-                ) {
-                  delete especial[key2];
-                } else {
-                  todovacio = false;
-                }
-              }
-            }
-          });
-          $set["especialidades"] = body["especialidades"];
-        } else {
-          // Delete del campo si esta como "null" o "" en body
-          if (body[key] === null || body[key] === "" || body[key].length === 0) {
-            $unset[key] = 1;
-          } else {
-            $set[key] = body[key];
-          }
-        }
-      }
-    }
-    body = {$set, $unset};
+    // Delete del campo si esta como null / "" / undefined /array vacio
+    body = objectSetUnset({dato: body}).dato;
 
     // Realiza la busqueda y el Update
-    let profesionalDB = await Profesional.findOneAndUpdate({_id: req.params.id}, body, {
-      new: true,
-      runValidators: true,
-    }).exec();
+    let profesionalDB = await Profesional.findOneAndUpdate({_id: req.params.id}, body).exec();
 
     if (!profesionalDB) {
       return errorMessage(res, {message: "Error al modificar el profesional."}, 400);
@@ -284,7 +230,7 @@ app.delete("/profesional/:id", [verificaToken, verificaAdmin_Role], async (req, 
     let profesionalBorrado = await Profesional.findOneAndUpdate(
       {_id: req.params.id},
       {estado: false},
-      {new: true}
+      {runValidators: false}
     ).exec();
 
     if (!profesionalBorrado) {

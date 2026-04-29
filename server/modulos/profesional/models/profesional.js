@@ -1,98 +1,84 @@
 const mongoose = require("mongoose");
 const uniqueValidator = require("mongoose-unique-validator");
 
-let schemaOptions = {
-  toObject: {
-    getters: true,
+const profesionalesSchema = new mongoose.Schema({
+  usuario_modifico: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Usuario",
+    required: [true, "El usuario modificador es necesario"],
   },
-  toJSON: {
-    getters: true,
+  apellido: {
+    type: String,
+    lowercase: true,
+    trim: true,
+    required: [true, "El Apellido es necesario."],
   },
-};
-
-let Schema = mongoose.Schema;
-
-let profesionalesSchema = new Schema(
-  {
-    usuario_modifico: {
-      type: Schema.Types.ObjectId,
-      ref: "Usuario",
-      required: true,
-    },
-    apellido: {
-      type: String,
-      lowercase: true,
-      trim: true,
-      required: [true, "El Apellido es necesario."],
-    },
-    nombre: {
-      type: String,
-      lowercase: true,
-      trim: true,
-      required: [true, "El Nombre es necesario."],
-    },
-    tipo_doc: {
-      type: String,
-      trim: true,
-    },
-    // "sparse" permite varios ingresos "undefined" del campo y con el "unique" cuando no es "undefined" verifica que el valor no se repita.
-    documento: {
-      type: String,
-      unique: true,
-      sparse: true,
-      trim: true,
-    },
-    legajo: {
-      type: String,
-      unique: true,
-      sparse: true,
-      trim: true,
-    },
-    especialidades: [
-      {
-        _id: false,
-        especialidad: {
-          type: String,
-          trim: true,
-          required: [true, "La Especialidad es necesaria."],
-        },
-        unidad_atencion: {
-          type: Schema.Types.ObjectId,
-          ref: "Area",
-          required: [true, "La Unidad Sanitaria de Atención es necesaria."],
-        },
-        duracion_turno: {
-          type: String,
-          required: [true, "La Duración de los Turnos es necesaria."],
-        },
-        dias_laborales: {
-          type: Object,
-          default: {},
-        },
-        turno: {
-          type: String,
-          default: "no",
-          required: [true, "Se requiere saber si la especialidad es con turno."],
-        },
+  nombre: {
+    type: String,
+    lowercase: true,
+    trim: true,
+    required: [true, "El Nombre es necesario."],
+  },
+  tipo_doc: {
+    type: String,
+    trim: true,
+  },
+  // "sparse" permite varios ingresos "undefined" del campo y con el "unique" cuando no es "undefined" verifica que el valor no se repita.
+  documento: {
+    type: String,
+    unique: true,
+    sparse: true,
+    trim: true,
+  },
+  legajo: {
+    type: String,
+    unique: true,
+    sparse: true,
+    trim: true,
+  },
+  especialidades: [
+    {
+      _id: false,
+      especialidad: {
+        type: String,
+        trim: true,
+        required: [true, "La Especialidad es necesaria."],
       },
-    ],
+      unidad_atencion: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Area",
+        required: [true, "La Unidad Sanitaria de Atención es necesaria."],
+      },
+      duracion_turno: {
+        type: String,
+        required: [true, "La Duración de los Turnos es necesaria."],
+      },
+      dias_laborales: {
+        type: Object,
+        default: {},
+      },
+      turno: {
+        type: String,
+        default: "no",
+        required: [true, "Se requiere saber si la especialidad es con turno."],
+      },
+    },
+  ],
 
-    //todos
-    estado: {
-      type: Boolean,
-      default: true,
-    },
-    updatedAt: {
-      type: Date,
-      default: Date.now,
-    },
-    createdAt: {
-      type: Date,
-      default: Date.now,
-    },
+  //todos
+  estado: {
+    type: Boolean,
+    default: true,
   },
-  schemaOptions
-);
+  updatedAt: {
+    type: Date,
+    default: Date.now,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
 
 profesionalesSchema.virtual("nombreC").get(function () {
   if (this.nombre !== undefined && this.apellido !== undefined) {
@@ -108,7 +94,7 @@ profesionalesSchema.virtual("nombreC").get(function () {
   }
 });
 
-profesionalesSchema.pre("findOneAndUpdate", function (next) {
+profesionalesSchema.pre(["findOneAndUpdate", "updateOne", "updateMany"], function (next) {
   if (this.getUpdate().$set) {
     this.getUpdate().$set.updatedAt = new Date();
   } else {

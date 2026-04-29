@@ -1,16 +1,16 @@
 const express = require("express");
 
-const _pick = require("lodash/pick");
-
-const {verificaToken, verificaArrayPropValue} = require(process.env.MAIN_FOLDER +
-  "/middlewares/autenticacion");
+const {verificaToken, verificaArrayPropValue} = require(
+  process.env.MAIN_FOLDER + "/middlewares/autenticacion"
+);
 const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
+const {isVacio, objectSetUnset} = require(process.env.MAIN_FOLDER + "/tools/object");
 
 const Turno = require("./models/turno");
 
 const app = express();
 
-let listaTurno = [
+const listaTurno = [
   // 'usuario_modifico',
   "uas",
   "fecha",
@@ -143,7 +143,7 @@ app.get(
       // Revisa que se haya enviado por lo menos un filtro.
       let todovacio = true;
       for (const key in filtro) {
-        if (filtro.hasOwnProperty(key)) {
+        if (Object.hasOwn(filtro, key)) {
           if (key === "fecha" || key === "fechaDesde") {
             todovacio = false;
             filtro[key] = new Date(filtro[key]);
@@ -155,7 +155,6 @@ app.get(
             key === "paciente"
           ) {
             todovacio = false;
-            filtro[key] = filtro[key];
           } else if (filtro[key] !== "" && filtro[key] !== null) {
             todovacio = false;
             // name: { $regex: '(?i)+palabra' } (?i) es para buscar minusculas y mayusculas
@@ -225,24 +224,15 @@ app.post(
   ],
   async (req, res) => {
     try {
-      let listaTurnoCrear = listaTurno.slice();
-
-      let body = _pick(req.body, listaTurnoCrear);
-
-      let todovacio = true;
-      for (const key in body) {
-        if (body.hasOwnProperty(key)) {
-          // Delete del campo si esta como "null" o ""
-          if (body[key] === null || body[key] === "") {
-            delete body[key];
-          } else {
-            todovacio = false;
-          }
-        }
-      }
-      if (todovacio === true) {
+      let body = isVacio({
+        dato: req.body,
+        pickDato: listaTurno,
+        borrar: true,
+      });
+      if (body.vacio === true) {
         return errorMessage(res, {message: "No se envió ningún dato."}, 412);
       }
+      body = body.dato;
 
       body["usuario_modifico"] = req.usuario._id;
 
@@ -280,46 +270,23 @@ app.put(
       if (!req.params.id || req.params.id === "undefined") {
         return errorMessage(res, {message: "No se envió el ID."}, 412);
       }
-      let listaTurnoUpdate = listaTurno.slice();
 
-      let body = _pick(req.body, listaTurnoUpdate);
-
-      let todovacio = true;
-      for (const key in body) {
-        if (body.hasOwnProperty(key)) {
-          const element = body[key];
-          if (element !== "") {
-            todovacio = false;
-            break;
-          }
-        }
-      }
-      if (todovacio === true) {
+      let body = isVacio({
+        dato: req.body,
+        pickDato: listaTurno,
+      });
+      if (body.vacio === true) {
         return errorMessage(res, {message: "No se envió ningún dato."}, 412);
       }
+      body = body.dato;
 
       body["usuario_modifico"] = req.usuario._id;
 
-      // Delete del campo si esta como "null" o ""
-      let $set = {};
-      let $unset = {};
-      for (const key in body) {
-        if (body.hasOwnProperty(key)) {
-          const element = body[key];
-          if (element === null || element === "" || element.length === 0) {
-            $unset[key] = 1;
-          } else {
-            $set[key] = element;
-          }
-        }
-      }
-      body = {$set, $unset};
+      // Delete del campo si esta como null / "" / undefined /array vacio
+      body = objectSetUnset({dato: body}).dato;
 
       // Realiza la busqueda y el Update
-      let turnoDB = await Turno.findOneAndUpdate({_id: req.params.id}, body, {
-        new: true,
-        runValidators: true,
-      }).exec();
+      let turnoDB = await Turno.findOneAndUpdate({_id: req.params.id}, body).exec();
 
       if (!turnoDB) {
         return errorMessage(res, {message: "Error al modificar el Turno."}, 400);

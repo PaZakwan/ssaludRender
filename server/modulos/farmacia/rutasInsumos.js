@@ -1,9 +1,8 @@
 const express = require("express");
 
-const _pick = require("lodash/pick");
-
-const {verificaToken, verificaArrayPropValue} = require(process.env.MAIN_FOLDER +
-  "/middlewares/autenticacion");
+const {verificaToken, verificaArrayPropValue} = require(
+  process.env.MAIN_FOLDER + "/middlewares/autenticacion"
+);
 const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
 const {isVacio, objectSetUnset} = require(process.env.MAIN_FOLDER + "/tools/object");
 
@@ -20,7 +19,7 @@ const HistorialMedicacion = require("../historial_clinico/models/historial_medic
 
 const app = express();
 
-let listaInsumo = [
+const listaInsumo = [
   "_id",
   "nombre",
   "categoria",
@@ -49,25 +48,25 @@ app.get(
       if (filtro !== "todos") {
         try {
           filtro = JSON.parse(filtro);
-          if (filtro !== "todos" && typeof filtro !== "object") {
+          if (typeof filtro !== "object") {
             return errorMessage(res, {message: "El dato de Filtro no es valido."}, 400);
           }
-          if (!!filtro.nombre && typeof filtro.nombre === "string") {
+          if (filtro.nombre) {
             filtro.nombre = {
               $regex: `(?i)${filtro.nombre}`,
             };
           }
-          if (!!filtro.descripcion && typeof filtro.descripcion === "string") {
+          if (filtro.descripcion) {
             filtro.descripcion = {
               $regex: `(?i)${filtro.descripcion}`,
             };
           }
-          if (!!filtro.unique_code && typeof filtro.unique_code === "string") {
+          if (filtro.unique_code) {
             filtro.unique_code = {
               $regex: `(?i)${filtro.unique_code}`,
             };
           }
-          if (!!filtro.categoria && typeof filtro.categoria === "string") {
+          if (filtro.categoria) {
             filtro.categoria = {
               $regex: `(?i)${filtro.categoria}`,
             };
@@ -100,13 +99,11 @@ app.get(
         return errorMessage(res, {message: "El dato para Limite no es valido."}, 400);
       }
 
-      let insumos = null;
-
       if (req.usuario.role !== "ADMIN_ROLE") {
         filtro.estado = true;
       }
 
-      insumos = await Insumo.find(filtro)
+      let insumos = await Insumo.find(filtro)
         .collation({locale: "es", numericOrdering: true})
         .select(select)
         .sort(orden)
@@ -142,7 +139,8 @@ app.put(
   async (req, res) => {
     try {
       let body = isVacio({
-        dato: _pick(req.body, listaInsumo),
+        dato: req.body,
+        pickDato: listaInsumo,
       });
       if (body.vacio === true) {
         return errorMessage(res, {message: "No se envió ningún dato."}, 412);
@@ -155,11 +153,7 @@ app.put(
         let _id = body.$set._id;
         delete body.$set._id;
         // update
-        insumoDB = await Insumo.findOneAndUpdate({_id}, body, {
-          new: true,
-          runValidators: true,
-          context: "query",
-        }).exec();
+        insumoDB = await Insumo.findOneAndUpdate({_id}, body).exec();
       } else {
         insumoDB = await new Insumo(body).save();
       }

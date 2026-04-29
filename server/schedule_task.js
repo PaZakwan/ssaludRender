@@ -1,5 +1,7 @@
 const schedule = require("node-schedule");
-const _merge = require("lodash/merge");
+
+const {clgEvento, clgFalla} = require(process.env.MAIN_FOLDER + "/tools/console");
+const {arrayFromSumarPropsInArrays} = require(process.env.MAIN_FOLDER + "/tools/object");
 
 const FarmaciaIngreso = require("./modulos/farmacia/models/farmacia_ingreso");
 const FarmaciaTransferencia = require("./modulos/farmacia/models/farmacia_transferencia");
@@ -44,7 +46,7 @@ const saveFarmaciaEstadistica = function () {
         // RECIBIDOS (INGRESOS / TRANSFERENCIAS RECIBIDAS)
 
         // Recibido Ingresos
-        let ingresosDB = await FarmaciaIngreso.aggregate()
+        let ingresosDB = FarmaciaIngreso.aggregate()
           .match({
             // fecha: {$gte: mesAnterior, $lt: primerDiaMes},
             fecha: {$gte: mesesAnteriores, $lt: mesAnterior},
@@ -73,7 +75,7 @@ const saveFarmaciaEstadistica = function () {
           .project({_id: 0});
 
         // Recibido Transferencias
-        let recibidoTransferenciaDB = await FarmaciaTransferencia.aggregate()
+        let recibidoTransferenciaDB = FarmaciaTransferencia.aggregate()
           .match({
             // fecha: {$gte: mesAnterior, $lt: primerDiaMes},
             fecha: {$gte: mesesAnteriores, $lt: mesAnterior},
@@ -104,7 +106,7 @@ const saveFarmaciaEstadistica = function () {
         // TRANSFERENCIAS (RETIRADAS) / ENTREGAS / DESCARTES (Utilizados)
 
         // Retiradas Transferencias
-        let retiradasTransferenciaDB = await FarmaciaTransferencia.aggregate()
+        let retiradasTransferenciaDB = FarmaciaTransferencia.aggregate()
           .match({
             // fecha: {$gte: mesAnterior, $lt: primerDiaMes},
             fecha: {$gte: mesesAnteriores, $lt: mesAnterior},
@@ -133,7 +135,7 @@ const saveFarmaciaEstadistica = function () {
           .project({_id: 0});
 
         // Entregas
-        let entregasDB = await InsumoEntrega.aggregate()
+        let entregasDB = InsumoEntrega.aggregate()
           .match({
             // fecha: {$gte: mesAnterior, $lt: primerDiaMes},
             fecha: {$gte: mesesAnteriores, $lt: mesAnterior},
@@ -149,7 +151,7 @@ const saveFarmaciaEstadistica = function () {
           .project({_id: 0});
 
         // Descartes (Utilizados)
-        let descartesDB = await FarmaciaDescarte.aggregate()
+        let descartesDB = FarmaciaDescarte.aggregate()
           .match({
             // fecha: {$gte: mesAnterior, $lt: primerDiaMes},
             fecha: {$gte: mesesAnteriores, $lt: mesAnterior},
@@ -190,7 +192,7 @@ const saveFarmaciaEstadistica = function () {
           .project({_id: 0});
 
         // SOLICITUDES
-        let solicitudesDB = await FarmaciaSolicitud.aggregate()
+        let solicitudesDB = FarmaciaSolicitud.aggregate()
           .match({
             // fecha: {$gte: mesAnterior, $lt: primerDiaMes},
             fecha: {$gte: mesesAnteriores, $lt: mesAnterior},
@@ -210,27 +212,34 @@ const saveFarmaciaEstadistica = function () {
         let estadisticaAnteriorDB = await FarmaciaEstadistica.find({
           fecha: mesesAnteriores,
         }).exec();
+
+        // format estadisticaAnteriorDB
         estadisticaAnteriorDB = estadisticaAnteriorDB.map((element) => ({
           area: element.area,
           insumo: element.insumo,
           stock_anterior: element.stock,
         }));
 
-        // MERGE / join DE area / insumo...
-        let merge = _merge(
-          [],
-          estadisticaAnteriorDB,
-          ingresosDB,
-          recibidoTransferenciaDB,
-          retiradasTransferenciaDB,
-          entregasDB,
-          descartesDB,
-          solicitudesDB
-        );
+        // Ejecutar todas las solicitudes y sumar objetos
+        let merge = await arrayFromSumarPropsInArrays({
+          arrays: [
+            estadisticaAnteriorDB,
+            ingresosDB,
+            recibidoTransferenciaDB,
+            retiradasTransferenciaDB,
+            entregasDB,
+            descartesDB,
+            solicitudesDB,
+          ],
+          compare:
+            // Solo suma (merge) cuando el objeto es la misma area y el mismo insumo
+            (a, b) => a.area === b.area && a.insumo === b.insumo,
+        });
         merge.forEach((element) => {
           element.fecha = new Date(mesAnterior.getTime());
         });
-        let mergeSave = await FarmaciaEstadistica.insertMany(merge, {
+
+        await FarmaciaEstadistica.insertMany(merge, {
           ordered: false,
           includeResultMetadata: true,
         });
@@ -252,7 +261,10 @@ const saveFarmaciaEstadistica = function () {
         // console.log(`merge: `, merge.length);
         // console.log(`mergeSave: `, mergeSave);
 
-        console.log(`✓ schedule saveFarmaciaEstadistica ${fireDate.toUTCString()}`);
+        clgEvento({
+          name: "✓ schedule saveFarmaciaEstadistica",
+          evento: `${fireDate.toUTCString()}`,
+        });
       } else {
         // no hacer nada ya se ejecuto
         // let estadisticasDB = await FarmaciaEstadistica.find().exec();
@@ -263,7 +275,10 @@ const saveFarmaciaEstadistica = function () {
       }
     });
   } catch (error) {
-    console.error(`× schedule saveFarmaciaEstadistica: `, error);
+    clgFalla({
+      name: "× schedule saveFarmaciaEstadistica: ",
+      falla: error,
+    });
   }
 };
 
@@ -273,23 +288,35 @@ const scheduleRun = async () => {
     // saveFarmaciaEstadistica();
     //  gracefully shutdown jobs when a system interrupt occurs.
     process.on("SIGINT", async () => {
-      console.log("gracefulShutdown");
+      clgEvento({
+        name: "scheduleRun SIGINT",
+        evento: "gracefulShutdown",
+      });
       await schedule.gracefulShutdown();
       process.exit(0);
     });
     process.on("SIGTERM", async () => {
-      console.log("gracefulShutdown");
+      clgEvento({
+        name: "scheduleRun SIGTERM",
+        evento: "gracefulShutdown",
+      });
       await schedule.gracefulShutdown();
       process.exit(0);
     });
     process.on("SIGQUIT", async () => {
-      console.log("gracefulShutdown");
+      clgEvento({
+        name: "scheduleRun SIGQUIT",
+        evento: "gracefulShutdown",
+      });
       await schedule.gracefulShutdown();
       process.exit(0);
     });
     return true;
   } catch (error) {
-    console.error(`scheduleRun CATCH => ${error.name}: ${error.message}.`);
+    clgFalla({
+      name: "scheduleRun CATCH: ",
+      falla: error,
+    });
     return false;
   }
 };

@@ -1,17 +1,16 @@
 const express = require("express");
 
-const _pick = require("lodash/pick");
-
-const {verificaToken, verificaAdmin_Role} = require(process.env.MAIN_FOLDER +
-  "/middlewares/autenticacion");
+const {verificaToken, verificaAdmin_Role} = require(
+  process.env.MAIN_FOLDER + "/middlewares/autenticacion"
+);
 const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
-const {objectSetUnset} = require(process.env.MAIN_FOLDER + "/tools/object");
+const {isVacio, objectSetUnset} = require(process.env.MAIN_FOLDER + "/tools/object");
 
 const Area = require("./models/area");
 
 const app = express();
 
-let listaArea = [
+const listaArea = [
   // 'usuario_modifico',
   "_id",
   "subsecretaria",
@@ -39,17 +38,17 @@ app.get("/area", async (req, res) => {
     if (filtro !== "todos") {
       try {
         filtro = JSON.parse(filtro);
-        if (filtro !== "todos" && typeof filtro !== "object") {
+        if (typeof filtro !== "object") {
           return errorMessage(res, {message: "El dato de Filtro no es valido."}, 400);
         }
-        if (!!filtro.subs) {
+        if (filtro.subs) {
           filtro.subsecretaria = {
             $regex: `(?i)${filtro.subs}`,
           };
           delete filtro.subs;
         }
-        if (!!filtro.depende) {
-          if (!/^[a-fA-F\d]{24}$/.test(depende)) {
+        if (filtro.depende) {
+          if (!/^[a-fA-F\d]{24}$/.test(filtro.depende)) {
             return errorMessage(
               res,
               {message: "El 'depende de ...' para Busqueda no es valido."},
@@ -57,29 +56,29 @@ app.get("/area", async (req, res) => {
             );
           }
         }
-        if (!!filtro.area) {
+        if (filtro.area) {
           filtro.area = {
             $regex: `(?i)${filtro.area}`,
           };
         }
-        if (!!filtro.zona) {
+        if (filtro.zona) {
           filtro.zona_us = {
             $regex: `(?i)${filtro.zona}`,
           };
           delete filtro.zona;
         }
-        if (!!filtro.uas) {
+        if (filtro.uas) {
           filtro.unidad_atencion = {
             $regex: `(?i)${filtro.uas}`,
           };
           delete filtro.uas;
         }
-        if (!!filtro.farmacia) {
+        if (filtro.farmacia) {
           filtro.farmacia = {
             $regex: `(?i)${filtro.farmacia}`,
           };
         }
-        if (!!filtro.vacunatorio) {
+        if (filtro.vacunatorio) {
           filtro.vacunatorio = {
             $regex: `(?i)${filtro.vacunatorio}`,
           };
@@ -87,8 +86,7 @@ app.get("/area", async (req, res) => {
       } catch (error) {
         return errorMessage(res, {message: "El dato de Filtro no es valido."}, 400);
       }
-    }
-    if (filtro === "todos") {
+    } else {
       filtro = {};
     }
 
@@ -115,24 +113,18 @@ app.get("/area", async (req, res) => {
 
     let populate = req.query.populate || "si";
 
-    let areas = null;
+    let areas = Area.find(filtro)
+      .collation({locale: "es", numericOrdering: true})
+      .select(select)
+      .sort(orden)
+      .limit(limite);
+
     if (populate === "si") {
-      areas = await Area.find(filtro)
-        .collation({locale: "es", numericOrdering: true})
-        .select(select)
-        .sort(orden)
-        .limit(limite)
-        // .populate("usuario_modifico", "nombre apellido nombreC")
-        .populate("depende", "area")
-        .exec();
-    } else {
-      areas = await Area.find(filtro)
-        .collation({locale: "es", numericOrdering: true})
-        .select(select)
-        .sort(orden)
-        .limit(limite)
-        .exec();
+      // .populate("usuario_modifico", "nombre apellido nombreC")
+      areas.populate("depende", "area");
     }
+
+    areas = await areas.lean().exec();
 
     res.json({
       ok: true,
@@ -148,32 +140,22 @@ app.get("/area", async (req, res) => {
 // ============================
 app.put("/area/:area", [verificaToken, verificaAdmin_Role], async (req, res) => {
   try {
-    let body = _pick(req.body, listaArea);
-
-    let _id = body._id || null;
-
-    let todovacio = true;
-    for (const key in body) {
-      if (body.hasOwnProperty(key)) {
-        if (body[key] !== "" && body[key] !== null) {
-          todovacio = false;
-          break;
-        }
-      }
-    }
-    if (todovacio === true) {
+    let body = isVacio({
+      dato: req.body,
+      pickDato: listaArea,
+    });
+    if (body.vacio === true) {
       return errorMessage(res, {message: "No se envió ningún dato."}, 412);
     }
+    body = body.dato;
 
     body["usuario_modifico"] = req.usuario._id;
 
     let areaDB = await Area.findOne({area: req.params.area}).exec();
 
-    if (!areaDB && !_id) {
+    if (!areaDB && !req.body._id) {
       // Si no existe el area la crea.
-      let nuevaArea = new Area(body);
-
-      areaDB = await nuevaArea.save();
+      areaDB = await new Area(body).save();
 
       return res.status(201).json({
         ok: true,
@@ -184,13 +166,10 @@ app.put("/area/:area", [verificaToken, verificaAdmin_Role], async (req, res) => 
       // Delete del campo si esta como null / "" / undefined /array vacio
       body = objectSetUnset({dato: body}).dato;
 
-      if (_id) {
+      if (req.body._id) {
         // actualiza el area, si se esta editando
         delete body.$set._id;
-        areaDB = await Area.findOneAndUpdate({_id}, body, {
-          new: true,
-          runValidators: true,
-        }).exec();
+        areaDB = await Area.findOneAndUpdate({_id: req.body._id}, body).exec();
 
         if (!areaDB) {
           return errorMessage(res, {message: "Area no encontrada."}, 404);
@@ -202,10 +181,8 @@ app.put("/area/:area", [verificaToken, verificaAdmin_Role], async (req, res) => 
         });
       } else {
         // actualiza el area por el nombre(para uploads o cuando se crea con el mismo nombre de area)
-        areaDB = await Area.findOneAndUpdate({area: req.params.area}, body, {
-          new: true,
-          runValidators: true,
-        }).exec();
+        delete body.$set.area;
+        areaDB = await Area.findOneAndUpdate({area: req.params.area}, body).exec();
 
         if (!areaDB) {
           return errorMessage(res, {message: "Area no encontrada."}, 404);
@@ -249,7 +226,7 @@ app.delete("/area/:area", [verificaToken, verificaAdmin_Role], async (req, res) 
         area: areaDB.area + " (BORRADA)",
         estado: false,
       },
-      {new: true}
+      {runValidators: false}
     ).exec();
 
     return res.json({

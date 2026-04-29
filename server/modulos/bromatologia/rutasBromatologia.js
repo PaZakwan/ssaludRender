@@ -1,16 +1,16 @@
 const express = require("express");
 
-const _pick = require("lodash/pick");
-
-const {verificaToken, verificaArrayPropValue} = require(process.env.MAIN_FOLDER +
-  "/middlewares/autenticacion");
+const {verificaToken, verificaArrayPropValue} = require(
+  process.env.MAIN_FOLDER + "/middlewares/autenticacion"
+);
 const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
+const {isVacio, objectSetUnset} = require(process.env.MAIN_FOLDER + "/tools/object");
 
 const Bromatologia = require("./models/bromatologia");
 
 const app = express();
 
-let listaBromatologia = [
+const listaBromatologia = [
   // 'usuario_creador',
   // 'orden',
   "conclusion",
@@ -234,24 +234,16 @@ app.post(
         return errorMessage(res, {message: "Acceso Denegado."}, 401);
       }
 
-      let body = _pick(req.body, listaBromatologia.slice());
-
-      let todovacio = true;
-      for (const key in body) {
-        if (body.hasOwnProperty(key)) {
-          const element = body[key];
-          if (element !== "") {
-            todovacio = false;
-            break;
-          }
-        }
+      let body = isVacio({
+        dato: req.body,
+        pickDato: listaBromatologia,
+      });
+      if (body.vacio === true) {
+        return errorMessage(res, {message: "No se envió ningún dato."}, 412);
       }
-      if (todovacio === true) {
-        return errorMessage(res, {message: "No se envió ningún dato."}, 400);
-      }
+      body = body.dato;
 
       // autonumerico para Numero de Orden segun Año-Autonumerico
-
       let ordTemp = [];
 
       try {
@@ -313,60 +305,28 @@ app.put(
   ],
   async (req, res) => {
     try {
-      let listaBromatologiaUpdate = listaBromatologia.slice();
-      // Se quitaban de la lista los valores que no serán modificables. Por cuestión de seguridad.
-      // listaBromatologiaUpdate.splice(0, 2);
-
-      let body = _pick(req.body, listaBromatologiaUpdate);
-
-      let todovacio = true;
-      for (const key in body) {
-        if (body.hasOwnProperty(key)) {
-          const element = body[key];
-          if (element !== "") {
-            todovacio = false;
-            break;
-          }
-        }
+      let body = isVacio({
+        dato: req.body,
+        pickDato: listaBromatologia,
+      });
+      if (body.vacio === true) {
+        return errorMessage(res, {message: "No se envió ningún dato."}, 412);
       }
-      if (todovacio === true) {
-        return errorMessage(res, {message: "No se envió ningún dato."}, 400);
-      }
+      body = body.dato;
 
-      let analisisDB = null;
-      analisisDB = await Bromatologia.findOne({_id: req.params.id}).exec();
+      let analisisDB = await Bromatologia.findOne({_id: req.params.id}).exec();
       if (!analisisDB) {
-        return errorMessage(res, {message: "Analisis no encontrado."}, 400);
+        return errorMessage(res, {message: "Analisis no encontrado."}, 404);
       }
 
       if (!analisisDB.usuario_verifico || analisisDB.usuario_verifico == req.usuario.id) {
-        let $set = {};
-        let $unset = {};
-        for (const key in body) {
-          if (body.hasOwnProperty(key)) {
-            const element = body[key];
-            if (element === null) {
-              // Delete del campo "muestra" si esta como "null"
-              if (key === "muestra") {
-                $unset[key] = 1;
-              } else {
-                $set[key] = element;
-              }
-            } else {
-              $set[key] = element;
-            }
-          }
-        }
-        body = {$set, $unset};
+        // Delete del campo si esta como null / "" / undefined /array vacio
+        body = objectSetUnset({dato: body}).dato;
 
         analisisDB = null;
-        analisisDB = await Bromatologia.findOneAndUpdate({_id: req.params.id}, body, {
-          new: true,
-          runValidators: true,
-          context: "query",
-        }).exec();
+        analisisDB = await Bromatologia.findOneAndUpdate({_id: req.params.id}, body).exec();
         if (!analisisDB) {
-          return errorMessage(res, {message: "Analisis no encontrado."}, 400);
+          return errorMessage(res, {message: "Analisis no encontrado."}, 404);
         }
 
         return res.json({
@@ -418,10 +378,10 @@ app.put(
           conclusion: req.body.conclusion,
         };
 
-        analisisDB = await Bromatologia.findOneAndUpdate({_id: req.params.id}, validarAnalisis, {
-          new: true,
-          runValidators: true,
-        }).exec();
+        analisisDB = await Bromatologia.findOneAndUpdate(
+          {_id: req.params.id},
+          validarAnalisis
+        ).exec();
 
         return res.json({
           ok: true,
@@ -457,7 +417,7 @@ app.delete(
         {
           estado: false,
         },
-        {new: true}
+        {runValidators: false}
       ).exec();
       if (!analisisDB) {
         return errorMessage(res, {message: "Analisis no encontrado."}, 400);

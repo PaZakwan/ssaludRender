@@ -35,8 +35,7 @@ app.post("/login", async (req, res) => {
     // Actualizar lastLogin
     let usuarioLoginDB = await Usuario.findOneAndUpdate(
       {usuario: body.usuario},
-      {lastLogin: Date.now()},
-      {new: true, runValidators: true}
+      {lastLogin: Date.now()}
     ).exec();
 
     if (!usuarioLoginDB) {

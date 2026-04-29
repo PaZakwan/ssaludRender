@@ -443,9 +443,10 @@ const PacienteFormat = async ({json, totales, line, logFile, csvErrors, csvFix})
               tipo_doc: json.tipo_doc,
               documento: json.documento,
             },
-            {$addToSet: {ps_id: {$each: json.ps_id}}},
-            {new: true, lean: true}
-          ).exec();
+            {$addToSet: {ps_id: {$each: json.ps_id}}}
+          )
+            .lean()
+            .exec();
         } else {
           existe = await mongoose.connections[1].models.Paciente.findOne({
             ps_id: json.ps_id,
@@ -491,9 +492,10 @@ const PacienteFormat = async ({json, totales, line, logFile, csvErrors, csvFix})
           fec_nac: json.fec_nac,
           sexo: json.sexo,
         },
-        {$addToSet: {ps_id: {$each: json.ps_id}}},
-        {new: true, lean: true}
-      ).exec();
+        {$addToSet: {ps_id: {$each: json.ps_id}}}
+      )
+        .lean()
+        .exec();
 
       if (existe) {
         errores += ` Persona ya existente en el sistema, debe ser unico (${
@@ -604,9 +606,10 @@ const savePacientesUnHilo = async ({documentos, totales, line, logFile, csvError
               tipo_doc: element.err.op.tipo_doc,
               documento: element.err.op.documento,
             },
-            {$addToSet: {ps_id: {$each: element.err.op.ps_id}}},
-            {new: true, lean: true}
-          ).exec();
+            {$addToSet: {ps_id: {$each: element.err.op.ps_id}}}
+          )
+            .lean()
+            .exec();
           totales["errores-exist"] += 1;
         } else {
           errorMessage = `${element.err.errmsg}`;

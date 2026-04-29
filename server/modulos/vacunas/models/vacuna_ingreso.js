@@ -1,85 +1,76 @@
 const mongoose = require("mongoose");
 
-let schemaOptions = {
-  toObject: {
-    getters: true,
+const VacunaIngresoSchema = new mongoose.Schema({
+  fecha: {
+    type: Date,
+    default: Date.now,
   },
-  toJSON: {
-    getters: true,
+  remito_compra: {
+    type: String,
+    trim: true,
+    required: [true, "El Remito de Compra es necesario."],
   },
-};
+  proveedor: {
+    type: String,
+    trim: true,
+    required: [true, "El Proveedor es necesario."],
+  },
+  destino: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Area",
+    required: [true, "El Area que recibe es necesaria."],
+  },
+  orden_compra: {
+    type: String,
+    trim: true,
+  },
 
-let Schema = mongoose.Schema;
-
-let VacunaIngresoSchema = new Schema(
-  {
-    fecha: {
-      type: Date,
-      default: Date.now,
-    },
-    remito_compra: {
-      type: String,
-      trim: true,
-      required: [true, "El Remito de Compra es necesario."],
-    },
-    proveedor: {
-      type: String,
-      trim: true,
-      required: [true, "El Proveedor es necesario."],
-    },
-    destino: {
-      type: Schema.Types.ObjectId,
-      ref: "Area",
-      required: [true, "El Area que recibe es necesaria."],
-    },
-    orden_compra: {
-      type: String,
-      trim: true,
-    },
-
-    insumos: {
-      type: [
-        {
-          _id: false,
-          insumo: {
-            type: Schema.Types.ObjectId,
-            ref: "VacunaInsumo",
-            required: [true, "El Insumo a recibir es necesario."],
-          },
-          cantidad: {
-            type: Number,
-            required: [true, "La Cantidad a recibir del mismo es necesaria."],
-          },
-          procedencia: {
-            type: String,
-            default: "Carga inicial",
-          },
-          lote: {
-            type: String,
-            trim: true,
-            uppercase: true,
-          },
-          vencimiento: {
-            type: Date,
-          },
-          recibido: {
-            type: Date,
-          },
+  insumos: {
+    type: [
+      {
+        _id: false,
+        insumo: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "VacunaInsumo",
+          required: [true, "El Insumo a recibir es necesario."],
         },
-      ],
-      validate: {
-        validator: (v) => Array.isArray(v) && v.length > 0,
-        message: "Por lo menos un Insumo a ingresar es requerido.",
+        cantidad: {
+          type: Number,
+          required: [true, "La Cantidad a recibir del mismo es necesaria."],
+        },
+        procedencia: {
+          type: String,
+          default: "Carga inicial",
+        },
+        lote: {
+          type: String,
+          trim: true,
+          uppercase: true,
+        },
+        vencimiento: {
+          type: Date,
+        },
+        recibido: {
+          type: Date,
+        },
       },
-    },
-
-    observacion: {
-      type: String,
-      trim: true,
-      lowercase: true,
-    },
+    ],
+    required: [true, "La lista de Insumos a recibir es necesaria."],
+    validate: [
+      {
+        validator: function (val) {
+          return Array.isArray(val) && val.length > 0;
+        },
+        message: "{PATH} al menos uno es requerido.",
+      },
+    ],
   },
-  schemaOptions
-);
+
+  observacion: {
+    type: String,
+    trim: true,
+    lowercase: true,
+  },
+});
 
 module.exports = mongoose.model("VacunaIngreso", VacunaIngresoSchema, "VacunaIngreso");

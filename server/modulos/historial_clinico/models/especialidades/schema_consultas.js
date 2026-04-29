@@ -1,12 +1,10 @@
 const mongoose = require("mongoose");
 
-let Schema = mongoose.Schema;
-
-let ConsultaSchema = {
+const ConsultaSchema = {
   usuario_modifico: {
-    type: Schema.Types.ObjectId,
+    type: mongoose.Schema.Types.ObjectId,
     ref: "Usuario",
-    required: true,
+    required: [true, "El usuario modificador es necesario"],
   },
   createdAt: {
     type: Date,
@@ -18,62 +16,64 @@ let ConsultaSchema = {
   },
 
   profesional: {
-    type: [{type: Schema.Types.ObjectId, ref: "Profesional"}],
+    type: [{type: mongoose.Schema.Types.ObjectId, ref: "Profesional"}],
     validate: [
-      (val) => {
-        return Array.isArray(val) && val.length >= 1;
+      {
+        validator: function (val) {
+          return Array.isArray(val) && val.length > 0;
+        },
+        message: "{PATH} al menos uno es requerid@.",
       },
-      "{PATH} al menos uno es requerido.",
     ],
-    required: true,
+    required: [true, "Al menos un profesional es necesari@."],
   },
 
   paciente: {
-    type: Schema.Types.ObjectId,
+    type: mongoose.Schema.Types.ObjectId,
     ref: "Paciente",
-    required: true,
+    required: [true, "El paciente es necesario"],
   },
 
   motivo: {
-    type: Schema.Types.ObjectId,
+    type: mongoose.Schema.Types.ObjectId,
     ref: "HistorialMotivo",
-    required: true,
+    required: [true, "El motivo es necesario"],
   },
 
   // nombre del modelo donde se guardo
   especialidad: {
     type: String,
-    required: true,
+    required: [true, "La especialidad es necesaria"],
   },
 
   edad_valor: {
     // para group etario estadistica
     // calcular en base a la fecha de nacimiento y la consulta..
     type: Number,
-    required: true,
+    required: [true, "El Valor de la edad es necesario"],
   },
   edad_unidad: {
     // para group etario estadistica
     // calcular en base a la fecha de nacimiento y la consulta..
     type: String,
-    required: true,
+    required: [true, "La Unidad de edad es necesaria"],
   },
 
   sexo: {
     // para group etario estadistica
     type: String,
-    required: true,
+    required: [true, "El sexo del paciente es necesario"],
   },
 
   area: {
-    type: Schema.Types.ObjectId,
+    type: mongoose.Schema.Types.ObjectId,
     ref: "Area",
-    required: true,
+    required: [true, "El area es necesaria"],
   },
 
   fecha: {
     type: Date,
-    required: true,
+    required: [true, "La fecha es necesaria"],
   },
 
   receto_medicamentos: {
@@ -86,7 +86,7 @@ let ConsultaSchema = {
   // JSON de actividades
   actividad: {
     type: String,
-    required: true,
+    required: [true, "La actividad es necesaria"],
   },
 
   observacion: {

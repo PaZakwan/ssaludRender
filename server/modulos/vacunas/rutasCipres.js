@@ -154,10 +154,6 @@ app.put(
           {
             cipres_fecha: new Date(),
             cipres_msg: verifica.error.message,
-          },
-          {
-            new: true,
-            runValidators: true,
           }
         ).exec();
         return errorMessage(
@@ -196,10 +192,6 @@ app.put(
               cipres_fecha: new Date(),
             },
             $unset: {cipres_msg: 1},
-          },
-          {
-            new: true,
-            runValidators: true,
           }
         ).exec();
 
@@ -232,10 +224,6 @@ app.put(
           {
             cipres_fecha: new Date(),
             cipres_msg: errorFormat.message,
-          },
-          {
-            new: true,
-            runValidators: true,
           }
         ).exec();
       }
@@ -678,11 +666,7 @@ const matchCIPRES = async ({vacunacionDB, CIPRES}) => {
         {
           _id: vacunacionDB.paciente._id,
         },
-        {cipres_id: registro.paciente},
-        {
-          new: true,
-          runValidators: true,
-        }
+        {cipres_id: registro.paciente}
       ).exec();
     }
   }

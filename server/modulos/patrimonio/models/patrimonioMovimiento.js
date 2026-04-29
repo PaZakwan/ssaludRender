@@ -1,94 +1,80 @@
 const mongoose = require("mongoose");
 const uniqueValidator = require("mongoose-unique-validator");
 
-let schemaOptions = {
-  toObject: {
-    getters: true,
+const patrimonioMovimientoSchema = new mongoose.Schema({
+  usuario_modifico: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Usuario",
+    required: [true, "El usuario modificador es necesario"],
   },
-  toJSON: {
-    getters: true,
+  id_objeto: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Patrimonio",
+    required: [true, "El id del objeto es necesario"],
   },
-};
-
-let Schema = mongoose.Schema;
-
-let patrimonioMovimientoSchema = new Schema(
-  {
-    usuario_modifico: {
-      type: Schema.Types.ObjectId,
-      ref: "Usuario",
-      required: true,
-    },
-    id_objeto: {
-      type: Schema.Types.ObjectId,
-      ref: "Patrimonio",
-      required: true,
-    },
-    fec_movio: {
-      type: Date,
-      required: true,
-    },
-    ubicacion_anterior: {
-      type: String,
-    },
-    ubicacion_destino: {
-      type: String,
-    },
-    lugar_anterior: {
-      type: Schema.Types.ObjectId,
-      ref: "Lugar",
-      // required: [true, 'El Lugar en donde se encontraba es necesario.']
-    },
-    lugar_destino: {
-      type: Schema.Types.ObjectId,
-      ref: "Lugar",
-      required: [true, "El Lugar a donde sera trasladado es necesario."],
-    },
-    area_anterior: {
-      type: Schema.Types.ObjectId,
-      ref: "Area",
-      // required: [true, 'El Area en donde se encontraba es necesaria.']
-    },
-    area_destino: {
-      type: Schema.Types.ObjectId,
-      ref: "Area",
-      required: [true, "El Area a donde sera trasladado es necesaria."],
-    },
-    usuario_movio: {
-      type: String,
-    },
-    usuario_legajo: {
-      type: String,
-    },
-    motivo_movio: {
-      type: String,
-      trim: true,
-    },
-    fec_entregado: {
-      type: String,
-    },
-    fec_patrimonio: {
-      type: String,
-    },
-
-    //todos
-    estado: {
-      type: Boolean,
-      default: true,
-    },
-    updatedAt: {
-      type: Date,
-      default: Date.now,
-    },
-    createdAt: {
-      type: Date,
-      default: Date.now,
-    },
+  fec_movio: {
+    type: Date,
+    required: [true, "El fecha de movimiento es necesario"],
   },
-  schemaOptions
-);
+  ubicacion_anterior: {
+    type: String,
+  },
+  ubicacion_destino: {
+    type: String,
+  },
+  lugar_anterior: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Lugar",
+    // required: [true, 'El Lugar en donde se encontraba es necesario.']
+  },
+  lugar_destino: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Lugar",
+    required: [true, "El Lugar a donde sera trasladado es necesario."],
+  },
+  area_anterior: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Area",
+    // required: [true, 'El Area en donde se encontraba es necesaria.']
+  },
+  area_destino: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Area",
+    required: [true, "El Area a donde sera trasladado es necesaria."],
+  },
+  usuario_movio: {
+    type: String,
+  },
+  usuario_legajo: {
+    type: String,
+  },
+  motivo_movio: {
+    type: String,
+    trim: true,
+  },
+  fec_entregado: {
+    type: String,
+  },
+  fec_patrimonio: {
+    type: String,
+  },
 
-patrimonioMovimientoSchema.pre("findOneAndUpdate", function (next) {
+  //todos
+  estado: {
+    type: Boolean,
+    default: true,
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
+patrimonioMovimientoSchema.pre(["findOneAndUpdate", "updateOne", "updateMany"], function (next) {
   if (this.getUpdate().$set) {
     this.getUpdate().$set.updatedAt = new Date();
   } else {

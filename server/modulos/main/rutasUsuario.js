@@ -1,10 +1,10 @@
 const express = require("express");
 
 const bcrypt = require("bcrypt");
-const _pick = require("lodash/pick");
 
-const {verificaToken, verificaAdmin_Role} = require(process.env.MAIN_FOLDER +
-  "/middlewares/autenticacion");
+const {verificaToken, verificaAdmin_Role} = require(
+  process.env.MAIN_FOLDER + "/middlewares/autenticacion"
+);
 const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
 const {isVacio, objectSetUnset} = require(process.env.MAIN_FOLDER + "/tools/object");
 
@@ -12,7 +12,7 @@ const Usuario = require("./models/usuario");
 
 const app = express();
 
-let listaUsuario = [
+const listaUsuario = [
   "usuario",
   "password",
   "nombre",
@@ -150,7 +150,8 @@ app.post("/usuario", async (req, res) => {
     listaCrear.splice(12);
 
     let body = isVacio({
-      dato: _pick(req.body, listaCrear),
+      dato: req.body,
+      pickDato: listaCrear,
       borrar: true,
     });
     if (body.vacio === true) {
@@ -181,7 +182,8 @@ app.post("/usuario", async (req, res) => {
 app.post("/usuario/admin", [verificaToken, verificaAdmin_Role], async (req, res) => {
   try {
     let body = isVacio({
-      dato: _pick(req.body, listaUsuario),
+      dato: req.body,
+      pickDato: listaUsuario,
       borrar: true,
     });
     if (body.vacio === true) {
@@ -220,7 +222,8 @@ app.put("/usuario/:id", [verificaToken, verificaAdmin_Role], async (req, res) =>
     listaUsuarioUpdate.splice(0, 1);
 
     let body = isVacio({
-      dato: _pick(req.body, listaUsuarioUpdate),
+      dato: req.body,
+      pickDato: listaUsuarioUpdate,
     });
     if (body.vacio === true) {
       return errorMessage(res, {message: "No se envió ningún dato."}, 412);
@@ -261,10 +264,7 @@ app.put("/usuario/:id", [verificaToken, verificaAdmin_Role], async (req, res) =>
     body = objectSetUnset({dato: body, unsetCero: true}).dato;
 
     // Modificacion de los datos
-    usuarioDB = await Usuario.findOneAndUpdate({_id: req.params.id}, body, {
-      new: true,
-      runValidators: true,
-    }).exec();
+    usuarioDB = await Usuario.findOneAndUpdate({_id: req.params.id}, body).exec();
 
     return res.json({
       ok: true,
@@ -290,7 +290,8 @@ app.put("/usuario/perfil/:id", [verificaToken], async (req, res) => {
 
     // Se selecciona de la lista los valores que serán modificables. Por cuestión de seguridad.
     let body = isVacio({
-      dato: _pick(req.body, ["password_anterior", "password", "actividad", "email", "telefono"]),
+      dato: req.body,
+      pickDato: ["password_anterior", "password", "actividad", "email", "telefono"],
     });
     if (body.vacio === true) {
       return errorMessage(res, {message: "No se envió ningún dato."}, 412);
@@ -322,10 +323,7 @@ app.put("/usuario/perfil/:id", [verificaToken], async (req, res) => {
     body = objectSetUnset({dato: body, unsetCero: true}).dato;
 
     // Actualiza usuario.
-    usuarioDB = await Usuario.findOneAndUpdate({_id: req.params.id}, body, {
-      new: true,
-      runValidators: true,
-    }).exec();
+    usuarioDB = await Usuario.findOneAndUpdate({_id: req.params.id}, body).exec();
 
     return res.json({
       ok: true,
@@ -359,7 +357,7 @@ app.delete("/usuario/:id", [verificaToken, verificaAdmin_Role], async (req, res)
       {
         estado: false,
       },
-      {new: true}
+      {runValidators: false}
     ).exec();
 
     return res.json({

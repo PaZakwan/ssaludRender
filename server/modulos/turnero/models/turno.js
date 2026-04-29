@@ -1,89 +1,75 @@
 const mongoose = require("mongoose");
 const uniqueValidator = require("mongoose-unique-validator");
 
-let schemaOptions = {
-  toObject: {
-    getters: true,
+const turnoSchema = new mongoose.Schema({
+  usuario_modifico: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Usuario",
+    required: [true, "El usuario modificador es necesario"],
   },
-  toJSON: {
-    getters: true,
+  uas: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Area",
+    required: [true, "La area es necesaria"],
   },
-};
-
-let Schema = mongoose.Schema;
-
-let turnoSchema = new Schema(
-  {
-    usuario_modifico: {
-      type: Schema.Types.ObjectId,
-      ref: "Usuario",
-      required: true,
-    },
-    uas: {
-      type: Schema.Types.ObjectId,
-      ref: "Area",
-      required: true,
-    },
-    fecha: {
-      type: Date,
-      required: true,
-    },
-    profesional: {
-      type: Schema.Types.ObjectId,
-      ref: "Profesional",
-      required: true,
-    },
-    especialidad: {
-      type: String,
-      required: true,
-    },
-    horario: [
-      {
-        type: String,
-        required: true,
-      },
-    ],
-    amplitudTurno: {
-      type: String,
-      required: true,
-    },
-    paciente: {
-      type: Schema.Types.ObjectId,
-      ref: "Paciente",
-      required: true,
-    },
-    fase: {
-      type: String,
-      default: "turno asignado",
-      required: true,
-    },
-    derivado: {
-      type: Schema.Types.ObjectId,
-      ref: "Area",
-    },
-
-    estado: {
-      type: Boolean,
-      default: true,
-    },
-    updatedAt: {
-      type: Date,
-      default: Date.now,
-    },
-    createdAt: {
-      type: Date,
-      default: Date.now,
-    },
+  fecha: {
+    type: Date,
+    required: [true, "La fecha es necesaria"],
   },
-  schemaOptions
-);
+  profesional: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Profesional",
+    required: [true, "El profesional es necesario"],
+  },
+  especialidad: {
+    type: String,
+    required: [true, "La especialidad es necesaria"],
+  },
+  horario: [
+    {
+      type: String,
+      required: [true, "El horario modificador es necesario"],
+    },
+  ],
+  amplitudTurno: {
+    type: String,
+    required: [true, "La amplitud es necesaria"],
+  },
+  paciente: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Paciente",
+    required: [true, "El paciente es necesario"],
+  },
+  fase: {
+    type: String,
+    default: "turno asignado",
+    required: [true, "La fase es necesaria"],
+  },
+  derivado: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Area",
+  },
+
+  estado: {
+    type: Boolean,
+    default: true,
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
 
 turnoSchema.index(
   {uas: 1, fecha: 1, profesional: 1, especialidad: 1, "horario.0": 1},
   {name: "turno_unico", unique: true}
 );
 
-turnoSchema.pre("findOneAndUpdate", async function (next) {
+turnoSchema.pre(["findOneAndUpdate", "updateOne", "updateMany"], async function (next) {
   if (this.getUpdate().$set) {
     this.getUpdate().$set.updatedAt = new Date();
   } else {

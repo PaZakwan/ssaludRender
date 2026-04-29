@@ -1,10 +1,12 @@
 const express = require("express");
 
-const {verificaToken, verificaArrayPropValue} = require(process.env.MAIN_FOLDER +
-  "/middlewares/autenticacion");
+const {verificaToken, verificaArrayPropValue} = require(
+  process.env.MAIN_FOLDER + "/middlewares/autenticacion"
+);
 const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
-const {isObjectIdValid, dateUTC, arrayFromSumarPropsInArrays} = require(process.env.MAIN_FOLDER +
-  "/tools/object");
+const {isObjectIdValid, dateUTC, arrayFromSumarPropsInArrays} = require(
+  process.env.MAIN_FOLDER + "/tools/object"
+);
 
 const Area = require(process.env.MAIN_FOLDER + "/modulos/main/models/area");
 const FarmaciaInsumo = require("./models/insumo");
@@ -442,8 +444,12 @@ app.get(
                   _id: JSON.parse(req.query.areas),
                 }
               : {farmacia: true}
-          ).exec(),
-          FarmaciaInsumo.find({_id: JSON.parse(req.query.insumos)}).exec(),
+          )
+            .lean()
+            .exec(),
+          FarmaciaInsumo.find({_id: JSON.parse(req.query.insumos)})
+            .lean()
+            .exec(),
         ]);
         areaDB.forEach((area) => {
           insumosDB.forEach((insumo) => {

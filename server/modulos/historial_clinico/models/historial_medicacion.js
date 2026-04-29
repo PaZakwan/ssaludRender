@@ -1,206 +1,183 @@
 const mongoose = require("mongoose");
 const uniqueValidator = require("mongoose-unique-validator");
 
-let schemaOptions = {
-  toObject: {
-    getters: true,
+const HistorialMedicacionSchema = new mongoose.Schema({
+  usuario_modifico: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Usuario",
+    required: [true, "El usuario modificador es necesario"],
   },
-  toJSON: {
-    getters: true,
+  updatedAt: {
+    type: Date,
+    default: Date.now,
   },
-};
 
-let Schema = mongoose.Schema;
-
-let HistorialMedicacionSchema = new Schema(
-  {
-    usuario_modifico: {
-      type: Schema.Types.ObjectId,
-      ref: "Usuario",
-      required: true,
-    },
-    updatedAt: {
-      type: Date,
-      default: Date.now,
-    },
-
-    paciente: {
-      type: Schema.Types.ObjectId,
-      ref: "Paciente",
-      required: true,
-      unique: true,
-    },
-
-    profesional: {
-      type: Schema.Types.ObjectId,
-      ref: "Profesional",
-      required: true,
-    },
-    // Para la receta medica del array de coberturas del paciente
-    // cobertura: {
-    //   rnos: {
-    //     type: String,
-    //   },
-    //   name: {
-    //     type: String,
-    //   },
-    //   plan: {
-    //     type: String,
-    //   },
-    //   nro_afiliado: {
-    //     type: String,
-    //   },
-    // },
-    area: {
-      type: Schema.Types.ObjectId,
-      ref: "Area",
-      required: true,
-    },
-    medicamento: {
-      type: Schema.Types.ObjectId,
-      ref: "Insumo",
-      required: true,
-    },
-    fecha_inicio: {
-      type: Date,
-    },
-    // dosis-recetas
-    // aplicacion: {
-    //   frecuencia: {
-    //     type: String,
-    //   },
-    //   unidad: {
-    //     type: String,
-    //   },
-    //   intervalo_diario: {
-    //     type: String,
-    //   },
-    //   expira: {
-    //     type: Date,
-    //   },
-    //   chronico: {
-    //     type: Boolean,
-    //   },
-    // },
-    fecha_declaracion_jurada: {
-      type: Date,
-    },
-    dias_declaracion_por_vencer: {
-      type: Number,
-      min: 0,
-    },
-    dias_declaracion_vencida: {
-      type: Number,
-      min: 0,
-    },
-    estado: {
-      type: String,
-      default: "Activo",
-      enum: {
-        values: ["Activo", "Suspendido", "Finalizado"],
-        message: "{VALUE} no es un estado de medicacion valido.",
-      },
-    },
-
-    // fecha_control: {
-    //   type: Date,
-    // },
-
-    // fecha_declaracion_jurada: [
-    //   {
-    //     type: Date,
-    //   },
-    // ],
-
-    // diabetes_tipo: {
-    //   type: String,
-    // },
-
-    // hipoglucemiantes: [
-    //   {
-    //     type: String,
-    //     enum: ["Metforminas", "Glibenclamida", "Gliclazida"],
-    //   },
-    // ],
-
-    // insulinas: [
-    //   {
-    //     type: String,
-    //     // enum: ["Metforminas", "Glibenclamida", "Gliclazida"],
-    //   },
-    // ],
-
-    // motivo_baja: {
-    //   type: String,
-    // },
-
-    // // HTA
-    // hiper_tension: {
-    //   type: String,
-    // },
-
-    // enalpril: {
-    //   type: Boolean,
-    // },
-
-    // losartan: {
-    //   type: Boolean,
-    // },
-
-    // hidroclortiazidas: {
-    //   type: Boolean,
-    // },
-
-    // amlodipina: {
-    //   type: Boolean,
-    // },
-
-    // atenolol: {
-    //   type: Boolean,
-    // },
-
-    // carvedilol: {
-    //   type: Boolean,
-    // },
-
-    // antidepresivos: [
-    //   {
-    //     type: String,
-    //     // enum: ["Metforminas", "Glibenclamida", "Gliclazida"],
-    //   },
-    // ],
-
-    // // Colesterol
-    // dislipemia: {
-    //   type: String,
-    // },
-
-    // estatinas: [
-    //   {
-    //     type: String,
-    //     // enum: ["Metforminas", "Glibenclamida", "Gliclazida"],
-    //   },
-    // ],
-
-    // // Tabaquismo
-    // fuma: {
-    //   type: String,
-    // },
-
-    // aspirina: {
-    //   type: Boolean,
-    // },
+  paciente: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Paciente",
+    required: [true, "El paciente es necesario"],
+    unique: true,
   },
-  schemaOptions
-);
 
-HistorialMedicacionSchema.pre("findOneAndUpdate", async function (next) {
-  if (this.getUpdate().$set) {
-    this.getUpdate().$set.updatedAt = new Date();
-  } else {
-    this.getUpdate().updatedAt = new Date();
-  }
-  next();
+  profesional: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Profesional",
+    required: [true, "El profesional es necesario"],
+  },
+  // Para la receta medica del array de coberturas del paciente
+  // cobertura: {
+  //   rnos: {
+  //     type: String,
+  //   },
+  //   name: {
+  //     type: String,
+  //   },
+  //   plan: {
+  //     type: String,
+  //   },
+  //   nro_afiliado: {
+  //     type: String,
+  //   },
+  // },
+  area: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Area",
+    required: [true, "El area es necesario"],
+  },
+  medicamento: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Insumo",
+    required: [true, "El medicamento es necesario"],
+  },
+  fecha_inicio: {
+    type: Date,
+  },
+  // dosis-recetas
+  // aplicacion: {
+  //   frecuencia: {
+  //     type: String,
+  //   },
+  //   unidad: {
+  //     type: String,
+  //   },
+  //   intervalo_diario: {
+  //     type: String,
+  //   },
+  //   expira: {
+  //     type: Date,
+  //   },
+  //   chronico: {
+  //     type: Boolean,
+  //   },
+  // },
+  fecha_declaracion_jurada: {
+    type: Date,
+  },
+  dias_declaracion_por_vencer: {
+    type: Number,
+    min: 0,
+  },
+  dias_declaracion_vencida: {
+    type: Number,
+    min: 0,
+  },
+  estado: {
+    type: String,
+    default: "Activo",
+    enum: {
+      values: ["Activo", "Suspendido", "Finalizado"],
+      message: "{VALUE} no es un estado de medicacion valido.",
+    },
+  },
+
+  // fecha_control: {
+  //   type: Date,
+  // },
+
+  // fecha_declaracion_jurada: [
+  //   {
+  //     type: Date,
+  //   },
+  // ],
+
+  // diabetes_tipo: {
+  //   type: String,
+  // },
+
+  // hipoglucemiantes: [
+  //   {
+  //     type: String,
+  //     enum: ["Metforminas", "Glibenclamida", "Gliclazida"],
+  //   },
+  // ],
+
+  // insulinas: [
+  //   {
+  //     type: String,
+  //     // enum: ["Metforminas", "Glibenclamida", "Gliclazida"],
+  //   },
+  // ],
+
+  // motivo_baja: {
+  //   type: String,
+  // },
+
+  // // HTA
+  // hiper_tension: {
+  //   type: String,
+  // },
+
+  // enalpril: {
+  //   type: Boolean,
+  // },
+
+  // losartan: {
+  //   type: Boolean,
+  // },
+
+  // hidroclortiazidas: {
+  //   type: Boolean,
+  // },
+
+  // amlodipina: {
+  //   type: Boolean,
+  // },
+
+  // atenolol: {
+  //   type: Boolean,
+  // },
+
+  // carvedilol: {
+  //   type: Boolean,
+  // },
+
+  // antidepresivos: [
+  //   {
+  //     type: String,
+  //     // enum: ["Metforminas", "Glibenclamida", "Gliclazida"],
+  //   },
+  // ],
+
+  // // Colesterol
+  // dislipemia: {
+  //   type: String,
+  // },
+
+  // estatinas: [
+  //   {
+  //     type: String,
+  //     // enum: ["Metforminas", "Glibenclamida", "Gliclazida"],
+  //   },
+  // ],
+
+  // // Tabaquismo
+  // fuma: {
+  //   type: String,
+  // },
+
+  // aspirina: {
+  //   type: Boolean,
+  // },
 });
 
 HistorialMedicacionSchema.virtual("declaracion_vencida").get(function () {
@@ -246,6 +223,16 @@ HistorialMedicacionSchema.virtual("declaracion_vencida").get(function () {
 //   // Naranja = Sobrepeso (IMC = 24.9-29,9)
 //   // Rojo = Obesidad (IMC >30)
 // });
+
+HistorialMedicacionSchema.pre(["findOneAndUpdate", "updateOne", "updateMany"], function (next) {
+  if (this.getUpdate().$set) {
+    this.getUpdate().$set.updatedAt = new Date();
+  } else {
+    this.getUpdate().updatedAt = new Date();
+  }
+
+  next();
+});
 
 HistorialMedicacionSchema.plugin(uniqueValidator, {
   message: "Ya existe. Valor repetido: '{VALUE}'.",

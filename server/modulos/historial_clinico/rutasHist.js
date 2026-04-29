@@ -1,7 +1,5 @@
 const express = require("express");
 
-const _pick = require("lodash/pick");
-
 const {verificaToken, verificaArrayPropValue} = require(
   process.env.MAIN_FOLDER + "/middlewares/autenticacion"
 );
@@ -17,7 +15,7 @@ const Nutricion = require("./models/especialidades/consultas_nutricion");
 
 const app = express();
 
-let listaHistorial = [
+const listaHistorial = [
   "_id",
   "id",
   // 'usuario_modifico',
@@ -40,7 +38,7 @@ let listaHistorial = [
   // "motivos", //[motivosSchema]
 ];
 
-let listaMotivo = [
+const listaMotivo = [
   "_id",
   "id",
   "createdAt",
@@ -60,7 +58,7 @@ let listaMotivo = [
   // "medicamentos", //[medicamentosSchema]
 ];
 
-let listaMedicacion = [
+const listaMedicacion = [
   "_id",
   "id",
   // 'usuario_modifico',
@@ -104,10 +102,7 @@ async function crearConsulta(body) {
           body = objectSetUnset({dato: body, unsetCero: false, unsetBoolean: true}).dato;
           let _id = body.$set._id;
           delete body.$set._id;
-          consultaTemp = await Nutricion.findOneAndUpdate({_id}, body, {
-            new: true,
-            runValidators: true,
-          }).exec();
+          consultaTemp = await Nutricion.findOneAndUpdate({_id}, body).exec();
         } else {
           // nuevo
           body = isVacio({
@@ -202,7 +197,8 @@ app.put(
   async (req, res) => {
     try {
       let body = isVacio({
-        dato: _pick(req.body, listaHistorial),
+        dato: req.body,
+        pickDato: listaHistorial,
       });
       if (body.vacio === true) {
         return errorMessage(res, {message: "No se envió ningún dato."}, 412);
@@ -220,10 +216,7 @@ app.put(
         body = objectSetUnset({dato: body, unsetCero: true, unsetBoolean: true}).dato;
         let _id = body.$set._id;
         delete body.$set._id;
-        historialDB = await HistorialClinico.findOneAndUpdate({_id}, body, {
-          new: true,
-          runValidators: true,
-        }).exec();
+        historialDB = await HistorialClinico.findOneAndUpdate({_id}, body).exec();
       } else {
         // nuevo
         body = isVacio({
@@ -299,7 +292,8 @@ app.put(
   async (req, res) => {
     try {
       let body = isVacio({
-        dato: _pick(req.body, listaMotivo),
+        dato: req.body,
+        pickDato: listaMotivo,
       });
       if (body.vacio === true) {
         return errorMessage(res, {message: "No se envió ningún dato."}, 412);
@@ -317,10 +311,7 @@ app.put(
         body = objectSetUnset({dato: body, unsetCero: true, unsetBoolean: true}).dato;
         let _id = body.$set._id;
         delete body.$set._id;
-        motivoDB = await HistorialMotivo.findOneAndUpdate({_id}, body, {
-          new: true,
-          runValidators: true,
-        }).exec();
+        motivoDB = await HistorialMotivo.findOneAndUpdate({_id}, body).exec();
       } else {
         // nuevo
         body = isVacio({
@@ -517,7 +508,8 @@ app.put(
   async (req, res) => {
     try {
       let body = isVacio({
-        dato: _pick(req.body, listaMedicacion),
+        dato: req.body,
+        pickDato: listaMedicacion,
       });
       if (body.vacio === true) {
         return errorMessage(res, {message: "No se envió ningún dato."}, 412);
@@ -535,10 +527,7 @@ app.put(
         body = objectSetUnset({dato: body, unsetCero: true, unsetBoolean: true}).dato;
         let _id = body.$set._id;
         delete body.$set._id;
-        medicacionDB = await HistorialMedicacion.findOneAndUpdate({_id}, body, {
-          new: true,
-          runValidators: true,
-        }).exec();
+        medicacionDB = await HistorialMedicacion.findOneAndUpdate({_id}, body).exec();
       } else {
         // nuevo
         body = isVacio({

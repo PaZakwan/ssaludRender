@@ -27,6 +27,20 @@
 
 ---
 
+### [1.7.20260429] - 2026-04-29
+
+- 🩹 Fixed a Sistema - Navegacion => El navbar "arrastraba" los permisos del usuario previo logueado, visual, o sea mostraba rutas a las que el usuario nuevo logueado tal vez no tenia permisos, pero igual no lo dejaba ingresar a esos lugares.
+
+- 📈 Improved a Sistema - Backend => Mongoose - Se actualizo codigo "viejo" (5+ años), centralizado de toJSON, toObject, schema.pre(setOptions); validate -> object with functions, custom required++, throw new Error(), para que sea mas legible y siga las nuevas costumbre.
+
+- 📈 Improved a Sistema - Backend => Object - added pickObject(), getObject() and impove isVacio() ahora es compatible con pickDato (permite quitar la libreria de Lodash).
+
+- 📈 Improved a Sistema - Backend => Object - impove arrayFromSumarPropsInArrays() and sumarProps() mejora para futuros reportes.
+
+- 🚨 Changed a Sistema - Areas => Zonas se agregaron nuevas y se dividio Alvarez La Reja -> +Alvarez +La Reja +Moreno Centro +Distrito Ecologico Roggero.
+
+- 🚨 Changed a HICLEM - Historial Gral => Se cambio la solicitud del campo opcional "Semana de Emabarazo" al rango de edad (10-50] años para el sexo Femenino. Yesica Fernandez
+
 ### [1.7.20260401] - 2026-04-01
 
 - ✨ Added a Sistema - Upload => Se agrego la posibilidad de arrastrar y soltar archivos (drag and drop).

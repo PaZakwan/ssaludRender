@@ -1,63 +1,49 @@
 const mongoose = require("mongoose");
 const uniqueValidator = require("mongoose-unique-validator");
 
-let schemaOptions = {
-  toObject: {
-    getters: true,
+const InsumoSchema = new mongoose.Schema({
+  nombre: {
+    type: String,
+    trim: true,
+    required: [true, "El Insumo a cargar es necesario."],
+    unique: true,
   },
-  toJSON: {
-    getters: true,
+  categoria: {
+    type: String,
+    required: [true, "La Categoria a cargar es necesaria."],
   },
-};
 
-let Schema = mongoose.Schema;
-
-let InsumoSchema = new Schema(
-  {
-    nombre: {
-      type: String,
-      trim: true,
-      required: [true, "El Insumo a cargar es necesario."],
-      unique: true,
-    },
-    categoria: {
-      type: String,
-      required: [true, "La Categoria a cargar es necesaria."],
-    },
-
-    descripcion: {
-      type: String,
-      trim: true,
-      lowercase: true,
-    },
-
-    unique_code: {
-      type: String,
-      trim: true,
-      unique: true,
-      sparse: true,
-    },
-
-    condiciones: {
-      type: [
-        {
-          type: String,
-        },
-      ],
-      default: void 0,
-    },
-
-    estado: {
-      type: Boolean,
-      default: true,
-    },
-    updatedAt: {
-      type: Date,
-      default: Date.now,
-    },
+  descripcion: {
+    type: String,
+    trim: true,
+    lowercase: true,
   },
-  schemaOptions
-);
+
+  unique_code: {
+    type: String,
+    trim: true,
+    unique: true,
+    sparse: true,
+  },
+
+  condiciones: {
+    type: [
+      {
+        type: String,
+      },
+    ],
+    default: void 0,
+  },
+
+  estado: {
+    type: Boolean,
+    default: true,
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
 
 InsumoSchema.virtual("nombreC").get(function () {
   try {
@@ -67,12 +53,13 @@ InsumoSchema.virtual("nombreC").get(function () {
   }
 });
 
-InsumoSchema.pre("findOneAndUpdate", function (next) {
+InsumoSchema.pre(["findOneAndUpdate", "updateOne", "updateMany"], function (next) {
   if (this.getUpdate().$set) {
     this.getUpdate().$set.updatedAt = new Date();
   } else {
     this.getUpdate().updatedAt = new Date();
   }
+
   next();
 });
 

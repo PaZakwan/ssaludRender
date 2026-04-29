@@ -28,36 +28,35 @@
   "author": "Paz Juan",
   "license": "AGPL-3.0-only",
   "dependencies": {
-    "axios": "^1.13.3",
+    "axios": "^1.15.2",
     "bcrypt": "^6.0.0",
     "connect-history-api-fallback": "^2.0.0",
-    "cors": "^2.8.5",
+    "cors": "^2.8.6",
     "csvtojson": "^2.0.14",
     "detect-file-encoding-and-language": "^2.4.0",
-    "express": "^4.21.2",
+    "express": "^4.22.1",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
-    "lodash": "^4.17.21",
-    "mongoose": "^8.21.0",
-    "mongoose-unique-validator": "^5.0.1",
+    "mongoose": "^8.23.1",
+    "mongoose-unique-validator": "^5.0.2",
     "morgan": "^1.10.1",
     "multer": "^2.0.2",
     "node-schedule": "^2.1.1",
-    "nodemailer": "^7.0.12",
-    "simple-xml-to-json": "^1.2.3",
+    "nodemailer": "^8.0.7",
+    "simple-xml-to-json": "^1.2.7",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.3",
-    "eslint": "^9.39.2",
+    "@eslint/js": "^9.39.4",
+    "eslint": "^9.39.4",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-n": "^17.23.2",
     "eslint-plugin-prettier": "^5.5.5",
-    "eslint-plugin-promise": "^7.2.1",
-    "globals": "^17.3.0"
+    "eslint-plugin-promise": "^7.3.0",
+    "globals": "^17.5.0"
   },
   "engines": {
-    "node": "24.x",
-    "npm": "11.x"
+    "node": "20.x - 24.x",
+    "npm": "10.x - 11.x"
   }
 }

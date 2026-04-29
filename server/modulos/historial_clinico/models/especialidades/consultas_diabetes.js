@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const uniqueValidator = require("mongoose-unique-validator");
 
 // ============================
 // XXXXXX  Desarrollar  XXXXXXX
@@ -8,110 +7,95 @@ const uniqueValidator = require("mongoose-unique-validator");
 // VER TODO, Extraido del ex historial
 // ============================
 
-let schemaOptions = {
-  toObject: {
-    getters: true,
-  },
-  toJSON: {
-    getters: true,
-  },
+const DiabetesSchema = new mongoose.Schema({
   _id: false,
-};
 
-let Schema = mongoose.Schema;
+  usuario_modifico: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Usuario",
+    required: [true, "El usuario modificador es necesario"],
+  },
 
-let DiabetesSchema = new Schema(
-  {
-    _id: false,
-
-    usuario_modifico: {
-      type: Schema.Types.ObjectId,
-      ref: "Usuario",
-      required: true,
-    },
-
-    numero_hist: {
-      type: String,
-      sparse: true,
-      trim: true,
-      required: true,
-    },
-    fecha_inicio: {
-      type: Date,
-      default: Date.now,
-    },
-    fecha_declaracion_jurada: {
-      type: Date,
-    },
-    observacion: {
-      type: String,
-      trim: true,
-    },
-    controles: [
-      {
-        fecha_control: {
-          type: Date,
+  numero_hist: {
+    type: String,
+    sparse: true,
+    trim: true,
+    required: [true, "El numero de historial es necesario"],
+  },
+  fecha_inicio: {
+    type: Date,
+    default: Date.now,
+  },
+  fecha_declaracion_jurada: {
+    type: Date,
+  },
+  observacion: {
+    type: String,
+    trim: true,
+  },
+  controles: [
+    {
+      fecha_control: {
+        type: Date,
+      },
+      profesional: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Profesional",
+      },
+      medicacion: {
+        glibenclamida: {
+          type: Boolean,
         },
-        profesional: {
-          type: Schema.Types.ObjectId,
-          ref: "Profesional",
+        metformina: {
+          type: Boolean,
         },
-        medicacion: {
-          glibenclamida: {
-            type: Boolean,
-          },
-          metformina: {
-            type: Boolean,
-          },
-          insulina: {
-            type: Boolean,
-          },
-          HTA: {
-            type: Boolean,
-          },
-          enalapril: {
-            type: Boolean,
-          },
-          atenolol: {
-            type: Boolean,
-          },
-          losartan: {
-            type: Boolean,
-          },
-          furosemida: {
-            type: Boolean,
-          },
-          hidroclorotiazida: {
-            type: Boolean,
-          },
-          dislipemia: {
-            type: Boolean,
-          },
-          estatinas: {
-            type: String,
-            enum: ["simvastatina", "atorvastatina", "rosuvastatina"],
-          },
+        insulina: {
+          type: Boolean,
+        },
+        HTA: {
+          type: Boolean,
+        },
+        enalapril: {
+          type: Boolean,
+        },
+        atenolol: {
+          type: Boolean,
+        },
+        losartan: {
+          type: Boolean,
+        },
+        furosemida: {
+          type: Boolean,
+        },
+        hidroclorotiazida: {
+          type: Boolean,
+        },
+        dislipemia: {
+          type: Boolean,
+        },
+        estatinas: {
+          type: String,
+          enum: ["simvastatina", "atorvastatina", "rosuvastatina"],
         },
       },
-    ],
+    },
+  ],
 
-    estado: {
-      type: Boolean,
-      default: true,
-    },
-    updatedAt: {
-      type: Date,
-      default: Date.now,
-    },
-    createdAt: {
-      type: Date,
-      default: Date.now,
-    },
+  estado: {
+    type: Boolean,
+    default: true,
   },
-  schemaOptions
-);
+  updatedAt: {
+    type: Date,
+    default: Date.now,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
 
-DiabetesSchema.pre("findOneAndUpdate", async function (next) {
+DiabetesSchema.pre(["findOneAndUpdate", "updateOne", "updateMany"], async function (next) {
   if (this.getUpdate().$set) {
     this.getUpdate().$set.updatedAt = new Date();
   } else {
@@ -121,13 +105,7 @@ DiabetesSchema.pre("findOneAndUpdate", async function (next) {
 });
 
 DiabetesSchema.virtual("fecha_ultimo_control").get(function () {
-  if (this.controles && this.controles[0] && this.controles[0].fecha_control) {
-    return `${this.controles[0].fecha_control}`;
-  } else {
-    return "No hay registro";
-  }
+  return `${this.controles?.[0]?.fecha_control ?? "No hay registro"}`;
 });
-
-DiabetesSchema.plugin(uniqueValidator, {message: "Ya existe. Valor repetido: '{VALUE}'."});
 
 module.exports = DiabetesSchema;

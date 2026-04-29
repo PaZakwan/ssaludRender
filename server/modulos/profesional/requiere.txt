@@ -1,1 +1,0 @@
-Config, para el array de las especialidades.

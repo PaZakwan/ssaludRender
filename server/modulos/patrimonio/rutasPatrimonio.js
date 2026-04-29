@@ -1,12 +1,12 @@
 const express = require("express");
 
-const _pick = require("lodash/pick");
-
-const {verificaToken, verificaArrayPropValue} = require(process.env.MAIN_FOLDER +
-  "/middlewares/autenticacion");
+const {verificaToken, verificaArrayPropValue} = require(
+  process.env.MAIN_FOLDER + "/middlewares/autenticacion"
+);
 const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
-const {isVacio, objectSetUnset, objectToFind, isObjectIdValid} = require(process.env.MAIN_FOLDER +
-  "/tools/object");
+const {isVacio, objectSetUnset, objectToFind, isObjectIdValid} = require(
+  process.env.MAIN_FOLDER + "/tools/object"
+);
 
 const Patrimonio = require("./models/patrimonio");
 
@@ -95,7 +95,8 @@ app.post(
   async (req, res) => {
     try {
       let body = isVacio({
-        dato: _pick(req.body, listaPatrimonio),
+        dato: req.body,
+        pickDato: listaPatrimonio,
         borrar: true,
       });
       if (body.vacio === true) {
@@ -161,7 +162,8 @@ app.put(
       }
 
       let body = isVacio({
-        dato: _pick(req.body, listaPatrimonioUpdate),
+        dato: req.body,
+        pickDato: listaPatrimonioUpdate,
       });
       if (body.vacio === true) {
         return errorMessage(res, {message: "No se envió ningún dato."}, 412);
@@ -213,10 +215,7 @@ app.put(
       if (!isObjectIdValid(req.params.id)) {
         return errorMessage(res, {message: "El ID de Objeto no es valido."}, 400);
       }
-      objetoDB = await Patrimonio.findOneAndUpdate({_id: req.params.id}, body, {
-        new: true,
-        runValidators: true,
-      }).exec();
+      objetoDB = await Patrimonio.findOneAndUpdate({_id: req.params.id}, body).exec();
       if (!objetoDB) {
         return errorMessage(res, {message: "ObjetoDB no editado."}, 400);
       }
@@ -282,10 +281,7 @@ app.put(
           validar["verificado"] = false;
         }
 
-        objetoDB = await Patrimonio.findOneAndUpdate({_id: req.params.id}, validar, {
-          new: true,
-          runValidators: true,
-        }).exec();
+        objetoDB = await Patrimonio.findOneAndUpdate({_id: req.params.id}, validar).exec();
 
         return res.json({
           ok: true,
@@ -339,10 +335,7 @@ app.delete(
       };
 
       let objetoBorrado = null;
-      objetoBorrado = await Patrimonio.findOneAndUpdate({_id: req.params.id}, eliminar, {
-        new: true,
-        runValidators: true,
-      }).exec();
+      objetoBorrado = await Patrimonio.findOneAndUpdate({_id: req.params.id}, eliminar).exec();
       if (!objetoBorrado) {
         return errorMessage(res, {message: "Objeto no encontrado."}, 404);
       }
@@ -466,7 +459,7 @@ app.get(
       if (populate?.usuario_verifico) {
         objetosDB.populate("usuario_verifico", "nombre apellido nombreC");
       }
-      objetosDB = await objetosDB.exec();
+      objetosDB = await objetosDB.lean().exec();
 
       return res.json({
         ok: true,

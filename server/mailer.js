@@ -1,5 +1,5 @@
 const nodemailer = require("nodemailer");
-const path = require("path");
+const {clgEvento, clgFalla} = require(process.env.MAIN_FOLDER + "/tools/console");
 
 // IMPORTAR DATOS DEL MAIL DE PRODUCCION Y DEVELOPMENT..DE CONFIG.JS
 // FUNCION PARA INICIAR MAIL SERVER
@@ -45,39 +45,43 @@ const crearTransporter = async () => {
       attachments: [
         {
           filename: "logo.png",
-          path: path.resolve(__dirname, "../assets/mail-titulo-215-150.png"),
+          path: process.env.MAIN_FOLDER + "\\assets\\mail-titulo-215-150.png",
           cid: "tituloUnico", //same cid value as in the html img src
         },
       ],
     });
 
     await transporter.verify();
-    // console.log(transporter.isIdle());
 
-    let ahora = new Date();
-    console.log(
-      `===== ${ahora.getFullYear()}/${(ahora.getMonth() + 1).toString().padStart(2, 0)}/${ahora
-        .getDate()
-        .toString()
-        .padStart(2, 0)} - ${ahora.getHours().toString().padStart(2, 0)}:${ahora
-        .getMinutes()
-        .toString()
-        .padStart(2, 0)} ` +
-        `<=> Mails Server ONLINE (${
-          transporter.options.service || `${transporter.options.host}:${transporter.options.port}`
-        }) =====`
-    );
+    if (process.env.NODE_ENV === "dev") {
+      // Listen for transporter has capacity to accept more messages.
+      transporter.on("idle", (idle) => {
+        clgEvento({
+          name: "Mail Server",
+          evento: `Idle (${idle})`,
+        });
+      });
+    }
+    clgEvento({
+      name: "Mail Server",
+      evento: `Funcionando (${
+        transporter.options.service || `${transporter.options.host}:${transporter.options.port}`
+      })`,
+    });
 
     return transporter;
   } catch (error) {
-    console.error(`XXXXX Mails Server OFFLINE. ${error} XXXXX`);
-    return {};
+    clgFalla({
+      name: "Mail Server CATCH",
+      falla: error,
+    });
+    return {error};
   }
 };
 
-// const mailerTransporter = crearTransporter();
+const mailTransporter = crearTransporter();
 
 // https://www.youtube.com/watch?v=M1E-bU5snA8
 
 // export transporter
-// module.exports.mailTransporter = mailerTransporter;
+module.exports.mailTransporter = mailTransporter;

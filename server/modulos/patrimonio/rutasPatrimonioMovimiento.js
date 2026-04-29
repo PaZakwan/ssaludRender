@@ -1,12 +1,12 @@
 const express = require("express");
 
-const _pick = require("lodash/pick");
-
-const {verificaToken, verificaArrayPropValue} = require(process.env.MAIN_FOLDER +
-  "/middlewares/autenticacion");
+const {verificaToken, verificaArrayPropValue} = require(
+  process.env.MAIN_FOLDER + "/middlewares/autenticacion"
+);
 const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
-const {isVacio, isObjectIdValid, objectSetUnset} = require(process.env.MAIN_FOLDER +
-  "/tools/object");
+const {isVacio, isObjectIdValid, objectSetUnset} = require(
+  process.env.MAIN_FOLDER + "/tools/object"
+);
 
 const Patrimonio = require("./models/patrimonio");
 const PatrimonioMovimiento = require("./models/patrimonioMovimiento");
@@ -54,7 +54,8 @@ app.post(
   async (req, res) => {
     try {
       let body = isVacio({
-        dato: _pick(req.body, listaPatrimonioMovimiento),
+        dato: req.body,
+        pickDato: listaPatrimonioMovimiento,
       });
       if (body.vacio === true) {
         return errorMessage(res, {message: "No se envió ningún dato."}, 412);
@@ -83,10 +84,10 @@ app.post(
 
       let movimientoDB = null;
       if (req.body._id) {
-        movimientoDB = await PatrimonioMovimiento.findOneAndUpdate({_id: req.body._id}, body, {
-          new: true,
-          runValidators: true,
-        }).exec();
+        movimientoDB = await PatrimonioMovimiento.findOneAndUpdate(
+          {_id: req.body._id},
+          body
+        ).exec();
         if (body.$set.fec_patrimonio || body.$set.fec_entregado) {
           return res.json({
             ok: true,
@@ -114,11 +115,7 @@ app.post(
             fec_verifico: Date.now(),
             verificado: true,
           },
-        }).dato,
-        {
-          new: true,
-          runValidators: true,
-        }
+        }).dato
       ).exec();
       if (!objetoActualizado) {
         return errorMessage(res, {message: "Objeto no encontrado."}, 404);
@@ -225,6 +222,7 @@ app.get(
         .populate("area_destino", "area oficina_nro")
         .populate("lugar_anterior", "nombre direccion ip")
         .populate("lugar_destino", "nombre direccion ip")
+        .lean()
         .exec();
 
       return res.json({

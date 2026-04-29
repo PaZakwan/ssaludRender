@@ -1,10 +1,13 @@
 const express = require("express");
-const fs = require("fs");
+const fs = require("fs").promises;
 const mongoose = require("mongoose");
 
 // Middleware de Permisos
-const {verificaToken, verificaAdmin_Role} = require(process.env.MAIN_FOLDER +
-  "/middlewares/autenticacion");
+const {verificaToken, verificaAdmin_Role} = require(
+  process.env.MAIN_FOLDER + "/middlewares/autenticacion"
+);
+const {objectSetUnset} = require(process.env.MAIN_FOLDER + "/tools/object");
+const {clgFalla} = require(process.env.MAIN_FOLDER + "/tools/console");
 
 // Herramientas para excels
 // const xlstojson = require("xls-to-json-lc");
@@ -17,11 +20,11 @@ const multer = require("multer");
 
 const storage = multer.diskStorage({
   //multer disk storage settings
-  destination: function (req, archivo, cb) {
+  destination: function (req, _, cb) {
     cb(null, "./server/uploads/");
   },
   filename: function (req, archivo, cb) {
-    let hoy = new Date().toISOString().substring(0, 19).replace(/:/g, "-");
+    const hoy = new Date().toISOString().substring(0, 19).replace(/:/g, "-");
     // let datetimestamp = Date.now();
     cb(null, hoy + "-" + archivo.originalname);
   },
@@ -69,7 +72,7 @@ function fechaTOyyyymmdd(value) {
     } else {
       // zona horaria, 24 - 3
       let offsetUTC = -21;
-      fecha = new Date(Date.UTC(0, 0, value, offsetUTC));
+      let fecha = new Date(Date.UTC(0, 0, value, offsetUTC));
       return [
         true,
         `${fecha.getFullYear()}-${(fecha.getMonth() + 1).toString().padStart(2, "0")}-${fecha
@@ -88,33 +91,31 @@ function fechaTOyyyymmdd(value) {
 // ###############################
 function exceltojson(file) {
   if (file.originalname.split(".")[file.originalname.split(".").length - 1] === "xlsx") {
-    return xlsxtojson;
+    // return xlsxtojson;
   } else if (file.originalname.split(".")[file.originalname.split(".").length - 1] === "xls") {
-    return xlstojson;
+    // return xlstojson;
   }
+  return null;
 }
 
 // ###############################
 // Guardar archivo log en uploads/logs...
 // ###############################
-function guardarLog(file, exitosos, errores, totales) {
-  let hoy = new Date().toISOString().substring(0, 19).replace(/:/g, "-");
-  let filename = file.originalname.split(".");
-  filename.pop();
-  filename = filename.join(".");
-  let ruta = `./server/uploads/logs/${hoy}-${filename}-log.txt`;
-  let texto = `EXITOSOS: ${exitosos} \r\nTOTAL EXITOSOS: ${totales.exitosos} \r\n \r\nERRORES: ${errores} \r\nTOTAL ERRORES: ${totales.errores}`;
-  fs.appendFile(
-    ruta,
-    texto,
-    {
+async function guardarLog(file, exitosos, errores, totales) {
+  try {
+    let hoy = new Date().toISOString().substring(0, 19).replace(/:/g, "-");
+    let filename = file.originalname.split(".").slice(0, -1).join(".");
+    let ruta = `./server/uploads/logs/${hoy}-${filename}-log.txt`;
+
+    let texto = `EXITOSOS: ${exitosos} \r\nTOTAL EXITOSOS: ${totales.exitosos} \r\n \r\nERRORES: ${errores} \r\nTOTAL ERRORES: ${totales.errores}`;
+
+    await fs.appendFile(ruta, texto, {
       encoding: "utf8",
       flag: "a",
-    },
-    function (err) {
-      if (err) throw err;
-    }
-  );
+    });
+  } catch (error) {
+    throw new Error(`Error al escribir el uploads/logs: ${error}.`);
+  }
 }
 
 // ============================
@@ -162,7 +163,6 @@ app.post("/area/upload", [verificaToken, verificaAdmin_Role], (req, res) => {
           }
           // Manipulando excel para luego actualizar la BD
           let object = {};
-          let $set = {};
           let objetoBDTMP = {};
           let exitosos = "";
           let errores = "";
@@ -174,30 +174,23 @@ app.post("/area/upload", [verificaToken, verificaAdmin_Role], (req, res) => {
             object = result[index];
             // preparando el objeto segun las columnas del excel
             if (object["area"]) {
-              for (const key in object) {
-                if (object.hasOwnProperty(key)) {
-                  if (object[key] === null || object[key] === "" || object[key].length === 0) {
-                    // no guardar nada
-                  } else {
-                    $set[key] = object[key];
-                  }
-                }
-              }
-              $set["usuario_modifico"] = req.usuario._id;
+              // Delete del campo si esta como null / "" / undefined /array vacio
+              objetoBDTMP = objectSetUnset({dato: object}).dato;
+
+              objetoBDTMP.$set["usuario_modifico"] = req.usuario._id;
 
               // Revisa cambio de nombre de area
               let area = object["area"];
               if (object["cambia_nombre"]) {
-                $set["area"] = object["cambia_nombre"];
+                objetoBDTMP.$set["area"] = object["cambia_nombre"];
+              } else {
+                delete objetoBDTMP.$set["area"];
               }
-              objetoBDTMP = {$set};
 
               // Realizar actualizacion uno por uno
               let AreaUnHilo = mongoose.connections[1].models.Area;
               try {
                 let resultado = await AreaUnHilo.findOneAndUpdate({area}, objetoBDTMP, {
-                  new: true,
-                  runValidators: true,
                   upsert: true,
                   setDefaultsOnInsert: true,
                 });
@@ -217,7 +210,6 @@ app.post("/area/upload", [verificaToken, verificaAdmin_Role], (req, res) => {
               // Reiniciar objetos para el proximo del loop
               area = "";
               objetoBDTMP = {};
-              $set = {};
             } else {
               // si No tiene nombre de area no hacer nada
               errores = `${errores}Fila Excel: ${index + 2}, Error: No contiene Area.\r\n\t`;
@@ -225,12 +217,15 @@ app.post("/area/upload", [verificaToken, verificaAdmin_Role], (req, res) => {
             }
           }
           // Guardar archivo log en uploads/logs...
-          guardarLog(req.file, exitosos, errores, totales);
+          await guardarLog(req.file, exitosos, errores, totales);
           // Borrar archivo subido
           try {
-            fs.unlinkSync(req.file.path);
+            await fs.unlink(req.file.path);
           } catch (e) {
-            console.log("error deleting the file, Error : ", e);
+            clgFalla({
+              name: "Upload, deleting the file",
+              falla: e,
+            });
           }
           return res.json({
             ok: true,
@@ -277,11 +272,11 @@ app.post("/patrimonio/upload", [verificaToken, verificaAdmin_Role], (req, res) =
     }
     let exceltojson;
     if (req.file.originalname.split(".")[req.file.originalname.split(".").length - 1] === "xlsx") {
-      exceltojson = xlsxtojson;
+      // exceltojson = xlsxtojson;
     } else if (
       req.file.originalname.split(".")[req.file.originalname.split(".").length - 1] === "xls"
     ) {
-      exceltojson = xlstojson;
+      // exceltojson = xlstojson;
     }
     try {
       exceltojson(
@@ -309,20 +304,27 @@ app.post("/patrimonio/upload", [verificaToken, verificaAdmin_Role], (req, res) =
             exitosos: 0,
             errores: 0,
           };
-          console.log("tutoBem");
+          // console.log("tutoBem DESARROLLANDO, MIRAR VACUNAS");
           for (let index = 0; index < result.length; index++) {
             object = result[index];
             // preparando el objeto segun las columnas del excel
 
             if (object["inventario"] || object["categoria"] === "Insumos") {
               try {
+                let AreaUnHilo = mongoose.connections[1].models.Area;
                 let areaTMP = await AreaUnHilo.find({area: object["area"]}).exec();
                 if (areaTMP.length !== 0) {
                   for (const key in object) {
-                    if (object.hasOwnProperty(key)) {
-                      if (object[key] === null || object[key] === "" || object[key].length === 0) {
+                    if (Object.hasOwn(object, key)) {
+                      if (
+                        object[key] === null ||
+                        object[key] === undefined ||
+                        object[key] === "" ||
+                        (Array.isArray(object[key]) && object[key].length === 0)
+                      ) {
                         // no guardar nada
-                      } else if (["fec_alta"].indexOf(key) !== -1) {
+                        continue;
+                      } else if (["fec_alta"].includes(key)) {
                         let respuesta = fechaTOyyyymmdd(object[key]);
                         if (respuesta[0]) {
                           $set[key] = respuesta[1];
@@ -373,8 +375,6 @@ app.post("/patrimonio/upload", [verificaToken, verificaAdmin_Role], (req, res) =
                           {modelo: object["modelo"]},
                           objetoBDTMP,
                           {
-                            new: true,
-                            runValidators: true,
                             upsert: true,
                             setDefaultsOnInsert: true,
                           }
@@ -397,8 +397,6 @@ app.post("/patrimonio/upload", [verificaToken, verificaAdmin_Role], (req, res) =
                           {inventario: object["inventario"]},
                           objetoBDTMP,
                           {
-                            new: true,
-                            runValidators: true,
                             upsert: true,
                             setDefaultsOnInsert: true,
                           }
@@ -449,12 +447,15 @@ app.post("/patrimonio/upload", [verificaToken, verificaAdmin_Role], (req, res) =
             }
           }
           // Guardar archivo log en uploads/logs...
-          guardarLog(req.file, exitosos, errores, totales);
+          await guardarLog(req.file, exitosos, errores, totales);
           // Borrar archivo subido
           try {
-            fs.unlinkSync(req.file.path);
+            await fs.unlink(req.file.path);
           } catch (e) {
-            console.log("error deleting the file, Error :", e);
+            clgFalla({
+              name: "Upload, deleting the file",
+              falla: e,
+            });
           }
           return res.json({
             ok: true,

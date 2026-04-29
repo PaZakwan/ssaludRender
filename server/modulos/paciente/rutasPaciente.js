@@ -1,13 +1,11 @@
 const express = require("express");
 const axios = require("axios");
 
-const _pick = require("lodash/pick");
-
 const {verificaToken, verificaArrayPropValue} = require(
   process.env.MAIN_FOLDER + "/middlewares/autenticacion"
 );
 const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
-const {isVacio, objectSetUnset, isObjectIdValid, objectToFind, getEdad} = require(
+const {isVacio, objectSetUnset, isObjectIdValid, objectToFind, getEdad, pickObject} = require(
   process.env.MAIN_FOLDER + "/tools/object"
 );
 const {capitalize} = require(process.env.MAIN_FOLDER + "/tools/string");
@@ -27,7 +25,7 @@ const Turno = require(process.env.MAIN_FOLDER + "/modulos/turnero/models/turno")
 
 const app = express();
 
-let listaPaciente = [
+const listaPaciente = [
   // 'usuario_modifico',
   "_id",
   "apellido",
@@ -210,7 +208,8 @@ app.put(
   async (req, res) => {
     try {
       let body = isVacio({
-        dato: _pick(req.body, listaPaciente),
+        dato: req.body,
+        pickDato: listaPaciente,
         borrar: req.body._id ? false : true,
       });
       if (body.vacio === true) {
@@ -273,10 +272,7 @@ app.put(
         // Delete del campo si esta como null / "" / undefined /array vacio
         body = objectSetUnset({dato: body}).dato;
         // Modificando la BD
-        pacienteDB = await Paciente.findOneAndUpdate({_id: req.body._id}, body, {
-          new: true,
-          runValidators: true,
-        }).exec();
+        pacienteDB = await Paciente.findOneAndUpdate({_id: req.body._id}, body).exec();
 
         // Verifica y actualiza las aplicaciones del paciente con nueva fecha de nacimiento o sexo.
         let vacunacionesCursor = VacunaAplicacion.find({
@@ -466,7 +462,8 @@ app.put(
       return errorMessage(res, {message: "Unificacion de Paciente en DESARROLLO."}, 501);
 
       // let body = isVacio({
-      //   dato: _pick(req.body, listaPaciente),
+      //   dato: req.body,
+      //   pickDato: listaPaciente,
       //   borrar: req.body._id ? false : true,
       // });
       // if (body.vacio === true) {
@@ -483,10 +480,7 @@ app.put(
       //   // Delete del campo si esta como null / "" / undefined /array vacio
       //   body = objectSetUnset({dato: body}).dato;
       //   // Modificando la BD
-      //   pacienteDB = await Paciente.findOneAndUpdate({_id: req.body._id}, body, {
-      //     new: true,
-      //     runValidators: true,
-      //   }).exec();
+      //   pacienteDB = await Paciente.findOneAndUpdate({_id: req.body._id}, body).exec();
       // } else {
       //   // Nuevo
       //   pacienteDB = await new Paciente(body).save();
@@ -537,7 +531,7 @@ app.put(
       // Se Agrega hist_tuberculosis a la lista para su modificacion
       listaPacienteTuberculosis.push("hist_tuberculosis");
 
-      let body = _pick(req.body, listaPacienteTuberculosis);
+      let body = pickObject({obj: req.body, arr: listaPacienteTuberculosis});
 
       // Revisa que se haya enviado por lo menos una propiedad en hist_tuberculosis y borra
       body["hist_tuberculosis"] = isVacio({
@@ -556,12 +550,10 @@ app.put(
 
       // Delete del campo si esta como null / "" / undefined /array vacio
       body = objectSetUnset({dato: body}).dato;
+      delete body.$set._id;
 
       // Realiza la busqueda y el Update
-      let pacienteDB = await Paciente.findOneAndUpdate({_id: req.params.id}, body, {
-        new: true,
-        runValidators: true,
-      }).exec();
+      let pacienteDB = await Paciente.findOneAndUpdate({_id: req.params.id}, body).exec();
 
       if (!pacienteDB) {
         return errorMessage(res, {message: "Paciente no encontrado."}, 404);

@@ -1,7 +1,6 @@
 const {
   Types: {ObjectId},
 } = require("mongoose");
-const _get = require("lodash/get");
 
 const isObjectIdValid = (id) => {
   try {
@@ -229,6 +228,19 @@ const getEdadUnidades = ({edad_valor, edad_unidad}) => {
 // let test = {edad_valor: "30", edad_unidad: "Dia"};
 // console.log("### TEST ", getEdadUnidades(test));
 
+const pickObject = ({obj = {}, arr = []}) => {
+  // Si no es un objeto o es null, devolvemos un objeto vacío
+  if (!obj || typeof obj !== "object") return {};
+
+  return arr.reduce((acc, key) => {
+    // Desestructuramos con seguridad
+    if (Object.hasOwn(obj, key)) {
+      acc[key] = obj[key];
+    }
+    return acc;
+  }, {});
+};
+
 const isVacio = (payload) => {
   // Si BORRAR es true y payload.dato es un objeto que contiene Funciones, una instancia de clase o elemento del DOM,
   // La funcion modificara el objeto original porque no crea una copia
@@ -246,6 +258,8 @@ const isVacio = (payload) => {
       inArr = false,
       inObj = false,
       borrar = false,
+      pickDato = false,
+      cloneFailed = false,
       visited = new WeakSet(),
     } = payload;
     // if (!mainValue) {
@@ -303,10 +317,14 @@ const isVacio = (payload) => {
         }
         const paraBorrar = Symbol("borrarIn");
 
+        if (mainValue && Array.isArray(pickDato)) {
+          dato = pickObject({obj: dato, arr: pickDato});
+        }
         if (mainValue && borrar) {
           try {
             dato = structuredClone(dato);
           } catch (error) {
+            cloneFailed = true;
             // return {
             //   dato: dato,
             //   vacio: "error",
@@ -320,12 +338,22 @@ const isVacio = (payload) => {
         }
         visited.add(dato);
 
+        if (borrar && cloneFailed) {
+          dato = {...dato};
+        }
+
         let todovacio = true;
         if (mainValue || (inArr && Array.isArray(dato)) || (inObj && !Array.isArray(dato))) {
           // Recorrer Objeto para borrar dentro
           for (const key in dato) {
             if (Object.hasOwn(dato, key)) {
-              let vacioTemp = isVacio({...payload, dato: dato[key], mainValue: false, visited});
+              let vacioTemp = isVacio({
+                ...payload,
+                dato: dato[key],
+                mainValue: false,
+                cloneFailed,
+                visited,
+              });
               // console.log("vacioTemp", vacioTemp);
               if (vacioTemp.error) {
                 return {
@@ -478,6 +506,8 @@ const isVacio = (payload) => {
 //     inArr: true, // false,
 //     inObj: true, // false,
 //     borrar: true, // false,
+//     // pickDato: [], // false,
+//     // pickDato: ["number", "array", "obj", "obje"], // false,
 //   })
 // );
 // console.log("Original: ", temp);
@@ -719,32 +749,25 @@ const objectToFind = ({dato, mainValue = true, mainKey = false}) => {
 const sumarProps = (object1, object2) => {
   try {
     let temp = {};
+    try {
+      temp = structuredClone(object2);
+    } catch (error) {
+      temp = {...object2};
+    }
     Object.keys(object1).forEach((key) => {
-      if (typeof object1[key] === "number") {
-        if (typeof object2[key] === "number") {
-          temp[key] = object1[key] + object2[key];
-        } else {
-          temp[key] = object1[key];
-        }
-      } else if (Array.isArray(object1[key])) {
-        if (Array.isArray(object2[key])) {
-          temp[key] = [].concat(object1[key], object2[key]);
-        } else {
-          temp[key] = object1[key];
-        }
-      } else if (typeof object1[key] === "object" && !(object1[key] instanceof ObjectId)) {
-        if (typeof object2[key] === "object") {
-          temp[key] = sumarProps(object1[key], object2[key]);
-        } else {
-          temp[key] = object1[key];
-        }
+      if (typeof object1[key] === "number" && typeof object2[key] === "number") {
+        temp[key] = object1[key] + object2[key];
+      } else if (Array.isArray(object1[key]) && Array.isArray(object2[key])) {
+        temp[key] = [].concat(object1[key], object2[key]);
+      } else if (
+        typeof object1[key] === "object" &&
+        !(isObjectIdValid(object1[key]) || isDateValid(object1[key])) &&
+        typeof object2[key] === "object" &&
+        !(isObjectIdValid(object2[key]) || isDateValid(object2[key]))
+      ) {
+        temp[key] = sumarProps(object1[key], object2[key]);
       } else {
         temp[key] = object1[key];
-      }
-    });
-    Object.keys(object2).forEach((key) => {
-      if (typeof temp[key] === "undefined") {
-        temp[key] = object2[key];
       }
     });
     return temp;
@@ -753,11 +776,21 @@ const sumarProps = (object1, object2) => {
   }
 };
 
+const getObject = ({obj = {}, path = "", defValue = undefined}) => {
+  if (!path) return defValue ?? undefined;
+  // Check if path is string or array. Regex : ensure that we do not have '.' and brackets.
+  // Regex explained: https://regexr.com/58j0k
+  const pathArray = Array.isArray(path) ? path : path.match(/([^[.\]])+/g);
+  // Find value
+  const result = obj[path] ?? pathArray.reduce((prevObj, key) => prevObj?.[key], obj);
+  return result === undefined ? defValue : result;
+};
+
 const groupBy = ({array, keys}) => {
   return array.reduce((acumulador, obj) => {
     keys.forEach((key) => {
-      (acumulador[_get(obj, key, "not found")] =
-        acumulador[_get(obj, key, "not found")] || []).push(obj);
+      (acumulador[getObject({obj: obj, path: key, defValue: "not found"})] =
+        acumulador[getObject({obj: obj, path: key, defValue: "not found"})] || []).push(obj);
     });
     return acumulador;
   }, {});
@@ -826,9 +859,7 @@ const valorInMatriz = ({valor, matriz}) => {
 
 const arrayFromSumarPropsInArrays = async ({
   arrays,
-  compare = (a, b) => {
-    a === b;
-  },
+  compare = (a, b) => a === b,
   nullArrays = true,
 }) => {
   try {
@@ -838,7 +869,12 @@ const arrayFromSumarPropsInArrays = async ({
       for (let ArrayIndex = 0; ArrayIndex < arrays.length; ArrayIndex++) {
         // si es una promesa entonces esperar que se resuelva
         if (typeof arrays[ArrayIndex]?.then === "function") {
-          arrays[ArrayIndex] = await arrays[ArrayIndex].exec();
+          if (typeof arrays[ArrayIndex].exec === "function") {
+            // si es de mongoose le agrega el exec para mejor stack traces
+            arrays[ArrayIndex] = await arrays[ArrayIndex].exec();
+          } else {
+            arrays[ArrayIndex] = await arrays[ArrayIndex];
+          }
         }
         if (Array.isArray(arrays[ArrayIndex])) {
           // recorrer contenido del array
@@ -899,6 +935,8 @@ exports.getEdad = getEdad;
 
 exports.getEdadUnidades = getEdadUnidades;
 
+exports.pickObject = pickObject;
+
 exports.isVacio = isVacio;
 
 exports.objectSetUnset = objectSetUnset;
@@ -906,6 +944,8 @@ exports.objectSetUnset = objectSetUnset;
 exports.objectToFind = objectToFind;
 
 exports.sumarProps = sumarProps;
+
+exports.getObject = getObject;
 
 exports.groupBy = groupBy;
 

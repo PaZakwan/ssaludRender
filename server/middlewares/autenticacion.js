@@ -1,7 +1,7 @@
 const jwt = require("jsonwebtoken");
-const _get = require("lodash/get");
 
 const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
+const {getObject} = require(process.env.MAIN_FOLDER + "/tools/object");
 
 // =====================
 // Verificar Token
@@ -53,21 +53,21 @@ const verificaArrayPropValue = (req, res, next) => {
   }
   // recorrer array de props value
   for (const element of req.verificacionArray) {
-    if (_get(req.usuario, element.prop)) {
+    if (getObject({obj: req.usuario, path: element.prop})) {
       // existe prop
-      if (element.value && _get(req.usuario, element.prop) >= element.value) {
+      if (element.value && getObject({obj: req.usuario, path: element.prop}) >= element.value) {
         // si existe value verifica prop con value
         return next();
       } else if (
-        Array.isArray(_get(req.usuario, element.prop)) &&
-        _get(req.usuario, element.prop).length >= 1
+        Array.isArray(getObject({obj: req.usuario, path: element.prop})) &&
+        getObject({obj: req.usuario, path: element.prop}).length >= 1
       ) {
         // si prop es array verifica si tiene elementos
         return next();
       } else if (
-        typeof _get(req.usuario, element.prop) === "object" &&
-        !Array.isArray(_get(req.usuario, element.prop)) &&
-        Object.keys(_get(req.usuario, element.prop)).length >= 1
+        typeof getObject({obj: req.usuario, path: element.prop}) === "object" &&
+        !Array.isArray(getObject({obj: req.usuario, path: element.prop})) &&
+        Object.keys(getObject({obj: req.usuario, path: element.prop})).length >= 1
       ) {
         // si prop es object y no array, verifica si tiene keys
         return next();

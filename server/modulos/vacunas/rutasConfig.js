@@ -1,16 +1,15 @@
 const express = require("express");
 
-const _pick = require("lodash/pick");
-
-const {verificaToken, verificaArrayPropValue} = require(process.env.MAIN_FOLDER +
-  "/middlewares/autenticacion");
+const {verificaToken, verificaArrayPropValue} = require(
+  process.env.MAIN_FOLDER + "/middlewares/autenticacion"
+);
 const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
 const {isVacio, isObjectIdValid} = require(process.env.MAIN_FOLDER + "/tools/object");
 const VacunaConfig = require("./models/vacuna_config");
 
 const app = express();
 
-let listaOpciones = ["_id", "area", "insumo", "cant_min", "opciones", "destinos"];
+const listaOpciones = ["_id", "area", "insumo", "cant_min", "opciones", "destinos"];
 
 // ============================
 // Mostrar Opciones por area
@@ -27,9 +26,7 @@ app.get(
   ],
   async (req, res) => {
     try {
-      let opciones = null;
-
-      opciones = await VacunaConfig.aggregate()
+      const opcionesDB = await VacunaConfig.aggregate()
         .match({area: isObjectIdValid(req.query.area)})
         .group({
           _id: {area: "$area"},
@@ -49,7 +46,7 @@ app.get(
 
       return res.status(200).json({
         ok: true,
-        opciones: opciones[0] ?? {area: req.query.area, opciones: []},
+        opciones: opcionesDB?.[0] ?? {area: req.query.area, opciones: []},
       });
     } catch (err) {
       return errorMessage(res, err, err.code);
@@ -77,7 +74,7 @@ app.get(
   ],
   async (req, res) => {
     try {
-      let filtro = {
+      const filtro = {
         // regresa mongoose.Types.ObjectId(area);
         area: isObjectIdValid(req.query.area),
         insumo: {
@@ -98,7 +95,7 @@ app.get(
         return errorMessage(res, {message: "No se enviaron datos necesarios para proceder."}, 412);
       }
 
-      let opcionesDB = await VacunaConfig.aggregate()
+      const opcionesDB = await VacunaConfig.aggregate()
         .match(filtro)
         .project({
           _id: 0,
@@ -133,7 +130,8 @@ app.put(
   async (req, res) => {
     try {
       let body = isVacio({
-        dato: _pick(req.body, listaOpciones),
+        dato: req.body,
+        pickDato: listaOpciones,
       });
       if (body.vacio === true) {
         return errorMessage(res, {message: "No se envió ningún dato."}, 412);
@@ -146,39 +144,44 @@ app.put(
         body.destinos = [body.area];
       }
 
-      let respuesta = {error: [], ok: []};
+      const respuesta = {error: [], ok: []};
 
       for (let index = 0; index < body.destinos.length; index++) {
         // destino body.destinos[index]
         for (let opc of body.opciones) {
           // opc.insumo opc.cant_min
-          let opcionesGuardadas = await VacunaConfig.findOneAndUpdate(
-            {area: body.destinos[index], insumo: opc.insumo},
-            {
-              area: body.destinos[index],
-              insumo: opc.insumo,
-              cant_min: opc.cant_min,
-            },
-            {
-              new: true,
-              upsert: true,
-              setDefaultsOnInsert: true,
+          try {
+            const opcionesGuardadas = await VacunaConfig.findOneAndUpdate(
+              {area: body.destinos[index], insumo: opc.insumo},
+              {
+                cant_min: opc.cant_min,
+              },
+              {
+                upsert: true,
+                setDefaultsOnInsert: true,
+              }
+            ).exec();
+            if (opcionesGuardadas) {
+              respuesta.ok.push({
+                area: body.destinos[index],
+                insumo: opc.insumo,
+                cant_min: opc.cant_min,
+              });
             }
-          ).exec();
-          if (!opcionesGuardadas) {
-            respuesta.error.push({area: body.destinos[index], insumo: opc.insumo});
-          } else {
-            respuesta.ok.push({
-              area: body.destinos[index],
-              insumo: opc.insumo,
-              cant_min: opc.cant_min,
-            });
+          } catch (error) {
+            respuesta.error.push(
+              `area: ${body.destinos[index]}, insumo: ${opc.insumo}, cant_min: ${opc.cant_min}.`
+            );
           }
         }
       }
 
       if (respuesta.error.length > 0) {
-        return errorMessage(res, {message: "Error al guardar las Opciones."}, 400);
+        return errorMessage(
+          res,
+          {message: `Error al guardar las Opciones.\n${respuesta.error.join("\n")}`},
+          400
+        );
       }
 
       return res.status(201).json({
@@ -206,7 +209,7 @@ app.delete(
   ],
   async (req, res) => {
     try {
-      let opcionBorrada = await VacunaConfig.deleteOne({_id: req.params.id}).exec();
+      const opcionBorrada = await VacunaConfig.deleteOne({_id: req.params.id}).exec();
 
       if (opcionBorrada?.deletedCount == 0) {
         return errorMessage(res, {message: "Opcion no encontrada."}, 404);

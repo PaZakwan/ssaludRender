@@ -2,72 +2,58 @@ const mongoose = require("mongoose");
 
 const {trim_between} = require(process.env.MAIN_FOLDER + "/tools/string");
 
-let schemaOptions = {
-  toObject: {
-    getters: true,
+const FarmaciaDescarteSchema = new mongoose.Schema({
+  usuario_creador: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Usuario",
+    required: [true, "El usuario creador es necesario"],
   },
-  toJSON: {
-    getters: true,
+
+  fecha: {
+    type: Date,
+    default: Date.now,
   },
-};
-
-let Schema = mongoose.Schema;
-
-let FarmaciaDescarteSchema = new Schema(
-  {
-    usuario_creador: {
-      type: Schema.Types.ObjectId,
-      ref: "Usuario",
-      required: true,
-    },
-
-    fecha: {
-      type: Date,
-      default: Date.now,
-    },
-    origen: {
-      type: Schema.Types.ObjectId,
-      ref: "Area",
-      required: [true, "El Area que egresara insumos es necesaria."],
-    },
-
-    insumo: {
-      type: Schema.Types.ObjectId,
-      ref: "Insumo",
-      required: [true, "El Insumo a egresar es necesario."],
-    },
-    cantidad: {
-      type: Number,
-      required: [true, "La Cantidad a egresar del mismo es necesaria."],
-    },
-    procedencia: {
-      type: String,
-      default: "Carga inicial",
-    },
-    lote: {
-      type: String,
-    },
-    vencimiento: {
-      type: Date,
-    },
-
-    motivo: {
-      type: String,
-      trim: true,
-      required: [true, "El Motivo del egreso del mismo es necesario."],
-    },
-
-    justificacion: {
-      type: String,
-      trim: true,
-      set: trim_between,
-    },
-
-    retirado: {
-      type: Date,
-    },
+  origen: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Area",
+    required: [true, "El Area que egresara insumos es necesaria."],
   },
-  schemaOptions
-);
+
+  insumo: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Insumo",
+    required: [true, "El Insumo a egresar es necesario."],
+  },
+  cantidad: {
+    type: Number,
+    required: [true, "La Cantidad a egresar del mismo es necesaria."],
+  },
+  procedencia: {
+    type: String,
+    default: "Carga inicial",
+  },
+  lote: {
+    type: String,
+  },
+  vencimiento: {
+    type: Date,
+  },
+
+  motivo: {
+    type: String,
+    trim: true,
+    required: [true, "El Motivo del egreso del mismo es necesario."],
+  },
+
+  justificacion: {
+    type: String,
+    trim: true,
+    set: trim_between,
+  },
+
+  retirado: {
+    type: Date,
+  },
+});
 
 module.exports = mongoose.model("FarmaciaDescarte", FarmaciaDescarteSchema, "FarmaciaDescartes");

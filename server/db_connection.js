@@ -6,15 +6,40 @@ if (process.env.NODE_ENV === "dev") {
 }
 mongoose.set("allowDiskUse", true);
 
+mongoose.set("toJSON", {virtuals: true, getters: true, versionKey: false});
+mongoose.set("toObject", {virtuals: true, getters: true, versionKey: false});
+
+// Plugin global
+mongoose.plugin((schema) => {
+  schema.pre(["findOneAndUpdate", "updateOne", "updateMany"], function (next) {
+    // 'this' se refiere al objeto Query
+    this.setOptions({
+      new: true,
+      runValidators: true,
+      context: "query",
+    });
+    next();
+  });
+});
+
 // config default connection
 mongoose.connection
-  .on("error", function (err) {
+  .on("error", async function (err) {
     // console.error(`mongoose.connect ERROR (Default), ${err.name}: ${err.message}.`);
+    clgFalla({
+      name: "mongoose.connect (Default)",
+      falla: `${err.name}: ${err.message}`,
+      type: "otros",
+    });
     // let defaultConnection = this;
     // intenta reconectar pasados los 20 seg de un error
-    setTimeout(function () {
-      // console.log("****** mongoose Default models", defaultConnection.models);
-      mongoose.connect(process.env.URLDB, JSON.parse(process.env.DBoptions)).catch((err) => {});
+    setTimeout(async function () {
+      try {
+        // console.log("****** mongoose Default models", defaultConnection.models);
+        await mongoose.connect(process.env.URLDB, JSON.parse(process.env.DBoptions));
+      } catch (error) {
+        // console.error(`mongoose.connect ERROR (Default), ${error.name}: ${error.message}.`);
+      }
       // }, 20 * 1000);
     }, 5 * 1000);
   })
@@ -59,14 +84,23 @@ const startConnectionDB = async () => {
 const crearNuevaConexion = async function (dbURL, options, baseName) {
   return await mongoose
     .createConnection(dbURL, options)
-    .on("error", function (err) {
+    .on("error", async function (err) {
       // console.error(`createConnection ERROR (${baseName}), ${err.name}: ${err.message}.`);
+      clgFalla({
+        name: `mongoose.connect (${baseName})`,
+        falla: `${err.name}: ${err.message}`,
+        type: "otros",
+      });
       let mongooseConnection = this;
       // intenta reconectar pasados los 20 seg de un error
-      setTimeout(function () {
-        // buscar e intentar reconectar con THIS
-        // console.log(`****** mongoose.${baseName} models`, mongooseConnection.models);
-        mongooseConnection.openUri(dbURL, options).catch(() => {});
+      setTimeout(async function () {
+        try {
+          // buscar e intentar reconectar con THIS
+          // console.log(`****** mongoose.${baseName} models`, mongooseConnection.models);
+          await mongooseConnection.openUri(dbURL, options);
+        } catch (error) {
+          // console.error(`createConnection ERROR (${baseName}), ${error.name}: ${error.message}.`);
+        }
         // }, 20 * 1000);
       }, 5 * 1000);
     })

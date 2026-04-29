@@ -37,14 +37,7 @@ const modificarStockInc = async (area, insumo, cantidad, resta) => {
   if (resta) {
     if (stockDB?.cantidad > cantidad) {
       // si existe y la cantidad es adecuada quita cantidad en "area"
-      stockDB = await VacunaStock.findOneAndUpdate(
-        filtro,
-        {$inc: {cantidad: -cantidad}},
-        {
-          new: true,
-          runValidators: true,
-        }
-      ).exec();
+      stockDB = await VacunaStock.findOneAndUpdate(filtro, {$inc: {cantidad: -cantidad}}).exec();
     } else if (stockDB?.cantidad == cantidad) {
       // si existe y la cantidad son iguales la borra del "area"
       stockDB = await VacunaStock.findOneAndDelete(filtro).exec();
@@ -57,14 +50,7 @@ const modificarStockInc = async (area, insumo, cantidad, resta) => {
   } else {
     if (stockDB) {
       // si existe incrementa cantidad en "area"
-      stockDB = await VacunaStock.findOneAndUpdate(
-        filtro,
-        {$inc: {cantidad}},
-        {
-          new: true,
-          runValidators: true,
-        }
-      ).exec();
+      stockDB = await VacunaStock.findOneAndUpdate(filtro, {$inc: {cantidad}}).exec();
     } else {
       // si no existe lo crea en el "area"
       stockDB = await new VacunaStock({area, ...insumo, cantidad}).save();

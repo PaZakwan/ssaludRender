@@ -1,64 +1,50 @@
 const mongoose = require("mongoose");
 
-let schemaOptions = {
-  toObject: {
-    getters: true,
+const farmaciaEstadisticaSchema = new mongoose.Schema({
+  fecha: {
+    type: Date,
+    default: Date.now,
   },
-  toJSON: {
-    getters: true,
+
+  area: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Area",
+    required: [true, "El Area en donde se encuentra es necesaria."],
   },
-};
-
-let Schema = mongoose.Schema;
-
-let farmaciaEstadisticaSchema = new Schema(
-  {
-    fecha: {
-      type: Date,
-      default: Date.now,
-    },
-
-    area: {
-      type: Schema.Types.ObjectId,
-      ref: "Area",
-      required: [true, "El Area en donde se encuentra es necesaria."],
-    },
-    insumo: {
-      type: Schema.Types.ObjectId,
-      ref: "Insumo",
-      required: [true, "El Insumo es necesario."],
-    },
-
-    stock_anterior: {
-      type: Number,
-    },
-
-    recibido_ingreso: {
-      type: Number,
-    },
-    recibido_transferencia: {
-      type: Number,
-    },
-
-    retirado_transferencia: {
-      type: Number,
-    },
-    entregados: {
-      type: Number,
-    },
-    utilizados: {
-      type: Number,
-    },
-    descartados: {
-      type: Number,
-    },
-
-    solicitados: {
-      type: Number,
-    },
+  insumo: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Insumo",
+    required: [true, "El Insumo es necesario."],
   },
-  schemaOptions
-);
+
+  stock_anterior: {
+    type: Number,
+  },
+
+  recibido_ingreso: {
+    type: Number,
+  },
+  recibido_transferencia: {
+    type: Number,
+  },
+
+  retirado_transferencia: {
+    type: Number,
+  },
+  entregados: {
+    type: Number,
+  },
+  utilizados: {
+    type: Number,
+  },
+  descartados: {
+    type: Number,
+  },
+
+  solicitados: {
+    type: Number,
+  },
+});
 
 farmaciaEstadisticaSchema.virtual("stock").get(function () {
   let temp = 0;

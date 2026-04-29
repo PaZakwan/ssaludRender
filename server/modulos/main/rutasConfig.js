@@ -1,9 +1,8 @@
 const express = require("express");
 
-const _pick = require("lodash/pick");
-
-const {verificaToken, verificaAdmin_Role} = require(process.env.MAIN_FOLDER +
-  "/middlewares/autenticacion");
+const {verificaToken, verificaAdmin_Role} = require(
+  process.env.MAIN_FOLDER + "/middlewares/autenticacion"
+);
 const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
 const {isVacio, objectSetUnset} = require(process.env.MAIN_FOLDER + "/tools/object");
 
@@ -11,7 +10,7 @@ const Config = require("./models/config");
 
 const app = express();
 
-let listaConfig = [
+const listaConfig = [
   // 'usuario_modifico',
   "opcion",
   "datos",
@@ -41,7 +40,8 @@ app.get("/config/:opc", async (req, res) => {
 app.put("/config/:opc", [verificaToken, verificaAdmin_Role], async (req, res) => {
   try {
     let body = isVacio({
-      dato: _pick(req.body, listaConfig),
+      dato: req.body,
+      pickDato: listaConfig,
     });
     if (body.vacio === true) {
       return errorMessage(res, {message: "No se envió ningún dato."}, 412);
@@ -68,10 +68,7 @@ app.put("/config/:opc", [verificaToken, verificaAdmin_Role], async (req, res) =>
       body = objectSetUnset({dato: body, unsetCero: true}).dato;
 
       // Modificando la BD
-      configDB = await Config.findOneAndUpdate({_id: configDB.id}, body, {
-        new: true,
-        runValidators: true,
-      }).exec();
+      configDB = await Config.findOneAndUpdate({_id: configDB.id}, body).exec();
 
       return res.json({
         ok: true,

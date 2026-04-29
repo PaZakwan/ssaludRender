@@ -1,11 +1,12 @@
 const express = require("express");
 
 const bcrypt = require("bcrypt");
-const _pick = require("lodash/pick");
 
-const {verificaToken, verificaAdmin_Role} = require(process.env.MAIN_FOLDER +
-  "/middlewares/autenticacion");
+const {verificaToken, verificaAdmin_Role} = require(
+  process.env.MAIN_FOLDER + "/middlewares/autenticacion"
+);
 const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
+const {isVacio} = require(process.env.MAIN_FOLDER + "/tools/object");
 const {mailTransporter} = require(process.env.MAIN_FOLDER + "/mailer");
 
 const AutoUsuario = require("./models/autoUsuario");
@@ -13,7 +14,7 @@ const VerificationCode = require("./models/codeTemp");
 
 const app = express();
 
-let listaUsuario = [
+const listaUsuario = [
   "documento",
   "password",
   "email",
@@ -180,22 +181,14 @@ app.post("/autoUsuario", async (req, res) => {
     // Se quitan de la lista los valores del role y los usados para los derechos de los demás módulos. Por cuestión de seguridad al crear usuarios.
     listaCrear.splice(16);
 
-    // Segundo parametro que propiedades tomar _pick(req.body, ['usuario', 'nombre', ..., ]).
-    let body = _pick(req.body, listaCrear);
-
-    let todovacio = true;
-    for (const key in body) {
-      if (body.hasOwnProperty(key)) {
-        if (body[key] !== "") {
-          todovacio = false;
-          break;
-        }
-      }
-    }
-
-    if (todovacio === true) {
+    let body = isVacio({
+      dato: req.body,
+      pickDato: listaCrear,
+    });
+    if (body.vacio === true) {
       return errorMessage(res, {message: "No se envió ningún dato."}, 412);
     }
+    body = body.dato;
 
     if (body.password) {
       body.password = bcrypt.hashSync(body.password, 10);
@@ -242,14 +235,14 @@ app.post("/autoUsuario", async (req, res) => {
     };
 
     // IMPORT DEL TRANSPORTADOR DE MAILS EN SENDER
-    let sender = await mailTransporter;
+    let sender = mailTransporter;
 
     // ENVIAR MAIL
     let respuestaMail = await sender.sendMail(mailOptions);
 
     // Respuesta para el Front satisfactoria
     if (process.env.NODE_ENV === "dev") {
-      console.log("mail:", respuestaMail.response);
+      // console.log("mail:", respuestaMail.response);
       return res.status(201).json({
         ok: true,
         usuario: usuarioDB,
@@ -294,30 +287,20 @@ app.put("/autoUsuario/:id", [verificaToken, verificaAdmin_Role], async (req, res
     // Se quitan de la lista los valores que no serán modificables. Por cuestión de seguridad.
     listaUsuarioUpdate.splice(0, 1);
 
-    let body = _pick(req.body, listaUsuarioUpdate);
-
-    let todovacio = true;
-    for (const key in body) {
-      if (body.hasOwnProperty(key)) {
-        const element = body[key];
-        if (element !== "") {
-          todovacio = false;
-          break;
-        }
-      }
-    }
-    if (todovacio === true) {
+    let body = isVacio({
+      dato: req.body,
+      pickDato: listaUsuarioUpdate,
+    });
+    if (body.vacio === true) {
       return errorMessage(res, {message: "No se envió ningún dato."}, 412);
     }
+    body = body.dato;
 
     if (body.password) {
       body.password = bcrypt.hashSync(body.password, 10);
     }
 
-    let usuarioDB = await AutoUsuario.findOneAndUpdate({_id: req.params.id}, body, {
-      new: true,
-      runValidators: true,
-    }).exec();
+    let usuarioDB = await AutoUsuario.findOneAndUpdate({_id: req.params.id}, body).exec();
     if (!usuarioDB) {
       return errorMessage(res, {message: "Usuario no encontrado."}, 404);
     }
@@ -347,22 +330,15 @@ app.put("/autoUsuario/perfil/:id", [verificaToken], async (req, res) => {
     // Se selecciona de la lista los valores que serán modificables. Por cuestión de seguridad.
     let listaUsuarioUpdate = ["email", "telefono", "password", "password_anterior"];
 
-    let body = _pick(req.body, listaUsuarioUpdate);
-
     // Verifica que haya datos para editar.
-    let todovacio = true;
-    for (const key in body) {
-      if (body.hasOwnProperty(key)) {
-        const element = body[key];
-        if (element !== "") {
-          todovacio = false;
-          break;
-        }
-      }
-    }
-    if (todovacio === true) {
+    let body = isVacio({
+      dato: req.body,
+      pickDato: listaUsuarioUpdate,
+    });
+    if (body.vacio === true) {
       return errorMessage(res, {message: "No se envió ningún dato."}, 412);
     }
+    body = body.dato;
 
     // Verifica que el password anterior haya sido enviado.
     if (!body.password_anterior) {
@@ -385,10 +361,7 @@ app.put("/autoUsuario/perfil/:id", [verificaToken], async (req, res) => {
     }
 
     // Actualiza usuario.
-    let usuarioUpdateDB = await AutoUsuario.findOneAndUpdate({_id: idSolicitada}, body, {
-      new: true,
-      runValidators: true,
-    }).exec();
+    let usuarioUpdateDB = await AutoUsuario.findOneAndUpdate({_id: idSolicitada}, body).exec();
     if (!usuarioUpdateDB) {
       return errorMessage(res, {message: "Usuario no Actualizado."}, 404);
     }
@@ -412,7 +385,7 @@ app.delete("/autoUsuario/:id", [verificaToken, verificaAdmin_Role], async (req, 
       {
         estado: false,
       },
-      {new: true}
+      {runValidators: false}
     ).exec();
 
     if (!usuarioBorrado) {

@@ -1,12 +1,24 @@
 {
   "json": [
     {
-      "description": "Alvarez La Reja",
-      "id": "Alvarez La Reja"
+      "description": "Alvarez",
+      "id": "Alvarez"
     },
     {
       "description": "Cuartel V",
       "id": "Cuartel V"
+    },
+    {
+      "description": "Distrito Ecologico Roggero",
+      "id": "Distrito Ecologico Roggero"
+    },
+    {
+      "description": "La Reja",
+      "id": "La Reja"
+    },
+    {
+      "description": "Moreno Centro",
+      "id": "Moreno Centro"
     },
     {
       "description": "Moreno Norte",

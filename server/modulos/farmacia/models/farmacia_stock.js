@@ -1,52 +1,38 @@
 const mongoose = require("mongoose");
 const uniqueValidator = require("mongoose-unique-validator");
 
-let schemaOptions = {
-  toObject: {
-    getters: true,
+const farmaciaStockSchema = new mongoose.Schema({
+  area: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Area",
+    required: [true, "El Area en donde se encuentra es necesaria."],
   },
-  toJSON: {
-    getters: true,
+  insumo: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Insumo",
+    required: [true, "El Insumo es necesario."],
   },
-};
-
-let Schema = mongoose.Schema;
-
-let farmaciaStockSchema = new Schema(
-  {
-    area: {
-      type: Schema.Types.ObjectId,
-      ref: "Area",
-      required: [true, "El Area en donde se encuentra es necesaria."],
-    },
-    insumo: {
-      type: Schema.Types.ObjectId,
-      ref: "Insumo",
-      required: [true, "El Insumo es necesario."],
-    },
-    cantidad: {
-      type: Number,
-      required: [true, "La Cantidad es necesaria."],
-    },
-    procedencia: {
-      type: String,
-      default: "Carga inicial",
-    },
-    lote: {
-      type: String,
-    },
-    vencimiento: {
-      type: Date,
-    },
-
-    //todos
-    updatedAt: {
-      type: Date,
-      default: Date.now,
-    },
+  cantidad: {
+    type: Number,
+    required: [true, "La Cantidad es necesaria."],
   },
-  schemaOptions
-);
+  procedencia: {
+    type: String,
+    default: "Carga inicial",
+  },
+  lote: {
+    type: String,
+  },
+  vencimiento: {
+    type: Date,
+  },
+
+  //todos
+  updatedAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
 
 farmaciaStockSchema.index(
   {area: 1, insumo: 1, procedencia: 1, lote: 1, vencimiento: 1},
@@ -56,12 +42,13 @@ farmaciaStockSchema.index(
   }
 );
 
-farmaciaStockSchema.pre("findOneAndUpdate", function (next) {
+farmaciaStockSchema.pre(["findOneAndUpdate", "updateOne", "updateMany"], function (next) {
   if (this.getUpdate().$set) {
     this.getUpdate().$set.updatedAt = new Date();
   } else {
     this.getUpdate().updatedAt = new Date();
   }
+
   next();
 });
 

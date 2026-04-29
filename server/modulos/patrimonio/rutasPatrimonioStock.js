@@ -1,9 +1,8 @@
 const express = require("express");
 
-const _pick = require("lodash/pick");
-
-const {verificaToken, verificaArrayPropValue} = require(process.env.MAIN_FOLDER +
-  "/middlewares/autenticacion");
+const {verificaToken, verificaArrayPropValue} = require(
+  process.env.MAIN_FOLDER + "/middlewares/autenticacion"
+);
 const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
 const {isVacio, isObjectIdValid} = require(process.env.MAIN_FOLDER + "/tools/object");
 
@@ -46,7 +45,8 @@ app.put(
   async (req, res) => {
     try {
       let body = isVacio({
-        dato: _pick(req.body, ["sumar", "restar"]),
+        dato: req.body,
+        pickDato: ["sumar", "restar"],
       });
       if (body.vacio === true) {
         return errorMessage(res, {message: "No se envió ningún dato."}, 412);
@@ -78,11 +78,7 @@ app.put(
         {
           _id: req.params.id,
         },
-        update,
-        {
-          new: true,
-          runValidators: true,
-        }
+        update
       ).exec();
 
       // no existe mostrar error
@@ -117,7 +113,8 @@ app.post(
   async (req, res) => {
     try {
       let body = isVacio({
-        dato: _pick(req.body, listaPatrimonioStock),
+        dato: req.body,
+        pickDato: listaPatrimonioStock,
         borrar: true,
       });
       if (body.vacio === true) {
@@ -132,10 +129,7 @@ app.post(
       let patrimonioStockDB = null;
       if (id) {
         delete body._id;
-        patrimonioStockDB = await PatrimonioStock.findOneAndUpdate({_id: id}, body, {
-          new: true,
-          runValidators: true,
-        }).exec();
+        patrimonioStockDB = await PatrimonioStock.findOneAndUpdate({_id: id}, body).exec();
       } else {
         patrimonioStockDB = await new PatrimonioStock(body).save();
       }
@@ -154,10 +148,7 @@ app.post(
       }
 
       let objetoActualizado = null;
-      objetoActualizado = await Patrimonio.findOneAndUpdate({_id: body.id_objeto}, update, {
-        new: true,
-        runValidators: true,
-      }).exec();
+      objetoActualizado = await Patrimonio.findOneAndUpdate({_id: body.id_objeto}, update).exec();
       if (!objetoActualizado) {
         return errorMessage(res, {message: "Objeto no encontrado."}, 404);
       }
@@ -231,10 +222,7 @@ app.post(
 
         let patrimonioUpdate = await Patrimonio.findOneAndUpdate(
           {_id: body[index].id_objeto},
-          update,
-          {
-            new: true,
-          }
+          update
         )
           .exec()
           .catch((err) => {
@@ -322,6 +310,7 @@ app.get(
         .sort({fec_solicitud: -1, id_objeto: 1, area_solicita: 1, _id: -1})
         .populate("id_objeto", "modelo subcategoria")
         .populate("area_solicita", "area")
+        .lean()
         .exec();
 
       return res.json({

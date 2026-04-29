@@ -1,39 +1,25 @@
 const mongoose = require("mongoose");
 const uniqueValidator = require("mongoose-unique-validator");
 
-let schemaOptions = {
-  toObject: {
-    getters: true,
+const FarmaciaOpcionesSchema = new mongoose.Schema({
+  area: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Area",
+    required: [true, "El Area a configurar es necesaria."],
   },
-  toJSON: {
-    getters: true,
+
+  insumo: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Insumo",
+    required: [true, "El Insumo a configurar es necesario."],
   },
-};
 
-let Schema = mongoose.Schema;
-
-let FarmaciaOpcionesSchema = new Schema(
-  {
-    area: {
-      type: Schema.Types.ObjectId,
-      ref: "Area",
-      required: [true, "El Area a configurar es necesaria."],
-    },
-
-    insumo: {
-      type: Schema.Types.ObjectId,
-      ref: "Insumo",
-      required: [true, "El Insumo a configurar es necesario."],
-    },
-
-    cant_min: {
-      type: Number,
-      required: [true, "La Cantidad Minima Alarmante es necesaria."],
-      min: [1, "El valor de {VALUE}, debe ser mayor a 0."],
-    },
+  cant_min: {
+    type: Number,
+    required: [true, "La Cantidad Minima Alarmante es necesaria."],
+    min: [1, "El valor de {VALUE}, debe ser mayor a 0."],
   },
-  schemaOptions
-);
+});
 
 FarmaciaOpcionesSchema.index(
   {area: 1, insumo: 1},

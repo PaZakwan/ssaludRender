@@ -1,9 +1,8 @@
 const express = require("express");
 
-const _pick = require("lodash/pick");
-
-const {verificaToken, verificaArrayPropValue} = require(process.env.MAIN_FOLDER +
-  "/middlewares/autenticacion");
+const {verificaToken, verificaArrayPropValue} = require(
+  process.env.MAIN_FOLDER + "/middlewares/autenticacion"
+);
 const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
 const {isVacio, isObjectIdValid, dateUTC} = require(process.env.MAIN_FOLDER + "/tools/object");
 
@@ -13,7 +12,7 @@ const VacunaDescarte = require("./models/vacuna_descarte");
 
 const app = express();
 
-let listaVacunaciones = [
+const listaVacunaciones = [
   "_id",
   "fecha",
   "origen",
@@ -289,7 +288,8 @@ app.put(
   async (req, res) => {
     try {
       let body = isVacio({
-        dato: _pick(req.body, listaVacunaciones),
+        dato: req.body,
+        pickDato: listaVacunaciones,
         //     vacioCero: true, // false,
         vacioBoolean: true, // false,
         inArr: true, // false,

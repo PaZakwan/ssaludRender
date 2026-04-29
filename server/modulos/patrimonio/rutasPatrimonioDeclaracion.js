@@ -1,9 +1,8 @@
 const express = require("express");
 
-const _pick = require("lodash/pick");
-
-const {verificaToken, verificaArrayPropValue} = require(process.env.MAIN_FOLDER +
-  "/middlewares/autenticacion");
+const {verificaToken, verificaArrayPropValue} = require(
+  process.env.MAIN_FOLDER + "/middlewares/autenticacion"
+);
 const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
 const {isVacio, objectToFind} = require(process.env.MAIN_FOLDER + "/tools/object");
 
@@ -44,7 +43,8 @@ app.post(
   async (req, res) => {
     try {
       let body = isVacio({
-        dato: _pick(req.body, listaPatrimonioDeclaracion),
+        dato: req.body,
+        pickDato: listaPatrimonioDeclaracion,
         borrar: true,
       });
       if (body.vacio === true) {
@@ -67,10 +67,7 @@ app.post(
       let declaracionDB = null;
       if (id) {
         delete body._id;
-        declaracionDB = await PatrimonioDeclaracion.findOneAndUpdate({_id: id}, body, {
-          new: true,
-          runValidators: true,
-        }).exec();
+        declaracionDB = await PatrimonioDeclaracion.findOneAndUpdate({_id: id}, body).exec();
       } else {
         declaracionDB = await new PatrimonioDeclaracion(body).save();
       }
@@ -151,6 +148,7 @@ app.get(
         .collation({locale: "es", numericOrdering: true})
         .sort({fecha: -1, oficina: 1, tipo: 1, _id: 1})
         .populate("oficina", "area")
+        .lean()
         .exec();
 
       return res.json({

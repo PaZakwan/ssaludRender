@@ -1,12 +1,12 @@
 const express = require("express");
 
-const _pick = require("lodash/pick");
-
-const {verificaToken, verificaArrayPropValue} = require(process.env.MAIN_FOLDER +
-  "/middlewares/autenticacion");
+const {verificaToken, verificaArrayPropValue} = require(
+  process.env.MAIN_FOLDER + "/middlewares/autenticacion"
+);
 const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
-const {isObjectIdValid, arrayFromSumarPropsInArrays} = require(process.env.MAIN_FOLDER +
-  "/tools/object");
+const {isObjectIdValid, arrayFromSumarPropsInArrays, pickObject} = require(
+  process.env.MAIN_FOLDER + "/tools/object"
+);
 
 const {modificarStockInc} = require("./farmaciaHelper");
 const Area = require(process.env.MAIN_FOLDER + "/modulos/main/models/area");
@@ -35,7 +35,7 @@ app.put(
   ],
   async (req, res) => {
     try {
-      let filtro = _pick(req.body, ["id", "remito_compra", "remito"]);
+      let filtro = pickObject({obj: req.body, arr: ["id", "remito_compra", "remito"]});
       let ingresoDB = null;
 
       // Buscar Ingresos
@@ -99,22 +99,14 @@ app.put(
             {
               _id: filtro.id,
             },
-            {insumos: ingresoDB.insumos},
-            {
-              new: true,
-              runValidators: true,
-            }
+            {insumos: ingresoDB.insumos}
           ).exec();
         } else if (filtro.remito_compra) {
           recibidoDB = await FarmaciaIngreso.findOneAndUpdate(
             {
               _id: filtro.id,
             },
-            {insumos: ingresoDB.insumos},
-            {
-              new: true,
-              runValidators: true,
-            }
+            {insumos: ingresoDB.insumos}
           ).exec();
         }
         if (recibidoDB === null) {
@@ -330,8 +322,12 @@ app.get(
                   _id: JSON.parse(req.query.areas),
                 }
               : {farmacia: true}
-          ).exec(),
-          FarmaciaInsumo.find({_id: JSON.parse(req.query.insumos)}).exec(),
+          )
+            .lean()
+            .exec(),
+          FarmaciaInsumo.find({_id: JSON.parse(req.query.insumos)})
+            .lean()
+            .exec(),
         ]);
         areaDB.forEach((area) => {
           insumosDB.forEach((insumo) => {
@@ -880,11 +876,7 @@ app.put(
           {
             remito: req.body.remito,
           },
-          {insumos: transferenciaDB.insumos},
-          {
-            new: true,
-            runValidators: true,
-          }
+          {insumos: transferenciaDB.insumos}
         ).exec();
         if (retiradoDB === null) {
           errors.push({

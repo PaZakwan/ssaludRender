@@ -1,18 +1,18 @@
 const express = require("express");
 
-const _pick = require("lodash/pick");
-
-const {verificaToken, verificaArrayPropValue} = require(process.env.MAIN_FOLDER +
-  "/middlewares/autenticacion");
+const {verificaToken, verificaArrayPropValue} = require(
+  process.env.MAIN_FOLDER + "/middlewares/autenticacion"
+);
 const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
-const {isVacio, objectSetUnset, isObjectIdValid, dateUTC} = require(process.env.MAIN_FOLDER +
-  "/tools/object");
+const {isVacio, objectSetUnset, isObjectIdValid, dateUTC} = require(
+  process.env.MAIN_FOLDER + "/tools/object"
+);
 
 const VacunaSolicitud = require("./models/vacuna_solicitud");
 
 const app = express();
 
-let listaSolicitud = [
+const listaSolicitud = [
   "_id",
   // "fecha",
   "origen",
@@ -419,7 +419,8 @@ app.put(
   async (req, res) => {
     try {
       let body = isVacio({
-        dato: _pick(req.body, listaSolicitud),
+        dato: req.body,
+        pickDato: listaSolicitud,
       });
       if (body.vacio === true) {
         return errorMessage(res, {message: "No se envió ningún dato."}, 412);
@@ -449,10 +450,7 @@ app.put(
         body = objectSetUnset({dato: body, unsetCero: true}).dato;
 
         // Modificando la BD
-        solicitudDB = await VacunaSolicitud.findOneAndUpdate({_id: body.$set._id}, body, {
-          new: true,
-          runValidators: true,
-        }).exec();
+        solicitudDB = await VacunaSolicitud.findOneAndUpdate({_id: body.$set._id}, body).exec();
       } else {
         // Nuevo
         solicitudDB = await new VacunaSolicitud(body).save();

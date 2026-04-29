@@ -106,16 +106,90 @@ $ npm ls
       - [-] Form Especiales (formTurnoUnir)
       - [-] Form Especiales (formTuberculosisUnir)
 
-  - [ ] FARMACIA - Fracciones de productos (blíster o envase vs unidades sueltas)
-    - [ ] Ingreso de Insumos -> agregar nuevo campo para hacer inequivoco el producto en stock "unidades por blíster o envase".
-    - [ ] Ingreso de Insumos -> validacion o informar?, cantidad multiplo de "unidades por blíster o envase".
-    - [ ] transferencia de Insumos -> validacion o informar?, cantidad multiplo de "unidades por blíster o envase".
-
   - [ ] Herramienta Admin General ->
     - [ ] Boton Reportar Duplicado (Origen -> Duplicado).
     - [ ] Mostrar Posibles Duplicados (posibilidad export csv) -> Apellido y Fec Nac coincidan (Mellizos | Gemelos).
           Dialog de union
           Quitar del reporte
+
+- [ ] FARMACIA - Fracciones de productos (blíster o envase vs unidades sueltas)
+  - [ ] Ingreso de Insumos -> agregar nuevo campo para hacer inequivoco el producto en stock "unidades por blíster o envase".
+  - [ ] Ingreso de Insumos -> validacion o informar?, cantidad multiplo de "unidades por blíster o envase".
+  - [ ] transferencia de Insumos -> validacion o informar?, cantidad multiplo de "unidades por blíster o envase".
+
+- [ ] SISTEMA - PACIENTE -> OBRA SOCIAL (PUCO) https://sisa.msal.gov.ar/sisa/#sisa -> servicios web -> PUCO.
+      https://sisa.msal.gov.ar/sisa/services/rest/puco/{nrodoc}
+      REQUIERE CUENTA DE USUARIO DE NACION, SISA... o la pagina de JUJUY.. se podria usar
+      http://www.msaludjujuy.gov.ar:8072/Notificaciones/Informacion/Puco
+      http://www.msaludjujuy.gov.ar:8072/Notificaciones/Informacion/ConsultaPuco
+
+```js
+dni: {nrodni};
+{
+  Estado: "OK",
+  Items: [
+    {
+      TipoDocumento: "DNI",
+      NroDocumento: "66123654",
+      ClaseDocumento: "Propio",
+      Nombre: "PAPAS VILLA JUAN",
+      ObraSocial : "O.S.P. BUENOS AIRES (IOMA)",
+      Siglas: "IOMA",
+    },
+    ...,
+  ],
+};
+```
+
+- [ ] FARMACIA - Insumo -> Nuevo Input, Lista de Diagnosticos a los que se lo puede asociar.
+
+- [ ] FARMACIA - Diagnosticos -> Crear o Get Diagnosticos... ver PROVINCIA... !!??
+
+- [ ] FARMACIA - Entregas ->
+  - [ ] Nuevo Input, matricula profesional MP MN (que emitio la receta) (opcional).
+  - [ ] OS PAMI -> Nuevo Input, NRO tramite (obligatorio).
+  - [ ] OS IOMA -> Nuevo Input, NRO Afiliado (obligatorio).
+
+- [ ] FARMACIA - Reportes Excel ->
+  - [ ] Ingresos/Egresos.
+  - [ ] Transferencia Clearing en Excel.
+  - [ ] Filtrar Lote, seguimiento.
+
+- [ ] FARMACIA - SAMO -> Formulario F5 de samo, posibilidad de impresión para solo firmar.
+
+- [ ] FARMACIA - STOCK CENTRAL ->
+  - [ ] Stock que ya está en mínimo, mostrar diálog a farmacia central, centro abastecimiento. No el de las salas. Para hacer la petición de insumos. (Permiso del usuario - nuevo o el de gestion?? VER)
+
+- [ ] FARMACIA - NO Entregado -> como Entregas pero que no se pudo satisfacer la demanda, para saber quien solicito. (estadistica demanda insatisfecha) (SOLICITUD CON CAMPO DE PERSONA?? CONSULTAR SI SE NECESITA QUE SEA NOMINAL)
+
+- [ ] FARMACIA - Export APIS
+  - [ ] Sin Obra Social -> RESAPRO
+  - [ ] OS PAMI -> exportar csv -> Nombre, Apellido, DNI, Número de Trámite del DNI y Medicación.
+  - [ ] OS IOMA y Resto de OS -> Impresion Formulario SAMO F5 autocompletado. (IOMA Nro de Afiliado)
+
+- [ ] FARMACIA - PROVINCIA "API" (NO TIENE, TEST DE RUTAS...)
+  - [ ] BUSCADOR DE MEDICAMENTOS => set-cookie -> cookie -> laravel*session
+        https://sistemas.ms.gba.gov.ar/sgm/public/index.php/vademeunico/validarMeds?medicamento=TEST
+        true | false
+        https://sistemas.ms.gba.gov.ar/sgm/public/index.php/vademeunico/obtenerVademeUnico?medicamento=TEST&*=1777470447546
+        {
+        data: [{medicamento: "UNDECANOATO DE TESTOSTERONA 1000 MG/4 ML AMPOLLA"},…]
+        draw:-1
+        recordsTotal:6
+        }
+        https://sistemas.ms.gba.gov.ar/sgm/public/index.php/vademeunico/getMedicamentosIndicacion?medicamento=CLORAMBUCILO+2+MG++-+COMPRIMIDO+RECUBIERTO
+        {
+        codigo_cie10: null
+        diagnostico_especifico: null
+        diagnostico_general: null
+        indicacion: "Este MEDICAMENTO se encuentra incluido en el Listado de MEDICAMENTOS DERIVACIONES NACIÓN y debe cargarse desde la opción DERIVACIÓN NACIÓN, disponible dentro del sistema Gestión de Medicamentos Oncológicos y Crónicos de Alto Precio."
+        medicamento: "CLORAMBUCILO 2 MG - COMPRIMIDO RECUBIERTO"
+        }
+        ESTABLECIMIENTO RUPES -> https://sistemas.ms.gba.gov.ar/sgm/public/index.php/vademeunico/buscarHospiAtenc?q=luciano
+        [{codestable: "56000031",descestable:"HOSPITAL DESCENTRALIZADO ZONAL GENERAL MARIANO Y LUCIANO DE LA VEGA"},...]
+        DIAGNOSTICO -> https://sistemas.ms.gba.gov.ar/sgm/public/index.php/vademeunico/buscarDiagnost?q=esquizofrenia
+        [{id_diagnost: "2231",descrip: "ESQUIZOFRENIA CATATONICA"},...]
+  - [ ] MEDICAMENTOS BONAERENSES => NO PUEDO INGRESAR...
 
 - [ ] PACIENTE - ALTA -> Nuevo metodo de alta/busqueda con Pistola lectora QR?.
 
@@ -148,8 +222,7 @@ $ npm ls
 ### En Progreso Secundario
 
 - BACK
-  - [ ] Revisar y borrar libreria lodash => \_pick , \_merge (sumarProps?). [youmightnotneed lodash](https://youmightnotneed.com/lodash)
-  - [ ] Revisar y modificar => Object.assign -> structuredClone() || {...structuredClone(), ...{}}.
+  - [ ] Migrar "sumarProps" => "arrayFromSumarPropsInArrays"
   - [ ] ‼️ Independizar y crear script para generar los ssl certificated for ip intranet.
         [SSL LOCAL](https://deliciousbrains.com/ssl-certificate-authority-for-local-https-development/)
         [generate-a-self-signed-SSL](https://stackoverflow.com/questions/10175812/how-to-generate-a-self-signed-ssl-certificate-using-openssl?answertab=trending#tab-top)
