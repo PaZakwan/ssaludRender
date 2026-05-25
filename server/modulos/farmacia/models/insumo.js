@@ -26,13 +26,64 @@ const InsumoSchema = new mongoose.Schema({
     sparse: true,
   },
 
-  condiciones: {
+  // HICLEM
+  // diagnostico [codigo] (detectado por medico)
+  // el médico ajusta -> la dosis, la frecuencia y la duración del tratamiento.
+
+  // Categoria - Medicamento
+  // https://servicios.pami.org.ar/vademecum/views/consultaPublica/listado.zul
+  forma_farmaceutica: {
+    type: String,
+  },
+  administracion: {
+    type: String,
+  },
+  // empaque / presentacion (stock - ingreso)
+  empaque: {
+    type: String,
+  },
+
+  // certificado_anmat  46087 (no es unico)
+  // -- GTIN | Troquel Unitario -> Vademécum Nacional de Medicamentos (VNM) (Producto + Lab + Envase) | Envase fisico autorizado
+  // GTIN               07791829019436 (unico -> Producto + Lab + Envase)
+  // laboratorio        MICROSULES ARGENTINA S.A. (lista proveedor?)
+  // nombre_comercial   RHINAL
+  // -- Generico (DCI) | Normativo (Ley de Genericos) | Ley 25.649
+  // nombre_generico    NAFAZOLINA CLORHIDRATO 0.1 mg / 100 ml Frasco
+  // nombreC ->         nombre_generico + concentracion + empaque
+
+  // accion terapeutica [codigo] (medicamento farmacia) (lista a cargar por farmacia con codigos de provincia-nacion)
+  // -- Codigo ATC | Científico (Principio Activo, uso terapeutico diferentes, cantidades de droga) | ANMAT -> Listado ATC
+  accion_terapeutica: {
     type: [
       {
-        type: String,
+        _id: false,
+        nombre: {
+          type: String,
+          trim: true,
+        },
+        codigo_provincia: {
+          type: String,
+          uppercase: true,
+          trim: true,
+        },
+        codigo_atc: {
+          type: String,
+          uppercase: true,
+          trim: true,
+        },
       },
     ],
     default: void 0,
+  },
+
+  auditoria: {
+    type: String,
+    trim: true,
+  },
+
+  cantidad_tratamiento_aprox: {
+    type: Number,
   },
 
   estado: {

@@ -1,3 +1,5 @@
+/* eslint no-console: ["error", { allow: ["warn", "error"] }] */
+
 const {
   Types: {ObjectId},
 } = require("mongoose");
@@ -616,7 +618,7 @@ const objectToFind = ({dato, mainValue = true, mainKey = false}) => {
           // sin datos para modiicar (prop:noTocar)
           if (dato?.noTocar) {
             delete dato.noTocar;
-            return dato;
+            return dato.datosNoTocar ?? dato;
           }
           // busca en el arrayDB de objetos el siguiente objeto.. (prop:elemMatch)
           if (dato?.elemMatch) {
@@ -922,6 +924,50 @@ const arrayFromSumarPropsInArrays = async ({
   }
 };
 
+const findDuplicates = ({array, key, onlyOne = false, sensitiveCase = true}) => {
+  const seen = new Set();
+  const duplicates = new Set();
+
+  for (const item of array) {
+    const value = getObject({obj: item, path: key});
+
+    if (value === undefined) continue;
+
+    if (typeof value !== "string") {
+      if (seen.has(value)) {
+        if (onlyOne) {
+          return [value];
+        }
+        duplicates.add(value);
+      } else {
+        seen.add(value);
+      }
+    } else {
+      if (sensitiveCase) {
+        if (seen.has(value.trim())) {
+          if (onlyOne) {
+            return [value];
+          }
+          duplicates.add(value);
+        } else {
+          seen.add(value.trim());
+        }
+      } else {
+        if (seen.has(value.trim().toLowerCase())) {
+          if (onlyOne) {
+            return [value];
+          }
+          duplicates.add(value);
+        } else {
+          seen.add(value.trim().toLowerCase());
+        }
+      }
+    }
+  }
+
+  return Array.from(duplicates);
+};
+
 // exports
 exports.isObjectIdValid = isObjectIdValid;
 
@@ -954,3 +1000,5 @@ exports.valorInRangoArray = valorInRangoArray;
 exports.valorInMatriz = valorInMatriz;
 
 exports.arrayFromSumarPropsInArrays = arrayFromSumarPropsInArrays;
+
+exports.findDuplicates = findDuplicates;

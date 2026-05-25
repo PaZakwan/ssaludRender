@@ -46,6 +46,7 @@ const listaPaciente = [
   "email",
   "fec_nac",
   "sexo",
+  "nacionalidad",
   "hist_salitas",
   "fec_fallecimiento",
   "validadoRENAPER",

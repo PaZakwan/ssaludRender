@@ -1,3 +1,5 @@
+/* eslint no-console: ["error", { allow: ["warn", "error"] }] */
+
 const {createReadStream, createWriteStream, unlinkSync, promises} = require("fs");
 const path = require("path");
 
@@ -42,7 +44,7 @@ const crearStreamFile = ({fileName, fileExtension, route}) => {
     encoding: "utf8",
   });
   streamFile.on("error", (error) => {
-    console.log(
+    console.error(
       `crearStreamFile ${fileName}.${fileExtension}: Stream Write error: ${error.message}`
     );
   });
@@ -72,8 +74,8 @@ const deleteFile = ({fileName, fileExtension, route}) => {
   try {
     let ruta = path.resolve(process.env.MAIN_FOLDER, route) + `/${fileName}.${fileExtension}`;
     unlinkSync(ruta);
-  } catch (err) {
-    console.log("error deleteFile, Error : ", err);
+  } catch (error) {
+    console.error("error deleteFile, Error : ", error);
   }
 };
 
@@ -99,7 +101,7 @@ const guardarFile = async ({
     encoding,
   });
   fsLog.on("error", (error) => {
-    console.log(`guardarFile ${fileName}.${fileExtension}: Stream Write error: ${error.message}`);
+    console.error(`guardarFile ${fileName}.${fileExtension}: Stream Write error: ${error.message}`);
   });
   // fsLog.on("finish", resolve);
 
@@ -117,10 +119,10 @@ const leerFile = async ({fileName, fileExtension, route, encoding = "utf8"}) => 
     let ruta = path.resolve(process.env.MAIN_FOLDER, route) + `/${fileName}.${fileExtension}`;
     // leer
     return await promises.readFile(ruta, encoding);
-  } catch (err) {
-    console.error(`leerFile Catch error: ${err}`);
+  } catch (error) {
+    console.error(`leerFile Catch error: ${error}`);
     return {
-      error: `leerFile - Catch: ${err}`,
+      error: `leerFile - Catch: ${error}`,
     };
   }
 };
@@ -128,6 +130,7 @@ const leerFile = async ({fileName, fileExtension, route, encoding = "utf8"}) => 
 // ###############################
 // Selecciona el modulo a utilizar para pasar a json, segun la extencion del archivo
 // ###############################
+/* eslint-disable-next-line no-unused-vars */
 const fileToJson = ({file, asyncOperation, target_sheet, output}) => {
   let extension = file?.originalname?.split(".")[file.originalname.split(".").length - 1] ?? null;
   if (extension === "csv") {
@@ -157,6 +160,7 @@ const fileToJson = ({file, asyncOperation, target_sheet, output}) => {
 // ###############################
 // Transforma archivo formato csv a Json
 // ###############################
+/* eslint-disable-next-line no-unused-vars */
 const csvToJson = async ({input, asyncOperation, output}) => {
   try {
     // https://stackoverflow.com/questions/16831250/how-to-convert-csv-to-json-in-node-js
@@ -174,13 +178,13 @@ const csvToJson = async ({input, asyncOperation, output}) => {
     let readableStream = createReadStream(input, {encoding: "utf8"});
 
     readableStream.on("error", (error) => {
-      console.log(`csvToJson Stream Read error: ${error.message}`);
+      console.error(`csvToJson Stream Read error: ${error.message}`);
     });
     // .on("end", () => {
     //   console.log("csvToJson Stream Read Ended");
     // })
-    // .on("close", (err) => {
-    //   console.log("csvToJson Stream Read Closed");
+    // .on("close", (error) => {
+    //   console.error("csvToJson Stream Read Closed");
     // });
 
     let line = 1;
@@ -192,27 +196,23 @@ const csvToJson = async ({input, asyncOperation, output}) => {
     })
       .fromStream(readableStream)
       .subscribe(
-        (json) => {
+        async (json) => {
           line++;
-          return new Promise(async (resolve, reject) => {
+          try {
             // long operation for each json e.g. transform / write into database.
-            try {
-              await asyncOperation({json, line});
-              resolve();
-            } catch (error) {
-              await asyncOperation({json, line, error});
-              resolve();
-            }
-          });
+            await asyncOperation({json, line});
+          } catch (error) {
+            await asyncOperation({json, line, error});
+          }
         },
         (error) => {
-          console.log(`csvToJson Subscribe error: ${error.message}`);
+          console.error(`csvToJson Subscribe error: ${error.message}`);
         }
       );
-  } catch (err) {
-    console.error(`csvToJson Catch error: ${err}`);
+  } catch (error) {
+    console.error(`csvToJson Catch error: ${error}`);
     return {
-      error: `csvToJson - Catch: ${err}`,
+      error: `csvToJson - Catch: ${error}`,
     };
   }
 };
@@ -242,14 +242,14 @@ const csvToJson = async ({input, asyncOperation, output}) => {
 //           `${path.resolve(process.env.MAIN_FOLDER, "../uploads", output)}.json`,
 //           JSON.stringify(parsedData)
 //         );
-//       } catch (err) {
-//         console.error(err);
+//       } catch (error) {
+//         console.error(error);
 //       }
 //     }
 
 //     return parsedData?.dataroot?.children;
-//   } catch (err) {
-//     console.error(err);
+//   } catch (error) {
+//     console.error(error);
 //   }
 // };
 
@@ -302,8 +302,8 @@ const csvToJson = async ({input, asyncOperation, output}) => {
 //         `${path.resolve(process.env.MAIN_FOLDER, "../uploads", output)}.json`,
 //         JSON.stringify(parsedData)
 //       );
-//     } catch (err) {
-//       console.error(err);
+//     } catch (error) {
+//       console.error(error);
 //     }
 //   }
 

@@ -254,9 +254,7 @@ const usuarioSchema = new mongoose.Schema({
 
 usuarioSchema.virtual("nombreC").get(function () {
   try {
-    return `${
-      this.apellido ? capitalize(this.apellido) : ""
-    }${this.apellido && this.nombre ? `, ` : ""}${this.nombre ? `${capitalize(this.nombre)}` : ""}${!this.apellido && !this.nombre ? `No tiene apellido y nombre` : ""}`;
+    return `${capitalize(this.apellido)}, ${capitalize(this.nombre)}`;
   } catch (error) {
     return "ERROR apellido y nombre";
   }

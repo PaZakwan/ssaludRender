@@ -50,6 +50,9 @@ const FarmaciaIngresoSchema = new mongoose.Schema({
         vencimiento: {
           type: Date,
         },
+        empaque_qty: {
+          type: Number,
+        },
         recibido: {
           type: Date,
         },

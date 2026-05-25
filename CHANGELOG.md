@@ -27,16 +27,28 @@
 
 ---
 
+### [1.7.20260525] - 2026-05-25
+
+- 🩵🤍🩵 🥟 Added a Sistema - Frontend => Cursor (mouse) follower con colores patrioticos.
+- 📈 Improved a Sistema - General => funcion objectSearch() para multi filtrar arrays con arrays de objetos (v-data-table - custom-filter).
+- 📈 Improved a Sistema - Component => body-data-table-dinamic una condicion menos al crear tablas dinamicas, mejorando un poco su rendimiento.
+- ✨ Added a Sistema - Paciente => Se agrego el campo opcional "Nacionalidad". Propuesto por Direccion de Farmacia para las cargas en Provincia.
+
+- 🩹 Fixed a Patrimonio - Movimientos => Error al mover objetos, no guardaba el area_anterior y el lugar_anterior (id -> \_id).
+- 🩹 Fixed a Patrimonio - Info => No mostraba los nombres de usuario (nombreC no existe mas en patrimonio).
+- ✨ Added a Patrimonio - Objetos => a las categorias PCs, Impresora, Telefono, Proyector y Router ahora se le pueden agregar valores de mac_address_lan y mac_address_wifi.
+
+- ✨ Added a Farmacia - Insumos => Ahora a los medicamentos se les debe cargar mas datos para facilitar la carga a Provincia, "forma_farmaceutica", "administracion", "empaque", "accion_terapeutica", "auditoria", "cantidad_tratamiento_aprox".
+- ✨ Added a Farmacia - Diagnosticos => Ahora se pueden dar de alta a diferentes diagnosticos con sus Codigos de Provincia y/o ATC para luego relacionarlos con los medicamentos dados de altas ("accion_terapeutica"), esto mejorara reportes futuros y cargas en Provincia.
+- 🚨 Changed a Farmacia - Alta Proveedores => El alta de Proveedores (Municipales) ahora se maneja con el mismo permiso de "Opciones Generales" (minimos).
+- 🚨 Changed a Farmacia - Egresos => La Categoria de Medicamentos no pueden egresar se como "Utilizado", para fortalecer la dispensa nominal.
+
 ### [1.7.20260429] - 2026-04-29
 
 - 🩹 Fixed a Sistema - Navegacion => El navbar "arrastraba" los permisos del usuario previo logueado, visual, o sea mostraba rutas a las que el usuario nuevo logueado tal vez no tenia permisos, pero igual no lo dejaba ingresar a esos lugares.
-
 - 📈 Improved a Sistema - Backend => Mongoose - Se actualizo codigo "viejo" (5+ años), centralizado de toJSON, toObject, schema.pre(setOptions); validate -> object with functions, custom required++, throw new Error(), para que sea mas legible y siga las nuevas costumbre.
-
 - 📈 Improved a Sistema - Backend => Object - added pickObject(), getObject() and impove isVacio() ahora es compatible con pickDato (permite quitar la libreria de Lodash).
-
 - 📈 Improved a Sistema - Backend => Object - impove arrayFromSumarPropsInArrays() and sumarProps() mejora para futuros reportes.
-
 - 🚨 Changed a Sistema - Areas => Zonas se agregaron nuevas y se dividio Alvarez La Reja -> +Alvarez +La Reja +Moreno Centro +Distrito Ecologico Roggero.
 
 - 🚨 Changed a HICLEM - Historial Gral => Se cambio la solicitud del campo opcional "Semana de Emabarazo" al rango de edad (10-50] años para el sexo Femenino. Yesica Fernandez
@@ -52,11 +64,9 @@
 ### [1.7.20260313] - 2026-03-13
 
 - 📈 Improved a Sistema - Tablas => El campo de busqueda "filtro" (search local) no era muy visible, se le agrego colores de fondo para que tenga mas contraste.
-
-- ✨ Added a Sistema - Paciente => Se agrego el campo opcional "DNI N° Tramite" para los casos de tipo de documento DNI, siendo solicitado por Farmacia para las entregas del PAMI.
+- ✨ Added a Sistema - Paciente => Se agrego el campo opcional "DNI N° Tramite" para los casos de tipo de documento DNI. Propuesto por Direccion de Farmacia para las entregas del PAMI.
 
 - ✨ Added a Farmacia - Entregas => Nuevo Paso(Step) de carga para revisar las entregas previas recibidas por el Paciente. Propuesto por Direccion de Farmacia.
-
 - ✨ Added a Farmacia - Entregas => Se agrego el campo "DNI N° Tramite", siendo requerido para las entregas del PAMI, editable desde el formulario del Paciente.
 
 - 📈 Improved a Vacunas - Aplicacion => Antes de guardar la aplicacion se verifica si ya se encuentra una "similar" aplicada a ese paciente en la fecha de aplicacion seleccionada (Fecha, Paciente, Vacuna, Dosis), comunica el error en caso de que ya se encuentre aplicada.
@@ -126,6 +136,9 @@
 
 ### [1.7.20250811] - 2025-08-11
 
+- 📈 Improved a Sistema - Net => Se mejoro la Deteccion y Notificacion del vencimiento del certificado para la navegacion segura y tambien los casos de no encontrar archivos debido a actualizacion del sistema.
+- 🚨 Changed a Sistema - Paciente => Cuando se modifica su fecha de nacimiento y/o sexo -> se actualizaran todas sus aplicaciones que no se registraron en CIPRES con los nuevos datos, re-calculando la edad a la fecha de aplicacion de ser necesario.
+
 - ✨ Added a Vacunas - Aplicacion => Ahora muestra la edad de los pacientes en la que se aplicaron la vacuna en la tabla de busqueda.
 - ✨ Added a Vacunas - Aplicacion => Se agregaron los siguientes filtros para ver aplicaciones: "Todas", "Registradas CIPRES", "ERRORES CIPRES", "No Envio CIPRES", "Vencidas".
 - ✨ Added a Vacunas - Aplicacion => Cada vacunador puede enviar solamente sus aplicaciones a CIPRES o un Gestor de CIPRES del area.
@@ -134,9 +147,6 @@
 - 🚨 Changed a Vacunas - Sistema => Se modificaron el uso de variables y sus nombres para mejorar futuros cambios y rastreo de errores. -tipo_doc, -documento -doc_responsable -> +ps_tipo_doc, +ps_doc +ps_doc_resp (para historial los valores reales los toma del paciente) | +fec_nac (acelerar reportes por edad).
 
 - 📈 Improved a Farmacia - Sistema => Se mejoro la visibilidad de varios campos de seleccion que mostraban muchas opciones deshabilitadas, ahora solamente muestra las opciones con las que cuenta el usuario.
-
-- 📈 Improved a Sistema - Net => Se mejoro la Deteccion y Notificacion del vencimiento del certificado para la navegacion segura y tambien los casos de no encontrar archivos debido a actualizacion del sistema.
-- 🚨 Changed a Sistema - Paciente => Cuando se modifica su fecha de nacimiento y/o sexo -> se actualizaran todas sus aplicaciones que no se registraron en CIPRES con los nuevos datos, re-calculando la edad a la fecha de aplicacion de ser necesario.
 
 ### [1.7.20250613] - 2025-06-13
 
@@ -162,7 +172,6 @@
 ### [1.7.20250404] - 2025-04-04
 
 - 📈 Improved a Sistema - objectToFind => Se mejora el formato para la busqueda en la base de datos.
-
 - ✨ Added a Sistema - Paciente => Se agrego la posibilidad de Borrar los Pacientes que no han sido utilizados por el sistema.
 - ✨ Added a Sistema - Paciente => Se agrego la posibilidad de Cargar la Fecha de Deceso al Paciente.
 - ✨ Added a Sistema - Paciente => Al momento de crear/editar muestra la edad del Paciente en base a la Fecha de Nacimiento.
@@ -211,6 +220,7 @@
 ### [1.7.20241209] - 2024-12-09
 
 - 🩹 Fixed a Bromatologia - PDFs => Se soluciono error generado por la actualizacion de la libreria que genera los PDF, ahora usa el generador de PDF de Tools/pdf-base.
+
 - 📈 Improved a Vacunatorio - Upload => Ahora tiene en cuenta los pacientes sin documento pero si con documento de un responsable, sin aumentar mucho el tiempo de carga.
 
 ### [1.7.20241206] - 2024-12-06
@@ -223,17 +233,18 @@
 - ✨ Added a Sistema - Pie de Pagina => Desde el Changelog ahora se puede abrir la Lista de cosas para hacer (ToDo List) del Sistema al clickear sobre "Continuara... Lista de cosas para hacer (ToDo List).".
 
 - ✨ Added a Patrimonio - Movimiento de Bienes -> Cuando la categoria del Bien es "Monitor" permite modificar la PC Asociada en el movimiento.
+
 - ✨ Added a Vacunatorio - Insumo -> Nueva categoria "Otros" para las Agujas, Diluyente, y Descartadores.
+
 - 📈 Improved a Farmacia - Reportes => El reporte de "Stock Total" ahora muestra el filtro utilizado y los insumos cuyo stock es 0.
+
 - 🚨 Changed a Farmacia/Vacunatorio - Stock => La referencia de colores en base al Stock ahora usan gamas del color rosa, para diferenciarlo de los basados en el Vencimiento (Rojo/Anaranjado).
 
 ### [1.7.20241004] - 2024-10-04
 
 - 📈 Improved a Sistema - \_id => Se mejoraron las relaciones entre colecciones de datos, cuando falta un documento de la relacion este podia generar errores.
 - 📈 Improved a Sistema - Pacientes => Upload el campo "dir_calle" y "dir_descripcion" ahora valida mejor si estan vacios.
-
 - 🚨 Changed a Sistema - Pacientes => Upload el campo "direccion" ahora se analiza -> si tiene valores numericos como ultimo valor de su cadena lo agrega a dir_numero si es que no existe y el resto lo agrega a dir_calle si es que no existe, por lo tanto si los campors dir_calle y dir_numero existen el campo direccion no es tenido en cuenta.
-
 - 🩹 Fixed a Sistema - PDFs => Se soluciono el error (Error: Error de red) de usar el boton de descarga proporcionado por el navegador Chromium cuando se previsualizaba el PDF.
 
 - 🚨 Changed a Farmacia - Reportes => El Reporte Detallado ahora tiene la fecha "Hasta" liberada para filtrar los movimientos (Ingresos/Egresos).
@@ -244,7 +255,6 @@
 - 📈 Improved a Sistema - Alerts/Dialogs => Carteles de error mejoran la deteccion del mismo error repetido y se cambiaron los "alert" por dialogs de Vue.
 - 📈 Improved a Sistema - Objetos => Los clonados con stringify() / Obect.assign() / {... , ...} se cambio a structuredClone({... , ...}).
 - 📈 Improved a Sistema - Unique Values => Se mejoraron los mensajes de error para cuando los valores deben ser unicos y se estan repitiendo.
-
 - ✨ Added a Sistema - Pie de Pagina => Abre el Changelog del Sistema al clickear sobre la version en el pie de pagina.
 - ✨ Added a Sistema - Pacientes => Upload acepta el campo "direccion" y lo agrega a "dir_descripcion".
 
@@ -262,7 +272,6 @@
 
 - 🩹 Fixed a Vacunatorio - Reporte => Aplicacion filtro -> Cuenta vacunaciones aplicadas por el sistema y el PS, pero no las de procedencia historial, no tiene en cuenta el filtro de Procedencia ahora...
 - 🩹 Fixed a Vacunatorio - Reporte => Nominal -> la opcion "Menores de 15" -> ahora no cuenta los sin edad.
-
 - ✨ Added a Vacunatorio - Reporte => Aplicaciones Resumen (Hoja2).
 
 ### [1.7.20240816] - 2024-08-16
@@ -319,7 +328,6 @@
 ### [1.7.20240509] - 2024-05-09
 
 - 📈 Improved a Sistema - Backend => Servidor se ejecuta mejor, secuencialmente, la BD se prepara para indexar antes de levantar el server web/api.
-
 - 🚨 Changed a Sistema - Pacientes => Tipo de Documento "DNI" solo acepta numeros como Documento.
 
 - ✨ Added a Vacunatorio - Insumos => Nuevos o Editados busca en aplicaciones previas por nombre de vacuna para vincularlo al nuevo.
@@ -344,7 +352,6 @@
 
 - ✨ Added a Sistema - Object => Funcion global arrayFromSumarPropsInArrays() mejora global para fusionar datos para reportes.
 - 🚨 Changed a Sistema - String => Funcion global capitalize() mejora el capitalizado de palabras del "medio" como articulos, conjunciones y Preposiciones.
-
 - ✨ Added a Sistema - Pacientes => Municipio y Responsable Documento -> +dir_municipio +doc_responsable.
 - ✨ Added a Sistema - Pacientes Busqueda => Responsable Documento y ID del PS -> +doc_responsable +ps_id.
 - 🚨 Changed a Sistema - Pacientes => Apellido y Nombre acepta mas caracteres especiales "'`´¨-".
@@ -366,7 +373,6 @@
 - 📈 Improved a Sistema - File => Crear y Leer archivos grandes que ocasionaban problemas con la memoria del sistema (memoria insuficiente) ahora lo hacen por medio de la tecnologia Stream evitando tal problema.
 - 📈 Improved a Sistema - Object => Funcion global isVacio() mejora el control y la manipulacion de tipos de datos.
 - 📈 Improved a Sistema - Uploads => Middleware para manejar la subida de archivos.
-
 - ✨ Added a Sistema - Areas => Funcionalidad de Vacunatorio.
 - ✨ Added a Sistema - Lugares => Tipo de conectividad.
 - ✨ Added a Sistema - Pacientes => Posibilidad de dar de Alta por medio de importar Planillas en formato CSV.
@@ -415,17 +421,12 @@
 - 🚨 Changed a Farmacia - Entregas => Ahora se pueden entregar a Pacientes todas las categorias de insumos menos las "Vacunas". +Higiene/Limpieza +Varios
 - ‼️🗑️ Removed a Farmacia - Entregas => No se podran entregar mas Insumos de Categoria Vacuna, las mismas seran Aplicadas desde su Seccion.
 - 🩹 Fixed a Farmacia - Entregas/Descartes => No se podian borrar las entregas/Descartes realizadas segun la fecha de carga (retirado).
-
 - 🩹 Fixed a Farmacia - Transferencia => Remito, PDF -> tabla quedaba afuera de la hoja A4.
-
 - ✨ Added a Farmacia - Egresos => Nuevo Motivo "Rotura cadena de Frio".
-
 - 🚨 Changed a Farmacia - Ingresos => El Ingreso de insumos con Categoria "Vacuna" requieren obligatoriamente los campos de Lote y Vencimiento.
-
 - ✨ Added a Farmacia - Insumos => Los insumos con Categoria "Vacuna" requieren obligatoriamente el campo de Dosis Posibles y Opcional las Condiciones de Aplicacion.
 
 - 🚨 Changed a Farmacia - Solicitudes => Ahora es obligatorio un campo nuevo de Categoria de insumos, el cual servira para diferenciar las solicitudes.
-
 - ✨ Added a Farmacia => Las listas de insumos ahora permiten borrar el primer elemento.
 
 - ✨ Added a HICLEM - Historial Gral => +Embarazada +Puerpera +Prematuro +Peso_nacer_menor_2500 +Peso_nacer_mayor_3800 +Fuma +Antecedentes +inmunodeprimida +Zona Sanitaria

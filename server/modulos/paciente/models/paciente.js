@@ -67,6 +67,10 @@ const pacienteSchema = new mongoose.Schema({
     type: String,
     required: [true, "La Fecha de Nacimiento del Paciente es necesaria."],
   },
+  nacionalidad: {
+    type: String,
+    // required: [true, "La Nacionalidad del Paciente es requerida."],
+  },
   doc_tramite: {
     type: String,
   },

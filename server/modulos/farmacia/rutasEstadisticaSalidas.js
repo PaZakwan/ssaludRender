@@ -176,6 +176,9 @@ app.get(
               pacienteSexoDB: {
                 $ifNull: ["$pacienteDB.sexo", "$vacio"],
               },
+              pacienteNacionalidadDB: {
+                $ifNull: ["$pacienteDB.nacionalidad", "$vacio"],
+              },
               pacienteDocTramiteDB: {
                 $ifNull: ["$pacienteDB.doc_tramite", "$vacio"],
               },
@@ -327,6 +330,7 @@ app.get(
                   pacienteDocDB: "$pacienteDocDB",
                   pacienteDocTramiteDB: "$pacienteDocTramiteDB",
                   pacienteSexoDB: "$pacienteSexoDB",
+                  pacienteNacionalidadDB: "$pacienteNacionalidadDB",
                   pacienteTelefonoDB: "$pacienteTelefonoDB",
                   oSocial: "$oSocial",
                   procedencia: "$procedencia",
@@ -362,6 +366,7 @@ app.get(
                   pacienteDocDB: "$pacienteDocDB",
                   pacienteDocTramiteDB: "$pacienteDocTramiteDB",
                   pacienteSexoDB: "$pacienteSexoDB",
+                  pacienteNacionalidadDB: "$pacienteNacionalidadDB",
                   pacienteTelefonoDB: "$pacienteTelefonoDB",
                   oSocial: "$oSocial",
                   procedencia: "$procedencia",
@@ -437,6 +442,9 @@ app.get(
                 $ifNull: ["$detalle_entregas.pacienteDocTramiteDB", "$noRetornaNada"],
               },
               pacienteSexoDB: {$ifNull: ["$detalle_entregas.pacienteSexoDB", "$noRetornaNada"]},
+              pacienteNacionalidadDB: {
+                $ifNull: ["$detalle_entregas.pacienteNacionalidadDB", "$noRetornaNada"],
+              },
               pacienteTelefonoDB: {
                 $ifNull: ["$detalle_entregas.pacienteTelefonoDB", "$noRetornaNada"],
               },

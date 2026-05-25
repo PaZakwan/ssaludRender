@@ -127,6 +127,7 @@ const PacienteProperties = [
   "doc_tramite",
   "sexo",
   "fec_nac",
+  "nacionalidad",
   "telefono",
   "telefono_alt",
   "email",

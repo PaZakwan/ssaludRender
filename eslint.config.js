@@ -45,10 +45,10 @@ module.exports = [
         {
           args: "all",
           // Ignora estas palabras exactas o lo que empiece por _
-          argsIgnorePattern: "^(error|req|res|next|_)$",
+          argsIgnorePattern: "^(error$|req$|res$|next$|_)",
           varsIgnorePattern: "^_",
           caughtErrors: "all",
-          caughtErrorsIgnorePattern: "^(error|_)$",
+          caughtErrorsIgnorePattern: "^(error$|_)",
         },
       ],
       "no-extra-boolean-cast": "off",
@@ -63,7 +63,7 @@ module.exports = [
       "n/no-process-exit": "warn",
       "promise/always-return": "warn",
       "promise/catch-or-return": "warn",
-      "handle-callback-err": ["warn", "^(err|error)$"],
+      "handle-callback-err": ["warn", "^(error|err)$"],
 
       // fallos de formato
       "prettier/prettier": ["warn", {endOfLine: "auto"}],

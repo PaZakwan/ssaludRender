@@ -1,3 +1,5 @@
+/* eslint-disable no-console */
+
 const clgEvento = ({name, evento} = {}) => {
   console.log(`== ${new Date().toISOString()} <=> ${name} -> ${evento}. ==`);
 };

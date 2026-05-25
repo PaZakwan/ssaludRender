@@ -71,7 +71,11 @@ const listaPatrimonio = [
   "subcategoria",
   "compatibilidad",
 
-  //todos
+  // Algunos (PCs, Impresora, Telefono, Proyector y Router)
+  "mac_address_lan",
+  "mac_address_wifi",
+
+  // todos
   "estado",
 ];
 
@@ -454,10 +458,10 @@ app.get(
         objetosDB.populate("lugar", "nombre direccion ip");
       }
       if (populate?.usuario_eliminacion) {
-        objetosDB.populate("usuario_eliminacion", "nombre apellido nombreC");
+        objetosDB.populate("usuario_eliminacion", "nombre apellido");
       }
       if (populate?.usuario_verifico) {
-        objetosDB.populate("usuario_verifico", "nombre apellido nombreC");
+        objetosDB.populate("usuario_verifico", "nombre apellido");
       }
       objetosDB = await objetosDB.lean().exec();
 

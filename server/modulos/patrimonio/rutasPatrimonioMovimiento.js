@@ -159,7 +159,7 @@ app.get(
         filtro.id_objeto = req.query.id;
       }
 
-      let inicio = req.query.inicio || false;
+      let inicio = req.query.inicio ?? false;
       if (inicio) {
         try {
           inicio = new Date(inicio);
@@ -171,7 +171,7 @@ app.get(
         filtro.fec_movio = {$gte: inicio};
       }
 
-      let fin = req.query.fin || false;
+      let fin = req.query.fin ?? false;
       if (fin) {
         try {
           fin = new Date(fin);
@@ -220,8 +220,8 @@ app.get(
         )
         .populate("area_anterior", "area oficina_nro")
         .populate("area_destino", "area oficina_nro")
-        .populate("lugar_anterior", "nombre direccion ip")
-        .populate("lugar_destino", "nombre direccion ip")
+        .populate("lugar_anterior", "nombre")
+        .populate("lugar_destino", "nombre")
         .lean()
         .exec();
 

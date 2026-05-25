@@ -236,6 +236,9 @@ app.post("/autoUsuario", async (req, res) => {
 
     // IMPORT DEL TRANSPORTADOR DE MAILS EN SENDER
     let sender = mailTransporter;
+    if (sender.error) {
+      return errorMessage(res, sender.error, sender.error.code);
+    }
 
     // ENVIAR MAIL
     let respuestaMail = await sender.sendMail(mailOptions);

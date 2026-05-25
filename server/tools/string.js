@@ -1,3 +1,5 @@
+/* eslint no-console: ["error", { allow: ["warn", "error"] }] */
+
 const capitalize = (string) => {
   if (!!string && typeof string === "string") {
     return string
@@ -119,8 +121,8 @@ const checkIsValidJson = (string) => {
     let parsedJson = JSON.parse(string);
     /** parsed JSON will not be undefined if it is parsed successfully because undefined is not a valid JSON */
     return parsedJson;
-  } catch (err) {
-    // console.log("checkIsValidJson", err);
+  } catch (error) {
+    // console.log("checkIsValidJson", error);
     /** returning undefined because null, boolean, string, array or object is a valid JSON whereas undefined is invalid JSON  */
     return undefined;
   }

@@ -164,7 +164,27 @@ const patrimonioSchema = new mongoose.Schema({
     type: String,
   },
 
-  //todos
+  // Algunos (PCs, Impresora, Telefono, Proyector y Router)
+  mac_address_lan: {
+    type: String,
+    trim: true,
+    uppercase: true,
+    match: [
+      /^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$/,
+      "Solo se admite Hexadecimal separado con ':', ejemplo AA:BB:11:22:CC:33.",
+    ],
+  },
+  mac_address_wifi: {
+    type: String,
+    trim: true,
+    uppercase: true,
+    match: [
+      /^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$/,
+      "Solo se admite Hexadecimal separado con ':', ejemplo AA:BB:11:22:CC:33.",
+    ],
+  },
+
+  // todos
   estado: {
     type: Boolean,
     default: true,

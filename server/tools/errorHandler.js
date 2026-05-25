@@ -1,5 +1,7 @@
+/* eslint no-console: ["error", { allow: ["warn", "error"] }] */
+
 const errorMessage = function (res, error, statusTemp) {
-  let status = Number.isInteger(statusTemp) ? statusTemp : error.responseCode ?? 500;
+  let status = Number.isInteger(statusTemp) ? statusTemp : (error.responseCode ?? 500);
   let msjtemp = `${error.name ? `<${error.name}>: ` : ""}${error.message}` || "Error inesperado";
   let statusOriginal = undefined;
   if (status < 100 || 600 <= status) {

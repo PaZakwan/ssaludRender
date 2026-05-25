@@ -112,10 +112,53 @@ $ npm ls
           Dialog de union
           Quitar del reporte
 
+---
+
+- [/] FARMACIA - Ingreso -> Proveedores
+  - [x] Proveedores -> Posibilidad de agregar Proveedores a los que tienen permiso (farmacia/opcionesGrales).
+  - [ ] Cambiar Nombre de la BD -> farmaciaProveedores -=> farmacia-proveedores.
+
+- [x] PACIENTE - Alta/Edit - Farmacia ->
+  - [x] NACIONALIDAD -> Alta/Edit.
+  - [x] NACIONALIDAD -> Para Farmacia, reportes nominal.
+
+- [x] FARMACIA - Alta Insumo -> Nuevos Inputs, "forma_farmaceutica", "administracion", "empaque" y "accion_terapeutica"; "auditoria" y "cantidad_tratamiento_aprox".
+  - [x] Necesita Auditoria, no carga automatica (Solo en Alta). (necesita fotos - y negativa de OS de anses). (agregar variable "auditoria")
+  - [x] ‼️ Cantidad Estimada para tratamiento (Solo en Alta). (agregar variable "cantidad_tratamiento_aprox")
+  - [x] accion_terapeutica -> Crear/Gestion accion_terapeutica (Diagnosticos Provincia) (farmacia/opcionesGrales)... con codigo ATC (opcional) (Mayor control local, para futuros reportes).
+    - [x] Codigo ATC -> dejar link a pagina para que busquen...
+    - [x] ‼️ Codigo Provincia -> Codigo Cat(egoria) ID, Vademecum... VER LINK DE PROVINCIA USAR WIFI... Usuario Deshabilitado...
+
+- [ ] FARMACIA - Entregas ->
+  - [ ] Nuevo Input, matricula profesional MP MN (que emitio la receta) (opcional | opcion en Alta para hacerlo requerido).
+  - [ ] Nuevo Input, fecha de preinscripcion (que emitio la receta) (opcional | opcion en Alta para hacerlo requerido).
+  - [ ] OS PAMI -> Nuevo Input, NRO tramite (obligatorio).
+  - [ ] OS IOMA -> Nuevo Input, NRO Afiliado (obligatorio).
+
+- [ ] FARMACIA - Export APIS
+  - [ ] Sin Obra Social -> RESAPRO - CIPRES??
+  - [ ] OS PAMI (ObraSocial : "INSTITUTO NACIONAL DE SERVICIOS SOCIALES PARA JUBILADOS Y PENSIONADOS" - INSSJP) -> exportar csv -> Nombre, Apellido, DNI, Número de Trámite del DNI y Medicación.
+  - [ ] OS IOMA (ObraSocial : "O.S.P. BUENOS AIRES (IOMA)") y Resto de OS -> Impresion Formulario SAMO F5 autocompletado. (IOMA Nro de Afiliado)
+
+- [ ] FARMACIA - NO Entregado -> como Entregas pero que no se pudo satisfacer la demanda, para saber quien solicito. (estadistica demanda insatisfecha) (SI QUE SEA NOMINAL)
+  - [ ] Farmacia - Entregas -> Crear nueva pagina de Faltantes similar a Entregas y Solicitudes, cantidad de insumo mostrando (recomendado y stock), Liberar seleccion de todos los insumos para ver que y quien pidio en las salas.
+  - [ ] Farmacia - Entregas -> Solapa en la misma Entrega para cargar los faltantes de la receta.
+
+---
+
+- [ ] Front - Performance ->
+  - [ ] mousedown: en el componente que activa, el listener de mouseup y avisa la lectura del mousemove Global;
+  - [ ] mousemove: Global con contador de cuantos lo estan leyendo; Centralizado Global ?Vue.Observer()? (vue 2.7 vue 3)
+  - [ ] mouseup: quita listener del mousedown y avisa al mousemove que deja de leer;
+- [ ] Front - Performance -> Dialogs Draggable with requestAnimationFrame(), style.transform = `translate3d(${this.currentX}px, ${this.currentY}px, 0)`
+
+- [ ] FARMACIA - Ingreso -> "empaque_qty"
+  - [ ] "Empaque" -> en base al Alta del insumo con "Blister x Unidades", "Frasco x Unidades".
+
 - [ ] FARMACIA - Fracciones de productos (blíster o envase vs unidades sueltas)
-  - [ ] Ingreso de Insumos -> agregar nuevo campo para hacer inequivoco el producto en stock "unidades por blíster o envase".
-  - [ ] Ingreso de Insumos -> validacion o informar?, cantidad multiplo de "unidades por blíster o envase".
-  - [ ] transferencia de Insumos -> validacion o informar?, cantidad multiplo de "unidades por blíster o envase".
+  - [ ] Stock de Insumos -> Insumo con empaque de "x Unidades" -> agregar nuevo campo "empaque_qty" para hacer inequivoco el producto en stock "Blister x Unidades", "Frasco x Unidades".
+  - [ ] Ingreso de Insumos -> Insumo con empaque de "x Unidades" -> agregar nuevo campo "empaque_qty" -> validacion e informar, no restringir, cantidad multiplo de "empaque_qty".
+  - [ ] Transferencia de Insumos -> validacion e informar, no restringir, cantidad multiplo de "empaque_qty".
 
 - [ ] SISTEMA - PACIENTE -> OBRA SOCIAL (PUCO) https://sisa.msal.gov.ar/sisa/#sisa -> servicios web -> PUCO.
       https://sisa.msal.gov.ar/sisa/services/rest/puco/{nrodoc}
@@ -141,15 +184,6 @@ dni: {nrodni};
 };
 ```
 
-- [ ] FARMACIA - Insumo -> Nuevo Input, Lista de Diagnosticos a los que se lo puede asociar.
-
-- [ ] FARMACIA - Diagnosticos -> Crear o Get Diagnosticos... ver PROVINCIA... !!??
-
-- [ ] FARMACIA - Entregas ->
-  - [ ] Nuevo Input, matricula profesional MP MN (que emitio la receta) (opcional).
-  - [ ] OS PAMI -> Nuevo Input, NRO tramite (obligatorio).
-  - [ ] OS IOMA -> Nuevo Input, NRO Afiliado (obligatorio).
-
 - [ ] FARMACIA - Reportes Excel ->
   - [ ] Ingresos/Egresos.
   - [ ] Transferencia Clearing en Excel.
@@ -159,13 +193,6 @@ dni: {nrodni};
 
 - [ ] FARMACIA - STOCK CENTRAL ->
   - [ ] Stock que ya está en mínimo, mostrar diálog a farmacia central, centro abastecimiento. No el de las salas. Para hacer la petición de insumos. (Permiso del usuario - nuevo o el de gestion?? VER)
-
-- [ ] FARMACIA - NO Entregado -> como Entregas pero que no se pudo satisfacer la demanda, para saber quien solicito. (estadistica demanda insatisfecha) (SOLICITUD CON CAMPO DE PERSONA?? CONSULTAR SI SE NECESITA QUE SEA NOMINAL)
-
-- [ ] FARMACIA - Export APIS
-  - [ ] Sin Obra Social -> RESAPRO
-  - [ ] OS PAMI -> exportar csv -> Nombre, Apellido, DNI, Número de Trámite del DNI y Medicación.
-  - [ ] OS IOMA y Resto de OS -> Impresion Formulario SAMO F5 autocompletado. (IOMA Nro de Afiliado)
 
 - [ ] FARMACIA - PROVINCIA "API" (NO TIENE, TEST DE RUTAS...)
   - [ ] BUSCADOR DE MEDICAMENTOS => set-cookie -> cookie -> laravel*session
@@ -195,7 +222,6 @@ dni: {nrodni};
 
 - [ ] ‼️ Farmacia/Vacunas -> Estado de Insumos (solo utilizables para reportes, historica).
 
-- [ ] Farmacia - Entregas -> Crear nueva pagina de Faltantes similar a Entregas y Solicitudes, cantidad de insumo mostrando (recomendado y stock), Liberar seleccion de todos los insumos para ver que y quien pidio en las salas.
 - [ ] ‼️ HICLEM - Salud Adulto -> Modulo de Medicacion (Consolidado)
 
 - [ ] ‼️ Vacunas - Aplicaciones -> ESPERAR IMPORTACION DEL MATERNO + Historicos -> SCRIPT LINKEAR APLICACIONES
@@ -230,21 +256,16 @@ dni: {nrodni};
 - FRONT
   - [ ] Revisar/modificar/quitar => vue-axios -> axios centralizado en un archivo con interceptores -> usarlo en Store y Router.
 
-#### REUNION 2024-10-18
+#### REUNION Farmacia Adulto 2024-10-18
 
-- [x] HICLEM - Patologia -> Diabetes Tipo I y Diabetes Tipo II (excluyente lo que se les medica).
 - [ ] HICLEM - Patologia -> Si Patologia es Diabetes Solicitar fecha de ddjj.
-- [x] Paciente - Alta -> Fecha fallecimiento.
-- [ ] Egreso -> Categoria Medicacion no permitir egreso con motivo Utilizado.
-- [ ] Insumo - Alta -> Agregar Patologia("Subcategoria").
+- [x] Egreso -> Categoria Medicacion no permitir egreso con motivo Utilizado.
+- [ ] Insumo - Alta -> Agregar Patologia("Subcategoria" -> "Diagnostico").
 - [ ] Insumo - Alta-> Agregar Estado para poder deshabilitarlos.. que no se usen para nuevos ingresos..
-- [x] Entrega -> PreCarga de patologias como en Vacunas (HICLEM).
 - [ ] Entrega -> Filtrar/Exportar Patologia del medicamento.
 - [ ] Filtro Avanzado -> areas por zonas o poder copiar/pegar varias.
 - [ ] Filtro FECHAS -> poder ingresar fechas solo con numeros.
 - [ ] Solicitud -> Consumo Mensual del insumo solicitado (fecha de la solicitud - 30 dias antes).
-- [x] Stock -> Minimos con colores de la gama fucsia-rosa.
-- [ ] Proveedores -> Permitir agregar/editar/borrar a los administrativos de farmacia.
 - [ ] Reporte-> Seleccion de 1 Medicamento para seguimiento ingresos + egresos con fecha lote vencimiento cantidad.
 - [ ] Salud Adulto -> pagina aparte para filtrar por paciente Patologia -> fechas de retiro (detectar quienes no retiran mas [2 meses]).
 - [ ] Insumo - Alta -> Poder Unificar Insumos Eliminando uno y cambiar su ID por el nuevo.

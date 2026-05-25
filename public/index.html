@@ -1,10 +1,10 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>G.I.SA.M.</title><link rel="shortcut icon" href="/favicon.ico"/><script async src="/static/fontawesome6.1.1/js/all.min.js"></script><style>.mainLoad {
+<!doctype html><html lang="es"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>G.I.SA.M.</title><link rel="icon" href="/favicon.ico"/><script async src="/static/fontawesome6.1.1/js/all.min.js"></script><style>.mainLoad {
         display: flex;
         justify-content: center;
         align-items: center;
         height: 80vh;
       }
-      .loadingText {
+      .mainLoadingText {
         margin-bottom: 18px;
         width: 100%;
         text-align: center;
@@ -12,66 +12,100 @@
         font-weight: bold;
         color: black;
       }
-      .loading {
+      .mainLoadingPuntos::after {
+        content: "";
+        animation: mainPuntos 1.5s infinite steps(4, end);
+      }
+      @keyframes mainPuntos {
+        0% {
+          content: "";
+        }
+        25% {
+          content: ".";
+        }
+        50% {
+          content: "..";
+        }
+        75% {
+          content: "...";
+        }
+        100% {
+          content: "";
+        }
+      }
+      .mainLoading {
         border: 16px solid #bdbdbd;
         border-top: 16px solid teal;
         border-radius: 50%;
         width: 120px;
         height: 120px;
-        animation: spin 2s linear infinite;
+        animation: mainSpin 2s linear infinite;
       }
-      @keyframes spin {
+      @keyframes mainSpin {
         0% {
           transform: rotate(0deg);
         }
         100% {
           transform: rotate(360deg);
         }
-      }</style><script defer="defer" src="/js/chunk-vendors.68ee7255.js"></script><script defer="defer" src="/js/app.2326652c.js"></script><link href="/css/chunk-vendors.4aa87979.css" rel="stylesheet"><link href="/css/app.8cbd12b4.css" rel="stylesheet"></head><body><noscript><strong>Lo siento, pero la pagina no funcionara sin Javascript Habilitado. Por favor Habilite Javascript para poder continuar</strong></noscript><div id="app" class="mainLoad"><div id="pageLoading"></div></div></body><script>const pageLoading = document.getElementById("pageLoading");
-    let loadingText = document.createElement("div");
-    loadingText.className = "loadingText";
-    loadingText.innerText = "Cargando...";
-    pageLoading.appendChild(loadingText);
-    let loading = document.createElement("div");
-    loading.className = "loading";
-    pageLoading.appendChild(loading);
+      }</style><script defer="defer" src="/js/chunk-vendors.3cf72035.js"></script><script defer="defer" src="/js/app.edfc95b7.js"></script><link href="/css/chunk-vendors.4aa87979.css" rel="stylesheet"><link href="/css/app.3a90ae38.css" rel="stylesheet"></head><body><noscript><strong>Lo siento, pero la pagina no funcionara sin Javascript Habilitado. Por favor Habilite Javascript para poder continuar</strong></noscript><div id="app" class="mainLoad"><div id="mainPageLoading"></div></div><script>const mainPageLoading = document.getElementById("mainPageLoading");
+      const loadingTitle = document.createElement("div");
+      loadingTitle.className = "mainLoadingText";
+      loadingTitle.innerHTML = "<b>G.I.SA.M.</b>";
+      mainPageLoading.appendChild(loadingTitle);
+      const loadingText = document.createElement("div");
+      loadingText.className = "mainLoadingText mainLoadingPuntos";
+      loadingText.innerHTML = "<i>Loading</i>";
+      mainPageLoading.appendChild(loadingText);
+      const mainLoading = document.createElement("div");
+      mainLoading.className = "mainLoading";
+      mainPageLoading.appendChild(mainLoading);
 
-    // Elimina el comportamiento de modificar los valores con la rueda en los input type number
-    document.addEventListener("wheel", function (event) {
-      if (
-        document.activeElement.type === "number"
-        // && document.activeElement.classList.contains("noscroll")
-      ) {
-        document.activeElement.blur();
-      }
-    });
-
-    function errorScript(event) {
-      // Create error div => text (fileName, src), className, style.
-      let errorDiv = document.createElement("div");
-      try {
-        // in production dont show the full route to the src script
-        if (event.target.src.startsWith("https://")) {
-          throw new Error(
-            "No se pudo cargar parte de la pagina, re-intente mas tarde." +
-              "\nSi continua apareciendo este error comuniquese con Informatica de la Sec. de Salud de Moreno."
-          );
+      // Elimina el comportamiento de modificar los valores con la rueda en los input type number
+      document.addEventListener("wheel", function (event) {
+        if (
+          document.activeElement.type === "number"
+          // && document.activeElement.classList.contains("noscroll")
+        ) {
+          document.activeElement.blur();
         }
-        errorDiv.innerText = `SCRIPT LOAD ERROR: ${decodeURIComponent(
-          new URL(event.target.src).pathname.split("/").filter(Boolean).pop()
-        )}\n${event.target.src}`;
-      } catch (error) {
-        errorDiv.innerText = `SCRIPT LOAD ERROR\n${error.message}`;
-      }
-      errorDiv.className = "errorScript";
-      errorDiv.style.cssText =
-        "background: black; text-shadow: 1px 1px 2px black, 0px 0px 15px white; color: red;";
-      errorDiv.style.cssText += " text-align: center; font-weight: bold; padding: 10px;";
-      // add error div
-      document.body.appendChild(errorDiv);
-    }
-    // Create array of scripts
-    [...document.getElementsByTagName("script")].forEach((elem) => {
-      // addEventListener on error to scripts
-      elem.addEventListener("error", errorScript);
-    });</script></html>
+      });
+
+      // Create array of scripts
+      [...document.getElementsByTagName("script")].forEach((elem) => {
+        // addEventListener on error to scripts
+        elem.addEventListener("error", errorScript);
+      });
+
+      // Funcion para mostrar errores al cargar scripts
+      function errorScript(event) {
+        // Stop Loading...
+        const mainLoad = document.getElementById("app");
+        mainLoad.classList.remove("mainLoad");
+        mainLoad.replaceChildren();
+
+        // Create error div => text (fileName, src), className, style.
+        const errorDiv = document.createElement("div");
+        try {
+          // in production dont show the full route to the src script
+          if (event.target.src.startsWith("https://")) {
+            throw new Error(
+              "No se pudo cargar parte de la pagina, re-intente mas tarde." +
+                "\nSi continua apareciendo este error comuniquese con Informatica de la Sec. de Salud de Moreno."
+            );
+          }
+          errorDiv.innerText = `SCRIPT LOAD ERROR: ${decodeURIComponent(
+            new URL(event.target.src).pathname.split("/").filter(Boolean).pop()
+          )}\n${event.target.src}`;
+        } catch (error) {
+          errorDiv.innerText = `SCRIPT LOAD ERROR\n${error.message}`;
+        }
+        errorDiv.className = "errorScript";
+        errorDiv.style.cssText =
+          "background: black; text-shadow: 1px 1px 2px black, 0px 0px 15px white; color: red;";
+        errorDiv.style.cssText += " text-align: center; font-weight: bold; padding: 10px;";
+
+        // Add/Show error div
+        document.body.appendChild(errorDiv);
+        // document.body.prepend(errorDiv);
+      }</script></body></html>

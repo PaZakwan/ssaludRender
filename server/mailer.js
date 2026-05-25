@@ -8,16 +8,24 @@ const crearTransporter = async () => {
     // ethereal
     // let testAccount = await nodemailer.createTestAccount();
     // console.log("testAccount", testAccount);
+    if (!(process.env.MAIL_SERVICE || process.env.MAIL_HOST)) {
+      clgFalla({
+        type: "Info",
+        name: "Mail Server",
+        falla: "No esta configurado.",
+      });
+      return {error: {code: 501, message: "Mail Server: No esta configurado."}};
+    }
 
-    let temp = {
+    const temp = {
       auth: {},
     };
-    // if (process.env.NODE_ENV === "dev") {
-    //   temp.logger = true;
-    //   temp.debug = true;
-    // }
+    if (process.env.NODE_ENV === "dev") {
+      temp.logger = true;
+      temp.debug = true;
+    }
     if (process.env.MAIL_SERVICE) {
-      temp.service = process.env.MAIL_SERVICE; // 'Hotmail', 'Gmail'/'gmail' miinuscula )?
+      temp.service = process.env.MAIL_SERVICE; // 'Hotmail', 'Gmail'/'gmail' minuscula )?
     } else {
       temp.host = process.env.MAIL_HOST ?? "smtp.ethereal.email"; // 'smtp.live.com', 'smtp.gmail.com'
       temp.port = process.env.MAIL_PORT ?? 587; // '587', '465'
@@ -39,7 +47,7 @@ const crearTransporter = async () => {
     temp.pool = true;
     temp.maxMessages = 50;
 
-    let transporter = nodemailer.createTransport(temp, {
+    const transporter = nodemailer.createTransport(temp, {
       // default message fields
       from: `Secretaria de Salud Moreno <${temp.auth.user}>`,
       attachments: [

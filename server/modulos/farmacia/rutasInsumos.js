@@ -4,7 +4,7 @@ const {verificaToken, verificaArrayPropValue} = require(
   process.env.MAIN_FOLDER + "/middlewares/autenticacion"
 );
 const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
-const {isVacio, objectSetUnset} = require(process.env.MAIN_FOLDER + "/tools/object");
+const {isVacio, objectSetUnset, objectToFind} = require(process.env.MAIN_FOLDER + "/tools/object");
 
 const Insumo = require("./models/insumo");
 const FarmaciaDescarte = require("./models/farmacia_descarte");
@@ -25,7 +25,12 @@ const listaInsumo = [
   "categoria",
   "descripcion",
   "unique_code",
-  "condiciones",
+  "forma_farmaceutica",
+  "administracion",
+  "empaque",
+  "accion_terapeutica",
+  "auditoria",
+  "cantidad_tratamiento_aprox",
   "estado",
 ];
 
@@ -45,37 +50,34 @@ app.get(
   async (req, res) => {
     try {
       let filtro = req.query.filtro || "todos";
-      if (filtro !== "todos") {
+      if (filtro === "{}" || filtro === "todos") {
+        filtro = {};
+      } else {
         try {
           filtro = JSON.parse(filtro);
           if (typeof filtro !== "object") {
             return errorMessage(res, {message: "El dato de Filtro no es valido."}, 400);
           }
-          if (filtro.nombre) {
-            filtro.nombre = {
-              $regex: `(?i)${filtro.nombre}`,
-            };
+          filtro = isVacio({
+            dato: filtro,
+            inArr: true, // false,
+            inObj: true, // false,
+            borrar: true, // false,
+          });
+          if (filtro.vacio === true) {
+            return errorMessage(res, {message: "No se envió ningún dato."}, 412);
           }
-          if (filtro.descripcion) {
-            filtro.descripcion = {
-              $regex: `(?i)${filtro.descripcion}`,
-            };
-          }
-          if (filtro.unique_code) {
-            filtro.unique_code = {
-              $regex: `(?i)${filtro.unique_code}`,
-            };
-          }
-          if (filtro.categoria) {
-            filtro.categoria = {
-              $regex: `(?i)${filtro.categoria}`,
-            };
+          filtro = objectToFind({dato: filtro.dato});
+          if (filtro.error) {
+            return errorMessage(
+              res,
+              {message: `El formato del Filtro no es valido. ${filtro.error}`},
+              400
+            );
           }
         } catch (error) {
           return errorMessage(res, {message: "El dato de Filtro no es valido."}, 400);
         }
-      } else {
-        filtro = {};
       }
 
       let select = req.query.select || "";
@@ -149,12 +151,20 @@ app.put(
 
       let insumoDB = null;
       if (body._id) {
-        body = objectSetUnset({dato: body, unsetCero: true}).dato;
+        body = objectSetUnset({dato: body, unsetCero: true, unsetBoolean: true}).dato;
         let _id = body.$set._id;
         delete body.$set._id;
         // update
         insumoDB = await Insumo.findOneAndUpdate({_id}, body).exec();
       } else {
+        body = isVacio({
+          dato: body,
+          inArr: true,
+          inObj: true,
+          vacioCero: true,
+          vacioBoolean: true,
+          borrar: true,
+        }).dato;
         insumoDB = await new Insumo(body).save();
       }
 

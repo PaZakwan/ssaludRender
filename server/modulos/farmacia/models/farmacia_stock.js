@@ -27,6 +27,10 @@ const farmaciaStockSchema = new mongoose.Schema({
     type: Date,
   },
 
+  empaque_qty: {
+    type: Number,
+  },
+
   //todos
   updatedAt: {
     type: Date,
@@ -35,7 +39,7 @@ const farmaciaStockSchema = new mongoose.Schema({
 });
 
 farmaciaStockSchema.index(
-  {area: 1, insumo: 1, procedencia: 1, lote: 1, vencimiento: 1},
+  {area: 1, insumo: 1, procedencia: 1, lote: 1, vencimiento: 1, empaque_qty: 1},
   {
     name: "Insumo lote en la Farmacia",
     unique: true,
