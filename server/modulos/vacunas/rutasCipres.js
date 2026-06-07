@@ -46,6 +46,8 @@ const app = express();
 let CIPRES_TKN = "";
 let CIPRES_Date = "";
 
+const CIPRES_timeout = 14 * 1000; // 14seg default is `0` (no timeout);
+
 // ============
 //  C.I.PRE.S.
 // ============
@@ -88,14 +90,14 @@ app.put(
         .populate({
           path: "paciente",
           select:
-            "tipo_doc documento fec_nac nombre apellido sexo cipres_id resp_apellido resp_nombre resp_tipo_doc doc_responsable resp_sexo resp_fec_nac",
+            "tipo_doc documento fec_nac nombre apellido sexo nacionalidad cipres_id resp_apellido resp_nombre resp_tipo_doc doc_responsable resp_sexo resp_fec_nac",
         })
         .exec();
       // verificar que vacunacion exista
       if (!vacunacionDB) {
         return errorMessage(res, {message: "Aplicacion no encontrada."}, 404);
       }
-      // verificar que no haya sido registrada, si aplicacion ya se encuentra en la BD registrada => informar
+      // verificar que no haya sido registrada, si aplicacion ya se encuentra en la DB registrada => informar
       if (vacunacionDB.cipres_id) {
         return res.json({
           ok: true,
@@ -177,7 +179,7 @@ app.put(
         registro,
         {
           headers: {"content-type": "application/json", Authorization: `Bearer ${CIPRES_TKN}`},
-          timeout: 5 * 60 * 1000, // 300.000 (300seg = 5min) default is `0` (no timeout)
+          timeout: CIPRES_timeout,
         }
       );
       if (registro?.data?.["id"]) {
@@ -291,7 +293,7 @@ const getDataBaseCipres = async () => {
         },
         {
           headers: {"content-type": "application/json"},
-          timeout: 5 * 60 * 1000, // 300.000 (300seg = 5min) default is `0` (no timeout)
+          timeout: CIPRES_timeout,
         }
       );
       if (respuesta?.data?.token) {
@@ -368,7 +370,7 @@ const getDataBaseCipres = async () => {
       // dosis;
       respuesta = await axios.get(`${process.env.CIPRES_URL}/api/vacunacion/dosis`, {
         headers: {Authorization: `Bearer ${CIPRES_TKN}`},
-        timeout: 5 * 60 * 1000, // 300.000 (300seg = 5min) default is `0` (no timeout)
+        timeout: CIPRES_timeout,
       });
       if (respuesta?.data?.["hydra:member"]) {
         CIPRES.dosis = respuesta.data["hydra:member"];
@@ -382,7 +384,7 @@ const getDataBaseCipres = async () => {
       // motivos;
       respuesta = await axios.get(`${process.env.CIPRES_URL}/api/vacunacion/motivos`, {
         headers: {Authorization: `Bearer ${CIPRES_TKN}`},
-        timeout: 5 * 60 * 1000, // 300.000 (300seg = 5min) default is `0` (no timeout)
+        timeout: CIPRES_timeout,
       });
       if (respuesta?.data?.["hydra:member"]) {
         CIPRES.motivos = respuesta.data["hydra:member"];
@@ -396,7 +398,7 @@ const getDataBaseCipres = async () => {
       // esquemas;
       respuesta = await axios.get(`${process.env.CIPRES_URL}/api/vacunacion/esquemas`, {
         headers: {Authorization: `Bearer ${CIPRES_TKN}`},
-        timeout: 5 * 60 * 1000, // 300.000 (300seg = 5min) default is `0` (no timeout)
+        timeout: CIPRES_timeout,
       });
       if (respuesta?.data?.["hydra:member"]) {
         CIPRES.esquemas = respuesta.data["hydra:member"];
@@ -427,7 +429,7 @@ const getDataBaseCipres = async () => {
             `${process.env.CIPRES_URL}/api/establecimiento/establecimientos?codigoSisa=${area.SISA}`,
             {
               headers: {Authorization: `Bearer ${CIPRES_TKN}`},
-              timeout: 5 * 60 * 1000, // 300.000 (300seg = 5min) default is `0` (no timeout)
+              timeout: CIPRES_timeout,
             }
           );
 
@@ -454,7 +456,7 @@ const getDataBaseCipres = async () => {
           `${process.env.CIPRES_URL}/api/vacunacion/planes_vacunacion?page=${page}`,
           {
             headers: {Authorization: `Bearer ${CIPRES_TKN}`},
-            timeout: 5 * 60 * 1000, // 300.000 (300seg = 5min) default is `0` (no timeout)
+            timeout: CIPRES_timeout,
           }
         );
         if (respuesta?.data?.["hydra:member"].length > 0) {
@@ -644,23 +646,45 @@ const matchCIPRES = async ({vacunacionDB, CIPRES}) => {
     planVacunacion: "",
   };
 
-  // paciente cipres_id existe y no es migracion del PS
-  if (vacunacionDB.ps_id && vacunacionDB.paciente?.cipres_id) {
+  // la vacunacion no es migracion del PS y paciente cipres_id ya existe
+  if (!vacunacionDB.ps_id && vacunacionDB.paciente?.cipres_id) {
     // console.log("# encontrado paciente.cipres_id", vacunacionDB.paciente.cipres_id);
     registro.paciente = vacunacionDB.paciente.cipres_id;
   } else {
-    // Buscar en CIPRES => paciente.documento/paciente.tipo_doc/sexo -> id;
-    registro.paciente = await matchPacienteCIPRES({
-      fec_nac: vacunacionDB.fec_nac,
-      sexo: vacunacionDB.sexo,
+    // Buscar/Registrar en CIPRES;
+    // registro.paciente = await matchPacienteCIPRES({
+    registro.paciente = await matchPacienteCIPRES_V2({
       paciente: vacunacionDB.paciente,
+      // paciente: {
+      //   tipo_doc,
+      //   documento,
+      //   fec_nac,
+      //   nombre,
+      //   apellido,
+      //   sexo,
+      //   nacionalidad,
+      //   cipres_id,
+      //   resp_apellido,
+      //   resp_nombre,
+      //   resp_tipo_doc,
+      //   doc_responsable,
+      //   resp_sexo,
+      //   resp_fec_nac,
+      //   edad_days_aplicacion,
+      // },
       ps_tipo_doc: vacunacionDB.ps_tipo_doc,
       ps_doc: vacunacionDB.ps_doc,
-      ps_doc_resp: vacunacionDB.ps_doc_resp,
       ps_fecha_nacimiento: vacunacionDB.ps_fecha_nacimiento,
       ps_nombreC: vacunacionDB.ps_nombreC,
+      ps_doc_resp: vacunacionDB.ps_doc_resp,
     });
-    if (vacunacionDB.paciente?._id && registro.paciente && !registro.paciente.err) {
+    // la vacunacion no es migracion del PS, existe paciente en DB local y se obtuvo cipres_id sin error
+    if (
+      !vacunacionDB.ps_id &&
+      vacunacionDB.paciente?._id &&
+      registro.paciente &&
+      !registro.paciente.err
+    ) {
       // guardar ID del CIPRES del paciente
       await Paciente.findOneAndUpdate(
         {
@@ -744,20 +768,417 @@ const matchCIPRES = async ({vacunacionDB, CIPRES}) => {
   return registro;
 };
 
-const matchPacienteCIPRES = async ({
+const buscarPacienteCIPRES = async ({paciente, responsable = false}) => {
+  // {paciente: {documento: "", tipo_doc: "", sexo: "", fec_nac: ""}}
+  // return {paciente:{}, hijos:[]} | null | {err}
+  try {
+    const pacienteCipres = await axios.get(`${process.env.CIPRES_URL}/api/patient`, {
+      params: {
+        numeroDocumento: paciente.documento,
+        sexo: paciente.sexo[0].toUpperCase(),
+        esDocumentoPropio: true,
+        // "esDocumentoPropio": true,
+        // // true -> retorna al paciente o 404 no encontrado [ { paciente:{}, hijos:{} } ]
+        // // false -> siempre retorna un array de los "hijos" exista o no el paciente [ [ {hijo1}, {hijo2} ] ].
+        incluirRelaciones: true,
+        // "incluirRelaciones": true, solo sirve si -> esDocumentoPropio es true
+        // // true -> retorna { paciente: ... , hijos: [...] o vacio [] } solo sirve para ver si tiene hijos... porque trae solo ids...
+        // // false -> retorna { paciente: ... , hijos: null}
+        tipoDocumento: `/api/paciente/referencias/tipo_documento/${
+          paciente.tipo_doc === "DNI" || !paciente.tipo_doc ? "1" : "0"
+        }`,
+        esDocumentoArgentino: paciente.tipo_doc === "DNI" || !paciente.tipo_doc ? true : false,
+        incluirDomicilio: false,
+        // establecimiento: "",
+      },
+      headers: {
+        Authorization: `Bearer ${CIPRES_TKN}`,
+        timeout: CIPRES_timeout,
+      },
+    });
+    if (pacienteCipres?.data?.["hydra:member"]?.[0]) {
+      // console.log("# encontrado paciente", pacienteCipres?.data?.["hydra:member"]?.[0]?.paciente);
+
+      // Verificacion / validacion
+      // comparar fecha de nacimiento => DIA-MES-AÑO -> AÑO-MES-DIA
+      if (
+        pacienteCipres.data["hydra:member"][0].paciente?.fechaNacimiento
+          ?.split("-")
+          .reverse()
+          .join("-") !== paciente.fec_nac
+      ) {
+        return {
+          err:
+            `Paciente: Fecha de Nacimiento ${responsable ? "del Responsable " : ""}no coincide con la del CIPRES.` +
+            `\nDatos -> Documento ${responsable ? "Responsable" : ""}: ${paciente.documento}.` +
+            `\nCIPRES: ${pacienteCipres.data["hydra:member"][0].paciente?.fechaNacimiento
+              ?.split("-")
+              .reverse()
+              .join("-")}. LOCAL: ${paciente.fec_nac}\n`,
+        };
+      }
+      return {
+        paciente: pacienteCipres.data["hydra:member"][0].paciente,
+        hijos: pacienteCipres.data["hydra:member"][0].hijos,
+      };
+    }
+    return null;
+  } catch (error) {
+    if (error.status === 404) {
+      return null;
+    }
+    if (error.response?.data) {
+      return {
+        err: `${responsable ? "Responsable del " : ""}Paciente: CIPRES ${error.response.data["hydra:description"]}.\n`,
+      };
+    }
+    return {
+      err: `${responsable ? "Responsable del " : ""}Paciente: ${error.message}.\n`,
+    };
+  }
+};
+
+const BuscarHijoCIPRES = async ({responsable, paciente}) => {
+  // {responsable: {documento: "", tipo_doc: "", sexo: ""}, paciente: {sexo: "", fec_nac: "", nombre: "", apellido: ""}}
+  // return {paciente: {}} | null | {err}
+  try {
+    let hijosCipres = await axios.get(`${process.env.CIPRES_URL}/api/patient`, {
+      params: {
+        numeroDocumento: responsable.documento,
+        // "sexo": M | F | X (de los paciente hijos que traera en el array cuando esDocumentoPropio = false)
+        sexo: paciente.sexo[0].toUpperCase(),
+        esDocumentoPropio: false,
+        // "esDocumentoPropio": true,
+        // // true -> retorna al paciente o 404 no encontrado [ { paciente:{}, hijos:{} } ]
+        // // false -> siempre retorna un array de los "hijos" exista o no el paciente [ [ {hijo1}, {hijo2} ] ].
+        incluirRelaciones: true,
+        // "incluirRelaciones": true, solo sirve si -> esDocumentoPropio es true
+        // // true -> retorna { paciente: ... , hijos: [...] o vacio [] } solo sirve para ver si tiene hijos... porque trae solo ids...
+        // // false -> retorna { paciente: ... , hijos: null}
+        tipoDocumento: `/api/paciente/referencias/tipo_documento/${
+          responsable.tipo_doc === "DNI" || !responsable.tipo_doc ? "1" : "0"
+        }`,
+        esDocumentoArgentino:
+          responsable.tipo_doc === "DNI" || !responsable.tipo_doc ? true : false,
+        incluirDomicilio: false,
+        // establecimiento: "",
+      },
+      headers: {
+        Authorization: `Bearer ${CIPRES_TKN}`,
+        timeout: CIPRES_timeout,
+      },
+    });
+    if (hijosCipres?.data?.["hydra:member"]?.[0] > 0) {
+      // buscar si existe el paciente en los hijos del responsable
+      hijosCipres = hijosCipres.data["hydra:member"][0].find?.(
+        // datos -> apellido / nombre / fechaNacimiento (dia-mes-año) / sexo.inicial
+        (hijo) =>
+          hijo.sexo.inicial === paciente.sexo[0].toUpperCase() &&
+          hijo.fechaNacimiento?.split("-").reverse().join("-") === paciente.fec_nac && // DIA-MES-AÑO -> AÑO-MES-DIA
+          hijo.nombre.localeCompare(paciente.nombre, undefined, {
+            sensitivity: "base",
+          }) === 0 &&
+          hijo.apellido.localeCompare(paciente.apellido, undefined, {
+            sensitivity: "base",
+          }) === 0
+      );
+      if (hijosCipres) {
+        // encontrado paciente hijo
+        // console.log("# encontrado paciente hijo", hijosCipres);
+        // return hijosCipres["@id"];
+        return {paciente: hijosCipres};
+      }
+    }
+    return null;
+  } catch (error) {
+    if (error.response?.data) {
+      return {
+        err: `Paciente Hijo: CIPRES ${error.response.data["hydra:description"]}.\n`,
+      };
+    }
+    return {
+      err: `Paciente Hijo: ${error.message}.\n`,
+    };
+  }
+};
+
+const registrarPacienteCIPRES = async ({paciente, responsableCIPRES}) => {
+  // {
+  //   paciente: {documento: "", tipo_doc: "", apellido: "", nombre: "", sexo: "", fec_nac: ""},
+  //   (opcional) responsableCIPRES: {["@id"], sexo: {inicial: "M|F"}}
+  // }
+  // return {paciente: {}} | null | {err}
+
+  // REGISTRAR ->
+  // "tipoDocumento": "/api/paciente/referencias/tipo_documento/1", // 0 -> no documento / 1 -> DNI
+  // "numeroDocumento": "n",
+  // "fechaNacimiento": "1988-11-17",
+  // "apellido": "Perez",
+  // "nombre": "Juan",
+  // "sexo": "/api/paciente/referencias/sexo/1", // M -> 1 | F -> 2 | no especifica -> 0
+  // "nacionalidad": "/api/referencias/nacionalidades/4", // 4 -> ARG | 3 -> Null
+  // "responsable": {
+  //    paciente: "@id",
+  //    tipoRelacion: "", // P -> Padre / M -> Madre / T -> Tutor
+  // }
+  try {
+    let registrarTemp = {
+      tipoDocumento: `/api/paciente/referencias/tipo_documento/${
+        paciente.tipo_doc === "DNI" || (paciente.documento && !paciente.tipo_doc) ? "1" : "0"
+      }`,
+      numeroDocumento: paciente.documento,
+      fechaNacimiento: paciente.fec_nac,
+      apellido: paciente.apellido,
+      nombre: paciente.nombre,
+      sexo: `/api/paciente/referencias/sexo/${
+        paciente.sexo[0].toUpperCase() === "M"
+          ? "1"
+          : paciente.sexo[0].toUpperCase() === "F"
+            ? "2"
+            : "0"
+      }`,
+      nacionalidad:
+        "/api/referencias/nacionalidades/" +
+        `${!paciente.nacionalidad || paciente.nacionalidad === "Argentina" ? "4" : "3"}`,
+    };
+    if (responsableCIPRES) {
+      registrarTemp.responsable = {
+        paciente: responsableCIPRES["@id"],
+        // Masculino -> Padre / Femenino -> Madre / X -> Tutor
+        tipoRelacion: `${
+          responsableCIPRES.sexo?.inicial === "M"
+            ? "P"
+            : responsableCIPRES.sexo?.inicial === "F"
+              ? "M"
+              : "T"
+        }`,
+      };
+    }
+    const pacienteCipres = await axios.post(
+      `${process.env.CIPRES_URL}/api/patient`,
+      registrarTemp,
+      {
+        headers: {"content-type": "application/json", Authorization: `Bearer ${CIPRES_TKN}`},
+        timeout: CIPRES_timeout,
+      }
+    );
+    if (pacienteCipres?.data) {
+      return {paciente: pacienteCipres.data};
+    }
+    return null;
+  } catch (error) {
+    if (error.response?.data) {
+      return {
+        err:
+          `Registro ${responsableCIPRES === false ? "Responsable del " : ""}Paciente: ` +
+          `CIPRES ${error.response.data["hydra:description"]}.\n`,
+      };
+    }
+    return {
+      err:
+        `Registro ${responsableCIPRES === false ? "Responsable del " : ""}Paciente: ` +
+        `${error.message}.\n`,
+    };
+  }
+};
+
+const matchPacienteCIPRES_V2 = async ({
   paciente,
   ps_tipo_doc,
   ps_doc,
-  ps_doc_resp,
   ps_fecha_nacimiento,
   ps_nombreC,
+  ps_doc_resp,
+}) => {
+  try {
+    // PRIORIDAD DATOS DE LA MIGRACION DEL PS
+    const datosPaciente = {
+      apellido: ps_nombreC?.split(",")[0] ?? paciente?.apellido,
+      nombre: ps_nombreC?.split(",")[1] ?? paciente?.nombre,
+      tipo_doc: ps_tipo_doc ?? paciente?.tipo_doc,
+      documento: ps_doc ?? paciente?.documento,
+      fec_nac: new Date(ps_fecha_nacimiento ?? paciente?.fec_nac).toISOString().slice(0, 10),
+      sexo: paciente?.sexo,
+      nacionalidad: paciente?.nacionalidad,
+      edad_days_aplicacion: paciente?.edad_days_aplicacion,
+    };
+    let datosResponsable = {
+      apellido: paciente?.resp_apellido,
+      nombre: paciente?.resp_nombre,
+      tipo_doc: paciente?.resp_tipo_doc,
+      documento: ps_doc_resp ?? paciente?.doc_responsable,
+      fec_nac: paciente?.resp_fec_nac,
+      sexo: paciente?.resp_sexo,
+    };
+    datosResponsable = isVacio({
+      dato: datosResponsable,
+      vacioCero: true, // false,
+      vacioBoolean: true, // false,
+      inArr: true, // false,
+      inObj: true, // false,
+      borrar: true, // false,
+    });
+    if (datosResponsable.vacio === true) {
+      datosResponsable = null;
+    } else {
+      datosResponsable = datosResponsable.dato;
+    }
+
+    let pacienteCIPRES = null;
+    // 1. Buscar Paciente por su documento
+    if (datosPaciente.documento) {
+      // {paciente: {documento: "", tipo_doc: "", sexo: "", fec_nac: ""}}
+      pacienteCIPRES = await buscarPacienteCIPRES({paciente: datosPaciente});
+    }
+    if (pacienteCIPRES?.err) {
+      return {err: pacienteCIPRES.err};
+    }
+    // 2. El paciente no se encontro por documento
+    if (!pacienteCIPRES) {
+      const pacienteMenor = datosPaciente.edad_days_aplicacion < 367 ? true : false;
+      let responsableCIPRES = null;
+      // Buscar Responsable y Evaluar si es REQUERIDO
+      if (datosResponsable) {
+        // obetener datos locales del Responsable con el documento si es necesario
+        if (
+          datosResponsable.documento ||
+          !datosResponsable.apellido ||
+          !datosResponsable.nombre ||
+          !datosResponsable.tipo_doc ||
+          !datosResponsable.fec_nac ||
+          !datosResponsable.sexo
+        ) {
+          let responsableDB = await Paciente.findOne(
+            datosResponsable.sexo
+              ? {
+                  tipo_doc: datosResponsable.tipo_doc ?? "DNI",
+                  documento: datosResponsable.documento,
+                  sexo: datosResponsable.sexo,
+                }
+              : {
+                  tipo_doc: datosResponsable.tipo_doc ?? "DNI",
+                  documento: datosResponsable.documento,
+                }
+          )
+            .select("apellido nombre tipo_doc fec_nac sexo nacionalidad cipres_id")
+            .lean()
+            .exec();
+          // Prioridad los datos cargados en el Paciente y no en la DB.
+          if (responsableDB) {
+            datosResponsable.apellido ??= responsableDB.apellido;
+            datosResponsable.nombre ??= responsableDB.nombre;
+            datosResponsable.tipo_doc ??= responsableDB.tipo_doc;
+            datosResponsable.fec_nac ??= responsableDB.fec_nac;
+            datosResponsable.sexo ??= responsableDB.sexo;
+            datosResponsable.nacionalidad ??= responsableDB.nacionalidad;
+            datosResponsable["@id"] = responsableDB.cipres_id;
+          }
+        }
+        // Verificamos si tenemos los datos del Responsable para buscarlo/registrarlo
+        // Retornar error si es Menor
+        if (
+          !datosResponsable.apellido ||
+          !datosResponsable.nombre ||
+          !datosResponsable.tipo_doc ||
+          !datosResponsable.documento ||
+          !datosResponsable.fec_nac ||
+          !datosResponsable.sexo
+        ) {
+          if (pacienteMenor) {
+            return {
+              err:
+                "Paciente: Faltan datos del Responsable para poder Registrarlo en CIPRES." +
+                `\nDatos Responsable-> Documento: ${datosResponsable.documento}. ` +
+                `Apellido: ${datosResponsable.apellido}. Nombre: ${datosResponsable.nombre}. ` +
+                `Nacimiento: ${datosResponsable.fec_nac}. Sexo: ${datosResponsable.sexo}.\n`,
+            };
+          }
+        }
+        // Tenemos lo Necesario para Buscar al Responsable
+        else {
+          datosResponsable.fec_nac = new Date(datosResponsable.fec_nac).toISOString().slice(0, 10);
+          // {paciente: {documento: "", tipo_doc: "", sexo: "", fec_nac: ""}}
+          responsableCIPRES = await buscarPacienteCIPRES({
+            paciente: datosResponsable,
+            responsable: true,
+          });
+          if (responsableCIPRES?.err) {
+            return {err: responsableCIPRES.err};
+          }
+          // responsableCIPRES {hijos: [ids]}
+          if (responsableCIPRES?.hijos?.length > 0) {
+            // El Responsable existe. Buscamos si el paciente ya esta bajo su responsabilidad
+            // {
+            //   responsable: {documento: "", tipo_doc: "", sexo: ""},
+            //   paciente: {sexo: "", fec_nac: "", nombre: "", apellido: ""}
+            // }
+            pacienteCIPRES = await BuscarHijoCIPRES({
+              responsable: datosResponsable,
+              paciente: datosPaciente,
+            });
+            if (pacienteCIPRES?.err) {
+              return {err: pacienteCIPRES.err};
+            }
+          }
+          // El Responsable NO existe, se Registra
+          if (!responsableCIPRES) {
+            // {
+            //   paciente: {documento: "", tipo_doc: "", apellido: "", nombre: "", sexo: "", fec_nac: ""},
+            //   (opcional) responsableCIPRES: {["@id"], sexo: {inicial: "M|F"}}
+            // }
+            responsableCIPRES = await registrarPacienteCIPRES({
+              paciente: datosResponsable,
+              responsableCIPRES: false,
+            });
+            if (responsableCIPRES?.err) {
+              return {err: responsableCIPRES.err};
+            }
+          }
+        }
+      } else if (pacienteMenor) {
+        return {
+          err: "Paciente (Menor): Falta el Responsable, para poder Registrarlo en CIPRES.",
+        };
+      }
+      // 3. REGISTRAR AL PACIENTE (Solo si no se encontro en el paso del responsable)
+      if (!pacienteCIPRES) {
+        // Error si es Menor y no se encontro/registro Responsable
+        if (pacienteMenor && !responsableCIPRES) {
+          return {
+            err: "Paciente (Menor): No se Encontro/Registro al Responsable en CIPRES, antes que al menor.",
+          };
+        }
+        pacienteCIPRES = await registrarPacienteCIPRES({
+          paciente: datosPaciente,
+          responsableCIPRES: responsableCIPRES?.paciente ?? null,
+        });
+        if (pacienteCIPRES?.err) {
+          return {err: pacienteCIPRES.err};
+        }
+      }
+    }
+    return pacienteCIPRES?.paciente?.["@id"];
+  } catch (error) {
+    return {
+      err: `Paciente: ${error.message}.\n`,
+    };
+  }
+};
+
+const _matchPacienteCIPRES = async ({
+  paciente,
+  ps_tipo_doc,
+  ps_doc,
+  ps_fecha_nacimiento,
+  ps_nombreC,
+  ps_doc_resp,
 }) => {
   // <= Posibilidades =>
   // Existe Doc o Responsable
   //    Doc -> Select ID
   //    Responsable -> Existe Hijo -> Select ID
   //    Responsable -> No Existe Hijo -> Registrar Hijo -> Select ID
-  // No Existe Responsable (Dato)
+  // No Existe Responsable (si los Datos)
   //    Registrar Responsable -> Registrar Hijo -> Select ID
   // No Existe Doc y NO DATO Responsable (Nuevos e indocumentados)
   //    Registrar -> Select ID
@@ -802,10 +1223,10 @@ const matchPacienteCIPRES = async ({
         incluirRelaciones: paciente.doc_responsable && !paciente.documento ? true : false,
         tipoDocumento: `/api/paciente/referencias/tipo_documento/${
           paciente.documento
-            ? paciente.tipo_doc === "DNI"
+            ? paciente.tipo_doc === "DNI" || !paciente.tipo_doc
               ? "1"
               : "0"
-            : paciente.resp_tipo_doc === "DNI"
+            : paciente.resp_tipo_doc === "DNI" || !paciente.resp_tipo_doc
               ? "1"
               : "0"
         }`,
@@ -814,7 +1235,7 @@ const matchPacienteCIPRES = async ({
       },
       headers: {
         Authorization: `Bearer ${CIPRES_TKN}`,
-        timeout: 5 * 60 * 1000, // 300.000 (300seg = 5min) default is `0` (no timeout)
+        timeout: CIPRES_timeout,
       },
     });
 
@@ -910,14 +1331,14 @@ const matchPacienteCIPRES = async ({
               esDocumentoPropio: false,
               incluirRelaciones: true,
               tipoDocumento: `/api/paciente/referencias/tipo_documento/${
-                responsable.tipo_doc === "DNI" ? "1" : "0"
+                responsable.tipo_doc === "DNI" || !responsable.tipo_doc ? "1" : "0"
               }`,
               incluirDomicilio: false,
               // establecimiento: "",
             },
             headers: {
               Authorization: `Bearer ${CIPRES_TKN}`,
-              timeout: 5 * 60 * 1000, // 300.000 (300seg = 5min) default is `0` (no timeout)
+              timeout: CIPRES_timeout,
             },
           });
 
@@ -949,13 +1370,13 @@ const matchPacienteCIPRES = async ({
                 esDocumentoPropio: true,
                 incluirRelaciones: false,
                 tipoDocumento: `/api/paciente/referencias/tipo_documento/${
-                  responsable.tipo_doc === "DNI" ? "1" : "0"
+                  responsable.tipo_doc === "DNI" || !responsable.tipo_doc ? "1" : "0"
                 }`,
                 incluirDomicilio: false,
               },
               headers: {
                 Authorization: `Bearer ${CIPRES_TKN}`,
-                timeout: 5 * 60 * 1000, // 300.000 (300seg = 5min) default is `0` (no timeout)
+                timeout: CIPRES_timeout,
               },
             });
           }
@@ -992,7 +1413,7 @@ const matchPacienteCIPRES = async ({
           },
           {
             headers: {"content-type": "application/json", Authorization: `Bearer ${CIPRES_TKN}`},
-            timeout: 5 * 60 * 1000, // 300.000 (300seg = 5min) default is `0` (no timeout)
+            timeout: CIPRES_timeout,
           }
         );
 
@@ -1047,7 +1468,7 @@ const matchPacienteCIPRES = async ({
           `${process.env.CIPRES_URL}/api/patient`,
           {
             tipoDocumento: `/api/paciente/referencias/tipo_documento/${
-              responsable.tipo_doc === "DNI" ? "1" : "0"
+              responsable.tipo_doc === "DNI" || !responsable.tipo_doc ? "1" : "0"
             }`,
             numeroDocumento: responsable.documento,
             fechaNacimiento: responsable.fec_nac,
@@ -1064,7 +1485,7 @@ const matchPacienteCIPRES = async ({
           },
           {
             headers: {"content-type": "application/json", Authorization: `Bearer ${CIPRES_TKN}`},
-            timeout: 5 * 60 * 1000, // 300.000 (300seg = 5min) default is `0` (no timeout)
+            timeout: CIPRES_timeout,
           }
         );
 
@@ -1100,7 +1521,7 @@ const matchPacienteCIPRES = async ({
           },
           {
             headers: {"content-type": "application/json", Authorization: `Bearer ${CIPRES_TKN}`},
-            timeout: 5 * 60 * 1000, // 300.000 (300seg = 5min) default is `0` (no timeout)
+            timeout: CIPRES_timeout,
           }
         );
 
@@ -1113,7 +1534,7 @@ const matchPacienteCIPRES = async ({
         `${process.env.CIPRES_URL}/api/patient`,
         {
           tipoDocumento: `/api/paciente/referencias/tipo_documento/${
-            paciente.tipo_doc === "DNI" ? "1" : "0"
+            paciente.tipo_doc === "DNI" || !paciente.tipo_doc ? "1" : "0"
           }`,
           numeroDocumento: paciente.documento,
           fechaNacimiento: paciente.fec_nac,
@@ -1130,7 +1551,7 @@ const matchPacienteCIPRES = async ({
         },
         {
           headers: {"content-type": "application/json", Authorization: `Bearer ${CIPRES_TKN}`},
-          timeout: 5 * 60 * 1000, // 300.000 (300seg = 5min) default is `0` (no timeout)
+          timeout: CIPRES_timeout,
         }
       );
 

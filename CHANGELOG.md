@@ -27,6 +27,19 @@
 
 ---
 
+### [1.7.20260607] - 2026-06-07
+
+- 🩹 Fixed a Sistema - General => Se puede volver a utilizar las teclas "Enter" y "Tab" en los campos numericos.
+- 🩹 Fixed a Sistema - Paciente => Se puede volver a buscar los pacientes al presionar "enter" en el campo de busqueda del documento del paciente.
+
+- 🩹 Fixed a Farmacia - General => Se soluciono el problema de generar PDF de Solicitudes, y todas las consultas de buscarInsumosFiltro por su \_id con $in (el back ya usa "objectToFind").
+
+- 📈 Improved a Vacunas - CIPRES => Ahora el registro de Pacientes en CIPRES tiene mas en cuenta al "Responsable", antes cuando se registraba un Paciente con Documento Propio no se registraba a su responsable, ademas informa de error si se intenta registrar a un Paciente "Menor" (Menos de 367 dias) sin un Responsable.
+
+### [1.7.20260527] - 2026-05-27
+
+- 🩵🤍🩵 🗑️ Removed a Sistema - Frontend => Cursor (mouse) follower con colores patrioticos.
+
 ### [1.7.20260525] - 2026-05-25
 
 - 🩵🤍🩵 🥟 Added a Sistema - Frontend => Cursor (mouse) follower con colores patrioticos.

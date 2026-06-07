@@ -114,9 +114,9 @@ $ npm ls
 
 ---
 
-- [/] FARMACIA - Ingreso -> Proveedores
+- [x] FARMACIA - Ingreso -> Proveedores
   - [x] Proveedores -> Posibilidad de agregar Proveedores a los que tienen permiso (farmacia/opcionesGrales).
-  - [ ] Cambiar Nombre de la BD -> farmaciaProveedores -=> farmacia-proveedores.
+  - [x] Cambiar Nombre de la BD -> farmaciaProveedores -=> farmacia-proveedores.
 
 - [x] PACIENTE - Alta/Edit - Farmacia ->
   - [x] NACIONALIDAD -> Alta/Edit.
@@ -633,6 +633,8 @@ FRONT
 
 - [ ] ‼️ SERVIDOR - Actualizar (Ubuntu, Node, MongoDB(5 -> 8), PM2, Nginx?) =>
       <progress value="0" max="100"></progress> 0%
+  - [ ] ‼️‼️ NO SE PUEDE => MongoDB 5.0+ Necesita un procesador con instrucciones AVX mejores que las del I3 de 4ta, y MongoDB 5.0 no es compatible con Ubuntu Server 22.04++
+    - [ ] MEJORAR MICROPROCESADOR
   - [/] Fase 1: Preparación y Node.js (Semana 1)
     - [/] ‼️ Node => 20.19.5 -> 24.x.x (Remove the old repository, add new repository, sudo apt-get install -y nodejs)
     - [ ] PM2 => 5.4.0 -> 6.x.x

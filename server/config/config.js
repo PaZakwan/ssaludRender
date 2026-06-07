@@ -94,23 +94,26 @@ if (process.env.NODE_ENV === "dev") {
   // serverSelectionTimeoutMS: Tiempo en retornar error de reconexion.
   // bufferCommands: Tiempo de espera en la ejecucion de las query de mongo, no espera antes de retornar un error.
   // family: 4; No intenta conectar con IPv6.
+  // journal: true; Fuerza a escribir en el Journal (disco duro) antes de responder "OK".
   process.env.DBoptions = JSON.stringify({
     serverSelectionTimeoutMS: 8 * 1000,
     bufferCommands: false,
     family: 4,
+    journal: true,
     autoIndex: false,
-    // VER EL TEMA DE Encriptacion -> 127.0.0.1 en el server local con certificado propio...
-    //      Tutorial -> https://rajanmaharjan.medium.com/secure-your-mongodb-connections-ssl-tls-92e2addb3c89
-    //      Client -> https://mongoosejs.com/docs/tutorials/ssl.html#tlsssl-validation
-    //      Server -> https://www.mongodb.com/docs/manual/tutorial/configure-ssl
-    // tls: true,
-    // tlsAllowInvalidCertificates: true,
   });
+  // VER EL TEMA DE Encriptacion -> 127.0.0.1 en el server local con certificado propio...
+  //      Tutorial -> https://rajanmaharjan.medium.com/secure-your-mongodb-connections-ssl-tls-92e2addb3c89
+  //      Client -> https://mongoosejs.com/docs/tutorials/ssl.html#tlsssl-validation
+  //      Server -> https://www.mongodb.com/docs/manual/tutorial/configure-ssl
+  // tls: true,
+  // tlsAllowInvalidCertificates: true,
 } else {
   process.env.DBoptions = JSON.stringify({
     serverSelectionTimeoutMS: 8 * 1000,
     bufferCommands: false,
     family: 4,
+    journal: true,
     autoIndex: false,
   });
   // VER EL TEMA DE CRAFTEO DE INDEXS....
