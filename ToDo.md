@@ -86,6 +86,9 @@ $ npm ls
       MAIL A CIPRES CONSULTA POR LA RESPUESTA "Internal Server Error".
       Persona Creada en CIPRES, SIN CODIGO DE CIPRES(SUMAR) y SIN RESPONSABLE o.o, creo que es lo que me esta generando el error.
 
+- [ ] ‼️ PACIENTE - Uploads -> salud_adulto => FIX {"Fecha último control": {$exists: true}, "ps_id": "salud_adulto"} $unset.
+  - [ ] rutas - Uploads -> Si la propiedad no esta en PacienteProperties, no cargar en la BD, delete propiedades que no estan.
+
 - [ ] ‼️ PACIENTE - UNIFICACION -> ASIGNAR A UN PACIENTE, las id del otro (ref: "Paciente") y luego BORRARLO al otro.
   - [ ] Permiso Admin General, no cualquiera pueda unificar.
 
@@ -114,26 +117,17 @@ $ npm ls
 
 ---
 
-- [x] FARMACIA - Ingreso -> Proveedores
-  - [x] Proveedores -> Posibilidad de agregar Proveedores a los que tienen permiso (farmacia/opcionesGrales).
-  - [x] Cambiar Nombre de la BD -> farmaciaProveedores -=> farmacia-proveedores.
-
-- [x] PACIENTE - Alta/Edit - Farmacia ->
-  - [x] NACIONALIDAD -> Alta/Edit.
-  - [x] NACIONALIDAD -> Para Farmacia, reportes nominal.
-
-- [x] FARMACIA - Alta Insumo -> Nuevos Inputs, "forma_farmaceutica", "administracion", "empaque" y "accion_terapeutica"; "auditoria" y "cantidad_tratamiento_aprox".
-  - [x] Necesita Auditoria, no carga automatica (Solo en Alta). (necesita fotos - y negativa de OS de anses). (agregar variable "auditoria")
-  - [x] ‼️ Cantidad Estimada para tratamiento (Solo en Alta). (agregar variable "cantidad_tratamiento_aprox")
+- [/] FARMACIA - Alta Insumo ->
   - [x] accion_terapeutica -> Crear/Gestion accion_terapeutica (Diagnosticos Provincia) (farmacia/opcionesGrales)... con codigo ATC (opcional) (Mayor control local, para futuros reportes).
     - [x] Codigo ATC -> dejar link a pagina para que busquen...
-    - [x] ‼️ Codigo Provincia -> Codigo Cat(egoria) ID, Vademecum... VER LINK DE PROVINCIA USAR WIFI... Usuario Deshabilitado...
+    - [/] ‼️ Codigo Provincia -> Codigo Cat(egoria) ID, Vademecum... VER LINK DE PROVINCIA USAR WIFI... Usuario Deshabilitado...
 
-- [ ] FARMACIA - Entregas ->
-  - [ ] Nuevo Input, matricula profesional MP MN (que emitio la receta) (opcional | opcion en Alta para hacerlo requerido).
-  - [ ] Nuevo Input, fecha de preinscripcion (que emitio la receta) (opcional | opcion en Alta para hacerlo requerido).
-  - [ ] OS PAMI -> Nuevo Input, NRO tramite (obligatorio).
-  - [ ] OS IOMA -> Nuevo Input, NRO Afiliado (obligatorio).
+- [ ] FARMACIA - Alta Insumo ->
+  - [ ] opcion para que fecha_prescripcion sea requerido en entregas.
+  - [ ] opcion para que profesional_MP y/o profesional_MN sea requerido en entregas.
+  - [ ] opcion para que "Diagnostico" (accion_terapeutica) sea requerido en entregas.
+    - [ ] si "Diagnostico" (accion_terapeutica) es opcional permitir cargar cualquier accion_terapeutica de la DB.
+    - [ ] si "Diagnostico" (accion_terapeutica) es requerido permitir cargar cualquier accion_terapeutica de la lista de insumos a entregar.
 
 - [ ] FARMACIA - Export APIS
   - [ ] Sin Obra Social -> RESAPRO - CIPRES??
@@ -174,10 +168,10 @@ dni: {nrodni};
     {
       TipoDocumento: "DNI",
       NroDocumento: "66123654",
-      ClaseDocumento: "Propio",
+      ClaseDocumento: "Propio", // Filtrar, obtener solamente los "Propio" y usar el primero del array
       Nombre: "PAPAS VILLA JUAN",
-      ObraSocial : "O.S.P. BUENOS AIRES (IOMA)",
-      Siglas: "IOMA",
+      ObraSocial : "O.S.P. BUENOS AIRES (IOMA)", // ObraSocial : "INSTITUTO NACIONAL DE SERVICIOS SOCIALES PARA JUBILADOS Y PENSIONADOS" (PAMI)
+      Siglas: "IOMA", // Siglas: "--"
     },
     ...,
   ],

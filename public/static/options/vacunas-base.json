@@ -32,12 +32,12 @@
     "qty_dosis_posibles": ["Media dosis", "Doble dosis"],
     "vacunas_estrategia": [
       "Calendario",
-      "Campaña",
       "Atrasado",
-      "Prescripcion Medica",
       "Grupo de Riesgo",
+      "Por excepcion",
       "Post Exposicion",
-      "Por excepcion"
+      "Prescripcion Medica",
+      "Campaña"
     ],
     "vacunas_reportes": [
       "Masculinos",

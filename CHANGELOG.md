@@ -27,6 +27,20 @@
 
 ---
 
+### [1.7.20260629] - 2026-06-29
+
+- 🩵🤍🩵 🥟 Added a Sistema - Frontend => Cursor (mouse) follower con colores patrioticos, con posibilidad de desactivarlo.
+- 📈 Improved a Sistema - Backend => Mensajes de error de Base de datos agregado "MongooseError" (initial connection).
+
+- 🩹 Fixed a Farmacia/Vacunas - Ingresos => El Destino no se mostraba correctamente cuando el que abria el Ingreso solamente tenia permisos para ver con el permiso de "Supervisor".
+- 🩹 Fixed a Farmacia/Vacunas - Solicitudes => Se soluciono el problema de generar PDF de Solicitudes cuando un "insumo" ya no se encuentra (Posiblemente "Borrado") ahora muestra -> "S/D" (Sin Dato) en el nombre del "insumo".
+
+- ✨ Added a Farmacia - Entrega => Al componente de Egreso de Insumos se le agrego el Boton de agregar Insumo, para acelerar la carga con el teclado, facilitando el uso de Tab-Space.
+- ✨ Added a Farmacia - Entrega => Se agregaron los campos: Fecha de Prescripcion, Diagnostico, Matricula Provincial | Nacional y Obra Social Nro Afiliado (Obligatorio con IOMA). Propuesto por Direccion de Farmacia para las cargas en Provincia.
+- ✨ Added a Farmacia - Filtros/Ingresos => Se agrego una nueva procedencia Hospital. Propuesto por Direccion de Farmacia para las cargas en Provincia.
+
+- 🚨 Changed a Vacunas - Aplicaciones => Se re-ordenaron las estrategias, arriba las mas usadas en los planes de CIPRES.
+
 ### [1.7.20260607] - 2026-06-07
 
 - 🩹 Fixed a Sistema - General => Se puede volver a utilizar las teclas "Enter" y "Tab" en los campos numericos.
@@ -49,7 +63,7 @@
 
 - 🩹 Fixed a Patrimonio - Movimientos => Error al mover objetos, no guardaba el area_anterior y el lugar_anterior (id -> \_id).
 - 🩹 Fixed a Patrimonio - Info => No mostraba los nombres de usuario (nombreC no existe mas en patrimonio).
-- ✨ Added a Patrimonio - Objetos => a las categorias PCs, Impresora, Telefono, Proyector y Router ahora se le pueden agregar valores de mac_address_lan y mac_address_wifi.
+- ✨ Added a Patrimonio - Objetos => a las categorias PCs, Impresora, Telefono, Proyector y Router ahora se le pueden agregar valores de mac_address_lan y mac_address_wifi. Propuesto por Pablo Bischoff.
 
 - ✨ Added a Farmacia - Insumos => Ahora a los medicamentos se les debe cargar mas datos para facilitar la carga a Provincia, "forma_farmaceutica", "administracion", "empaque", "accion_terapeutica", "auditoria", "cantidad_tratamiento_aprox".
 - ✨ Added a Farmacia - Diagnosticos => Ahora se pueden dar de alta a diferentes diagnosticos con sus Codigos de Provincia y/o ATC para luego relacionarlos con los medicamentos dados de altas ("accion_terapeutica"), esto mejorara reportes futuros y cargas en Provincia.
@@ -64,7 +78,7 @@
 - 📈 Improved a Sistema - Backend => Object - impove arrayFromSumarPropsInArrays() and sumarProps() mejora para futuros reportes.
 - 🚨 Changed a Sistema - Areas => Zonas se agregaron nuevas y se dividio Alvarez La Reja -> +Alvarez +La Reja +Moreno Centro +Distrito Ecologico Roggero.
 
-- 🚨 Changed a HICLEM - Historial Gral => Se cambio la solicitud del campo opcional "Semana de Emabarazo" al rango de edad (10-50] años para el sexo Femenino. Yesica Fernandez
+- 🚨 Changed a HICLEM - Historial Gral => Se cambio la solicitud del campo opcional "Semana de Emabarazo" al rango de edad (10-50] años para el sexo Femenino. Propuesto por Yesica Fernandez.
 
 ### [1.7.20260401] - 2026-04-01
 

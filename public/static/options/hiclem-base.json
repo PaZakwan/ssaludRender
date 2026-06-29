@@ -2,7 +2,7 @@
   "json": {
     "motivo_especialidad": ["Nutricion", "Diabetes", "Tuberculosis"],
 
-    "motivo_temp": ["Clinica Medica", "Pediatria", "Ginecologia", "Obstetricia"],
+    "motivo_Desarrollar": ["Clinica Medica", "Pediatria", "Ginecologia", "Obstetricia"],
 
     "motivo_estado": ["Activo", "Finalizado", "Abandonado", "Suspendido", "Cancelado"],
 
@@ -17,8 +17,6 @@
       "Obstetricia": ["control"],
       "Ginecologia": ["control"]
     },
-
-    "consulta_especialidad": ["Nutricion", "Diabetes", "Tuberculosis"],
 
     "consulta_actividades": {
       "Nutricion": ["Nutricionista", "Coordinador"],
@@ -41,38 +39,22 @@
 
     "consulta_presentacion": ["1ra vez", "Ulterior", "Promocion"],
 
-    "estudios_estado": ["Pendiente", "Finalizado"],
+    "estudio_estado": ["Pendiente", "Finalizado", "Suspendido", "Cancelado"],
 
     "estudios": {
       "Contra-Referencia": {
+        "estado": null,
         "snomed": null,
         "descripcion": "Solicitud de evaluación diagnóstica y/o tratamiento."
       },
-      "Laboratorio": {"snomed": null, "descripcion": "Solicitud de Analisis de Laboratorio"}
+      "Laboratorio": {
+        "estado": null,
+        "snomed": null,
+        "descripcion": "Solicitud de Analisis de Laboratorio"
+      }
     },
 
-    "medicamentos_estado": ["Activo", "Suspendido", "Finalizado"],
-
-    "medicamentos": [
-      {
-        "nomivac": null,
-        "snomed": null,
-        "titulo": "Droga xx mg",
-        "descripcion": "Medicamento para bla bla."
-      },
-      {
-        "nomivac": null,
-        "snomed": null,
-        "titulo": "Droga zz mg",
-        "descripcion": "Medicamento para bla ble bli."
-      },
-      {
-        "nomivac": null,
-        "snomed": null,
-        "titulo": "Droga nn mg",
-        "descripcion": "Medicamento para bli blo blu."
-      }
-    ]
+    "medicacion_estado": ["Activa", "Finalizada", "Suspendida", "Cancelada"]
   },
   "ok": true
 }

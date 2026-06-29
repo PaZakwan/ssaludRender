@@ -765,12 +765,20 @@ app.get(
               $cond: [{$eq: ["$procedencia", "Donacion"]}, "$cantidad", 0],
             },
           },
+          subtotal_Hospital: {
+            $sum: {
+              $cond: [{$eq: ["$procedencia", "Hospital"]}, "$cantidad", 0],
+            },
+          },
           total: {$sum: "$cantidad"},
           cant_min_prom: {$avg: "$cant_min"},
           insumoDB: {$last: "$insumoDB"},
           categoriaDB: {$last: "$categoriaDB"},
         })
         .addFields({
+          subtotal_Donacion_Hospital: {
+            $sum: ["$subtotal_Donacion", "$subtotal_Hospital"],
+          },
           subtotal_Otros: {
             $subtract: [
               "$total",
@@ -782,6 +790,7 @@ app.get(
                   "$subtotal_Region",
                   "$subtotal_Nacion",
                   "$subtotal_Donacion",
+                  "$subtotal_Hospital",
                 ],
               },
             ],

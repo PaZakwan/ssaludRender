@@ -21,38 +21,53 @@ const errorMessage = function (res, error, statusTemp) {
     console.error("errors: ", error.errors);
     console.error("##### errorMessage END #####");
   }
-  // Mongoose Errors
-  if (error.name === "ValidationError") {
-    // pasar object de errors a array de string.. key: message
-    status = 400;
-    let temp = [];
-    Object.keys(error.errors).forEach((key) => {
-      temp.push(`${key}: ${error.errors[key].message}`);
-    });
-    error.errors = temp;
-    msjtemp = "";
-  }
 
-  // MongoDB Errors
-  if (error.name === "MongoServerError") {
-    status = 500;
-    if (error.code === 292 || error.code === 146) {
-      msjtemp = `Problema con la Consulta a la Base de Datos,
-      El rango de busqueda de la Consulta Excede el Limite de Memoria del Servidor.`;
-    } else {
-      msjtemp = `Problema con la Consulta a la Base de Datos
+  switch (error.name) {
+    // Mongoose Errors
+    case "MongooseError":
+      // "cannot call connection functions" no se conecto con la BD
+      if (error.message?.includes?.("initial connection")) {
+        status = 503;
+        msjtemp = `No se logro la Conexion con la Base de Datos
+        Comuniquese con soporte para mas informacion.`;
+      } else {
+        status = 500;
+        msjtemp = `Problema con la Base de Datos
+        Comuniquese con soporte para mas informacion.`;
+      }
+      break;
+    case "MongooseServerSelectionError":
+      status = 503;
+      msjtemp = `Problema con la Conexion a la Base de Datos
       Comuniquese con soporte para mas informacion.`;
-    }
-  }
+      break;
+    case "ValidationError":
+      // pasar object de errors a array de string.. key: message
+      status = 400;
+      error.errors = Object.entries(error.errors).map(([key, value]) => `${key}: ${value.message}`);
+      msjtemp = "";
+      break;
 
-  // "timed out" o "MongooseServerSelectionError" mensaje de BD no funcionando
-  if (
-    error.message?.includes?.("timed out") ||
-    error.name?.includes?.("MongooseServerSelectionError")
-  ) {
-    status = 503;
-    msjtemp = `Problema con la Conexion a la Base de Datos
-    Comuniquese con soporte para mas informacion.`;
+    // MongoDB Errors
+    case "MongoServerError":
+      status = 500;
+      if (error.code === 292 || error.code === 146) {
+        msjtemp = `Problema con la Consulta a la Base de Datos,
+        El rango de busqueda de la Consulta Excede el Limite de Memoria del Servidor.`;
+      } else {
+        msjtemp = `Problema con la Consulta a la Base de Datos
+        Comuniquese con soporte para mas informacion.`;
+      }
+      break;
+
+    default:
+      // "timed out" mensaje de BD no funcionando
+      if (error.message?.includes?.("timed out")) {
+        status = 503;
+        msjtemp = `Problema con la Conexion a la Base de Datos
+        Comuniquese con soporte para mas informacion.`;
+      }
+      break;
   }
 
   return res.status(status).json({

@@ -910,16 +910,16 @@ const registrarPacienteCIPRES = async ({paciente, responsableCIPRES}) => {
   // return {paciente: {}} | null | {err}
 
   // REGISTRAR ->
-  // "tipoDocumento": "/api/paciente/referencias/tipo_documento/1", // 0 -> no documento / 1 -> DNI
-  // "numeroDocumento": "n",
-  // "fechaNacimiento": "1988-11-17",
+  // "tipoDocumento": "/api/paciente/referencias/tipo_documento/1", // 0 -> no documento | 1 -> DNI
+  // "numeroDocumento": "########",
+  // "fechaNacimiento": "AAAA-MM-DD",
   // "apellido": "Perez",
   // "nombre": "Juan",
   // "sexo": "/api/paciente/referencias/sexo/1", // M -> 1 | F -> 2 | no especifica -> 0
   // "nacionalidad": "/api/referencias/nacionalidades/4", // 4 -> ARG | 3 -> Null
   // "responsable": {
-  //    paciente: "@id",
-  //    tipoRelacion: "", // P -> Padre / M -> Madre / T -> Tutor
+  //    paciente: "@id", // ID del CIPRES -> "/api/paciente/########"
+  //    tipoRelacion: "", // P -> Padre | M -> Madre | T -> Tutor
   // }
   try {
     let registrarTemp = {
@@ -1184,11 +1184,11 @@ const _matchPacienteCIPRES = async ({
   //    Registrar -> Select ID
 
   // REGISTRAR ->
-  // "tipoDocumento": "/api/paciente/referencias/tipo_documento/1", // 0 -> no documento / 1 -> DNI
-  // "numeroDocumento": "n", //vacunacionDB.documento ?? vacunacionDB.doc_responsable
-  // "fechaNacimiento": "1988-11-17", // vacunacionDB.fec_nac  / ps_fecha_nacimiento
-  // "apellido": "Perez", // vacunacionDB.apellido / ps_nombreC
-  // "nombre": "Juan", // vacunacionDB.nombre / ps_nombreC
+  // "tipoDocumento": "/api/paciente/referencias/tipo_documento/1", // 0 -> no documento | 1 -> DNI
+  // "numeroDocumento": "########", //vacunacionDB.documento ?? vacunacionDB.doc_responsable
+  // "fechaNacimiento": "AAAA-MM-DD", // vacunacionDB.fec_nac  | ps_fecha_nacimiento
+  // "apellido": "Perez", // vacunacionDB.apellido | ps_nombreC
+  // "nombre": "Juan", // vacunacionDB.nombre | ps_nombreC
   // "sexo": "/api/paciente/referencias/sexo/1", // M -> 1 | F -> 2 | no especifica -> 0
   // "nacionalidad": "/api/referencias/nacionalidades/4", // 4 -> ARG
   // "esDocumentoPropio": true,

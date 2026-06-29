@@ -31,7 +31,13 @@ const listaEntregas = [
   // entrega
   "profesional",
   "paciente",
+  "doc_tramite",
   "oSocial",
+  "oSocialNumero",
+  "fecha_prescripcion",
+  "accion_terapeutica",
+  "profesional_MP",
+  "profesional_MN",
 ];
 
 // ============================
@@ -142,7 +148,7 @@ app.get(
             ],
           },
           pacienteDocTramiteDB: {
-            $ifNull: ["$pacienteDB.doc_tramite", "$vacio"],
+            $ifNull: ["$doc_tramite", "$pacienteDB.doc_tramite", "$vacio"],
           },
           pacienteTelefonoDB: {
             $ifNull: ["$pacienteDB.telefono", "$pacienteDB.telefono_alt", "$vacio"],

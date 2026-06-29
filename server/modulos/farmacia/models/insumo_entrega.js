@@ -24,6 +24,39 @@ const InsumoEntregaSchema = new mongoose.Schema({
   oSocial: {
     type: String,
   },
+  // IOMA (Obligatorio)
+  oSocialNumero: {
+    type: String,
+  },
+  // PAMI (Obligatorio)
+  doc_tramite: {
+    type: String,
+  },
+  fecha_prescripcion: {
+    type: Date,
+  },
+  accion_terapeutica: {
+    nombre: {
+      type: String,
+      trim: true,
+    },
+    codigo_provincia: {
+      type: String,
+      uppercase: true,
+      trim: true,
+    },
+    codigo_atc: {
+      type: String,
+      uppercase: true,
+      trim: true,
+    },
+  },
+  profesional_MP: {
+    type: Number,
+  },
+  profesional_MN: {
+    type: Number,
+  },
 
   insumo: {
     type: mongoose.Schema.Types.ObjectId,
