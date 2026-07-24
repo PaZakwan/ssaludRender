@@ -80,90 +80,99 @@ async function consultarPucoDniSISA(dni) {
 }
 
 async function consultarPucoDniCipres(dni, sexo, fec_nac) {
-  // Verificar datos necesarios
-  if (!dni || !sexo || !fec_nac) {
-    return {
-      error: {
-        message:
-          "Falta informacion para proceder con la consulta al PUCO:" +
-          `${!dni ? " • DNI" : ""}${!sexo ? " • SEXO" : ""}${!fec_nac ? " • Fecha de Nacimiento" : ""}`,
-        status: 412,
+  try {
+    // Verificar datos necesarios
+    if (!dni || !sexo || !fec_nac) {
+      return {
+        error: {
+          message:
+            "Falta informacion para proceder con la consulta al PUCO:" +
+            `${!dni ? " • DNI" : ""}${!sexo ? " • SEXO" : ""}${!fec_nac ? " • Fecha de Nacimiento" : ""}`,
+          status: 412,
+        },
+      };
+    }
+
+    // {paciente: {documento: "", tipo_doc: "", sexo: "", fec_nac: ""}}
+    const pacienteCIPRES = await buscarPacienteCIPRES({
+      paciente: {tipo_doc: "DNI", documento: dni, sexo, fec_nac},
+    });
+    if (pacienteCIPRES?.err) {
+      return {
+        error: {
+          message: pacienteCIPRES.err.replaceAll?.("CIPRES", "PUCO"),
+          status: pacienteCIPRES.status ?? 400,
+        },
+      };
+    }
+    if (pacienteCIPRES === null) {
+      // return {
+      //   error: {message: "Persona no encontrada.", status: 404},
+      // };
+      return [];
+    }
+    // pacienteCIPRES:  {
+    //   paciente: {
+    //     '@id': '/api/paciente/28485764',
+    //     '@type': 'Paciente',
+    //     id: 28485764,
+    //     nombre: 'JUAN ALBERTO',
+    //     apellido: 'PEREZ',
+    //     sexo: {
+    //       '@id': '/api/paciente/referencias/sexo/1',
+    //       '@type': 'Sexo',
+    //       id: 1,
+    //       descripcionSexo: 'MASCULINO',
+    //       inicial: 'M'
+    //     },
+    //     fechaNacimiento: '13-09-1951',
+    //     fechaFallecido: null,
+    //     tipoDocumento: {
+    //       '@id': '/api/paciente/referencias/tipo_documento/1',
+    //       '@type': 'TiposDocumento',
+    //       id: 1,
+    //       descripcionTiposDocumento: 'D.N.I.'
+    //     },
+    //     numeroDocumento: '11222666',
+    //     historiaClinica: null,
+    //     responsable: null,
+    //     domicilio: null,
+    //     obraSocial: {
+    //       '@id': '/api/sgcc/obra-social/500807',
+    //       '@type': 'ObraSocial',
+    //       id: '500807',
+    //       descripcion: 'INSTITUTO NACIONAL DE SERVICIOS SOCIALES PARA JUBILADOS Y PENSIONADOS',
+    //       sigla: 'PAMI',
+    //       tipo: null,
+    //       habilitada: 'S'
+    //     },
+    //     nacionalidad: null,
+    //     claseDocumento: 'P',
+    //     cuil: null,
+    //     isValidated: 'S'
+    //   },
+    //   hijos: []
+    // }
+
+    // formato
+    return [
+      {
+        tipo_doc: "DNI",
+        documento: pacienteCIPRES.paciente?.numeroDocumento,
+        apellido: `${capitalize(pacienteCIPRES.paciente?.apellido)}`,
+        nombre: `${capitalize(pacienteCIPRES.paciente?.nombre)}`,
+        fec_nac: pacienteCIPRES.paciente?.fechaNacimiento,
+        oSocial: capitalize(pacienteCIPRES.paciente?.obraSocial?.descripcion),
+        oSocialSigla: pacienteCIPRES.paciente?.obraSocial?.sigla,
+        oSocialRnos: pacienteCIPRES.paciente?.obraSocial?.id,
+        nombreC: `${capitalize(pacienteCIPRES.paciente?.apellido)}, ${capitalize(pacienteCIPRES.paciente?.nombre)}`,
       },
-    };
-  }
-
-  // {paciente: {documento: "", tipo_doc: "", sexo: "", fec_nac: ""}}
-  const pacienteCIPRES = await buscarPacienteCIPRES({
-    paciente: {tipo_doc: "DNI", documento: dni, sexo, fec_nac},
-  });
-
-  if (pacienteCIPRES?.err) {
+    ];
+  } catch (error) {
     return {
-      error: {message: pacienteCIPRES.err, status: 400},
+      error: {message: error.message, status: 500},
     };
   }
-  if (pacienteCIPRES === null) {
-    return {
-      error: {message: "Persona no encontrada.", status: 400},
-    };
-  }
-  // pacienteCIPRES:  {
-  //   paciente: {
-  //     '@id': '/api/paciente/28485764',
-  //     '@type': 'Paciente',
-  //     id: 28485764,
-  //     nombre: 'JUAN ALBERTO',
-  //     apellido: 'PEREZ',
-  //     sexo: {
-  //       '@id': '/api/paciente/referencias/sexo/1',
-  //       '@type': 'Sexo',
-  //       id: 1,
-  //       descripcionSexo: 'MASCULINO',
-  //       inicial: 'M'
-  //     },
-  //     fechaNacimiento: '13-09-1951',
-  //     fechaFallecido: null,
-  //     tipoDocumento: {
-  //       '@id': '/api/paciente/referencias/tipo_documento/1',
-  //       '@type': 'TiposDocumento',
-  //       id: 1,
-  //       descripcionTiposDocumento: 'D.N.I.'
-  //     },
-  //     numeroDocumento: '11222666',
-  //     historiaClinica: null,
-  //     responsable: null,
-  //     domicilio: null,
-  //     obraSocial: {
-  //       '@id': '/api/sgcc/obra-social/500807',
-  //       '@type': 'ObraSocial',
-  //       id: '500807',
-  //       descripcion: 'INSTITUTO NACIONAL DE SERVICIOS SOCIALES PARA JUBILADOS Y PENSIONADOS',
-  //       sigla: 'PAMI',
-  //       tipo: null,
-  //       habilitada: 'S'
-  //     },
-  //     nacionalidad: null,
-  //     claseDocumento: 'P',
-  //     cuil: null,
-  //     isValidated: 'S'
-  //   },
-  //   hijos: []
-  // }
-
-  // formato
-  return [
-    {
-      tipo_doc: "DNI",
-      documento: pacienteCIPRES.paciente?.numeroDocumento,
-      apellido: `${capitalize(pacienteCIPRES.paciente?.apellido)}`,
-      nombre: `${capitalize(pacienteCIPRES.paciente?.nombre)}`,
-      fec_nac: pacienteCIPRES.paciente?.fechaNacimiento,
-      oSocial: capitalize(pacienteCIPRES.paciente?.obraSocial?.descripcion),
-      oSocialSigla: pacienteCIPRES.paciente?.obraSocial?.sigla,
-      oSocialRnos: pacienteCIPRES.paciente?.obraSocial?.id,
-      nombreC: `${capitalize(pacienteCIPRES.paciente?.apellido)}, ${capitalize(pacienteCIPRES.paciente?.nombre)}`,
-    },
-  ];
 }
 
 async function consultarPucoDniJujuy(dni) {

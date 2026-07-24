@@ -784,7 +784,7 @@ const buscarPacienteCIPRES = async ({paciente, responsable = false}) => {
           planCipres.error = errorAxios({serverName: "CIPRES", code: planCipres.error.code});
         }
         return {
-          error: planCipres.error.message,
+          err: planCipres.error.message,
           status: planCipres.error.status,
         };
       }
