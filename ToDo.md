@@ -140,12 +140,6 @@ $ npm ls
 
 ---
 
-- [ ] Front - Performance ->
-  - [ ] mousedown: en el componente que activa, el listener de mouseup y avisa la lectura del mousemove Global;
-  - [ ] mousemove: Global con contador de cuantos lo estan leyendo; Centralizado Global ?Vue.Observer()? (vue 2.7 vue 3)
-  - [ ] mouseup: quita listener del mousedown y avisa al mousemove que deja de leer;
-- [ ] Front - Performance -> Dialogs Draggable with requestAnimationFrame(), style.transform = `translate3d(${this.currentX}px, ${this.currentY}px, 0)`
-
 - [ ] FARMACIA - Ingreso -> "empaque_qty"
   - [ ] "Empaque" -> en base al Alta del insumo con "Blister x Unidades", "Frasco x Unidades".
 
@@ -153,30 +147,6 @@ $ npm ls
   - [ ] Stock de Insumos -> Insumo con empaque de "x Unidades" -> agregar nuevo campo "empaque_qty" para hacer inequivoco el producto en stock "Blister x Unidades", "Frasco x Unidades".
   - [ ] Ingreso de Insumos -> Insumo con empaque de "x Unidades" -> agregar nuevo campo "empaque_qty" -> validacion e informar, no restringir, cantidad multiplo de "empaque_qty".
   - [ ] Transferencia de Insumos -> validacion e informar, no restringir, cantidad multiplo de "empaque_qty".
-
-- [ ] SISTEMA - PACIENTE -> OBRA SOCIAL (PUCO) https://sisa.msal.gov.ar/sisa/#sisa -> servicios web -> PUCO.
-      https://sisa.msal.gov.ar/sisa/services/rest/puco/{nrodoc}
-      REQUIERE CUENTA DE USUARIO DE NACION, SISA... o la pagina de JUJUY.. se podria usar
-      http://www.msaludjujuy.gov.ar:8072/Notificaciones/Informacion/Puco
-      http://www.msaludjujuy.gov.ar:8072/Notificaciones/Informacion/ConsultaPuco
-
-```js
-dni: {nrodni};
-{
-  Estado: "OK",
-  Items: [
-    {
-      TipoDocumento: "DNI",
-      NroDocumento: "66123654",
-      ClaseDocumento: "Propio", // Filtrar, obtener solamente los "Propio" y usar el primero del array
-      Nombre: "PAPAS VILLA JUAN",
-      ObraSocial : "O.S.P. BUENOS AIRES (IOMA)", // ObraSocial : "INSTITUTO NACIONAL DE SERVICIOS SOCIALES PARA JUBILADOS Y PENSIONADOS" (PAMI)
-      Siglas: "IOMA", // Siglas: "--"
-    },
-    ...,
-  ],
-};
-```
 
 - [ ] FARMACIA - Reportes Excel ->
   - [ ] Ingresos/Egresos.
@@ -248,6 +218,17 @@ dni: {nrodni};
         [generate-a-self-signed-SSL](https://stackoverflow.com/questions/10175812/how-to-generate-a-self-signed-ssl-certificate-using-openssl?answertab=trending#tab-top)
         [How SSL LOCAL](https://www.section.io/engineering-education/how-to-get-ssl-https-for-localhost/)
 - FRONT
+  - [ ] Performance ->
+    - [x] mouseTools: Global con contador de cuantos lo estan leyendo; Centralizado Global ?Vue.Observer()? (vue 2.7 vue 3)
+      - [x] TOUCH (moviles): touchstart, touchmove y touchend.
+      - [x] Agregar a cursor-trail y cursor-follower.
+      - [x] Testear.
+    - [ ] Dialogs - useDraggable
+      - [ ] Front - Performance -> Dialogs Draggable with requestAnimationFrame(), style.transform = `translate3d(${this.currentX}px, ${this.currentY}px, 0)`
+      - [ ] mousedown: (si es el main click) en el componente que activa el drag, agregar el listener de mouseup y avisa la lectura del mousemove Global;
+      - [ ] touchstart: (si es el main dedo) en el componente que activa el drag, agregar el listener de touchend y avisa la lectura del touchmove Global;
+      - [ ] mouseup: quita listener del mouseup y avisa al mousemove Global que deja de leer;
+            REVISAR -> useDraggable: Su único trabajo es mover un elemento del DOM de forma activa.
   - [ ] Revisar/modificar/quitar => vue-axios -> axios centralizado en un archivo con interceptores -> usarlo en Store y Router.
 
 #### REUNION Farmacia Adulto 2024-10-18
@@ -365,10 +346,10 @@ dni: {nrodni};
   - [ ] bodyDataTableDinamic, agregar numeros y stylos para cantidades.
   - [ ] ENTREGA DE INSUMOS AUTOCOMPLETE DE MODELOS DE IMPRESORA
   - [ ] Reporte de Insumos..
-        subcategoria (Toner,Periferico,Repuesto,Otros)
+        Subcategoria (Toner,Periferico,Repuesto,Otros)
         CONSUMO, CUANTOS QUEDAN.
         Compras, Ultimas entradas.
-        pdf/excel totales por modelos.
+        PDF/Excel totales por modelos.
 
 - VER
   - Mejorar Declaraciones con la dinamic-table

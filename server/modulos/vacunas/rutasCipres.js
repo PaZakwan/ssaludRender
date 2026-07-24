@@ -772,6 +772,23 @@ const buscarPacienteCIPRES = async ({paciente, responsable = false}) => {
   // {paciente: {documento: "", tipo_doc: "", sexo: "", fec_nac: ""}}
   // return {paciente:{}, hijos:[]} | null | {err}
   try {
+    if (!CIPRES_TKN) {
+      const planCipres = await getDataBaseCipres();
+      if (planCipres.error) {
+        // SI CIPRES RESPONDE CON ERROR DARLE FORMATO
+        if (planCipres.error.response) {
+          planCipres.error = errorCIPRES({respuesta: planCipres.error.response});
+        }
+        // SI CIPRES NO RESPONDE DARLE FORMATO
+        if (planCipres.error.request && planCipres.error.isAxiosError) {
+          planCipres.error = errorAxios({serverName: "CIPRES", code: planCipres.error.code});
+        }
+        return {
+          error: planCipres.error.message,
+          status: planCipres.error.status,
+        };
+      }
+    }
     const pacienteCipres = await axios.get(`${process.env.CIPRES_URL}/api/patient`, {
       params: {
         numeroDocumento: paciente.documento,
@@ -829,7 +846,7 @@ const buscarPacienteCIPRES = async ({paciente, responsable = false}) => {
     }
     if (error.response?.data) {
       return {
-        err: `${responsable ? "Responsable del " : ""}Paciente: CIPRES ${error.response.data["hydra:description"]}.\n`,
+        err: `${responsable ? "Responsable del " : ""}Paciente: CIPRES ${error.response.data["hydra:description"] ?? error.response.data.message}.\n`,
       };
     }
     return {
@@ -893,7 +910,7 @@ const BuscarHijoCIPRES = async ({responsable, paciente}) => {
   } catch (error) {
     if (error.response?.data) {
       return {
-        err: `Paciente Hijo: CIPRES ${error.response.data["hydra:description"]}.\n`,
+        err: `Paciente Hijo: CIPRES ${error.response.data["hydra:description"] ?? error.response.data.message}.\n`,
       };
     }
     return {
@@ -971,7 +988,7 @@ const registrarPacienteCIPRES = async ({paciente, responsableCIPRES}) => {
       return {
         err:
           `Registro ${responsableCIPRES === false ? "Responsable del " : ""}Paciente: ` +
-          `CIPRES ${error.response.data["hydra:description"]}.\n`,
+          `CIPRES ${error.response.data["hydra:description"] ?? error.response.data.message}.\n`,
       };
     }
     return {
@@ -1560,7 +1577,7 @@ const _matchPacienteCIPRES = async ({
     }
     if (error.response?.data) {
       return {
-        err: `Paciente: CIPRES ${error.response.data["hydra:description"]}.\n`,
+        err: `Paciente: CIPRES ${error.response.data["hydra:description"] ?? error.response.data.message}.\n`,
       };
     }
     return {
@@ -2027,4 +2044,5 @@ const verificaMatchCIPRES = ({registro}) => {
   return true;
 };
 
-module.exports = app;
+exports.app = app;
+exports.buscarPacienteCIPRES = buscarPacienteCIPRES;

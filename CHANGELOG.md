@@ -27,6 +27,19 @@
 
 ---
 
+### [1.7.20260724] - 2026-07-24
+
+- 🩹 Fixed a Sistema - Frontend => Cursor (mouse) follower, al abrir un iframe (reportes PDF), si el follower estaba activado quedaba bugueado sobre el iframe.
+- ✨ Added a Sistema - Frontend => Ahora se pueden guardar las opciones de "configuracion/personalizacion" del usuario en el navegador (se conservan al recargar pagina), por el momento solo el estado de activacion del Cursor (mouse) follower.
+- 📈 Improved a Sistema - Frontend => Cursor (mouse) follower ahora es compatible con los touch de tablets/telefonos.
+- 📈 Improved a Sistema - Frontend => En algunos Dialogs se cambianton los v-icon por v-btn con tooltips donde correspondian.
+- 📈 Improved a Sistema - Backend => Se mejoro la forma en que se capitalizaban las frases, siglas, palabra entre parentesis y nombres con la funcion capitalize().
+
+- ✨ Added a Sistema - Paciente => En la ventana de Alta/Edicion del Paciente ahora es posible buscar en los sistemas nacionales si el paciente tiene Obra Social en el Padrón Único Consolidado Operativo (PUCO) y auto completa el campo de la Obra Social.
+- 🚨 Changed a Sistema - Paciente => En HICLEM ahora solamente autocompleta los datos de busqueda, si y solo si se da de alta a un paciente y no se realizo ninguna busqueda previa, este cambio permite conservar los campos de busqueda al dar de alta/edicion de pacientes.
+
+---
+
 ### [1.7.20260629] - 2026-06-29
 
 - 🩵🤍🩵 🥟 Added a Sistema - Frontend => Cursor (mouse) follower con colores patrioticos, con posibilidad de desactivarlo.
