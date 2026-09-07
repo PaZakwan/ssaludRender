@@ -73,9 +73,9 @@ app.get(
           // regresa mongoose.Types.ObjectId(area);
           filtro.origen.$in[index] = isObjectIdValid(area);
         }
-      } else if (
-        !(req.usuario.vacunas.general?.lectura === 1 || req.usuario.vacunas.general?.gestion === 1)
-      ) {
+      } else if (!(
+        req.usuario.vacunas.general?.lectura === 1 || req.usuario.vacunas.general?.gestion === 1
+      )) {
         return errorMessage(res, {message: "Acceso Denegado."}, 401);
       }
       if (req.query.insumos && req.query.insumos !== "[]") {
@@ -297,9 +297,9 @@ app.get(
           // regresa mongoose.Types.ObjectId(area);
           filtro.areasID.$in[index] = isObjectIdValid(area);
         }
-      } else if (
-        !(req.usuario.vacunas.general?.lectura === 1 || req.usuario.vacunas.general?.gestion === 1)
-      ) {
+      } else if (!(
+        req.usuario.vacunas.general?.lectura === 1 || req.usuario.vacunas.general?.gestion === 1
+      )) {
         return errorMessage(res, {message: "Acceso Denegado."}, 401);
       }
       if (req.query.insumos && req.query.insumos !== "[]") {

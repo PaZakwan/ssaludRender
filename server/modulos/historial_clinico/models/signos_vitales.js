@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const uniqueValidator = require("mongoose-unique-validator");
 
 const actual_anterior = new mongoose.Schema({
   _id: false,
@@ -72,7 +71,5 @@ SignosVitalesSchema.pre(["findOneAndUpdate", "updateOne", "updateMany"], functio
 
   next();
 });
-
-SignosVitalesSchema.plugin(uniqueValidator, {message: "Ya existe. Valor repetido: '{VALUE}'."});
 
 module.exports = mongoose.model("SignosVitales", SignosVitalesSchema);

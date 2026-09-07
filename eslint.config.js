@@ -25,7 +25,6 @@ module.exports = [
     ],
   },
   js.configs.recommended,
-  pluginN.configs["flat/recommended-script"],
   pluginPromise.configs["flat/recommended"],
   {
     files: ["**/*.js"],
@@ -37,9 +36,12 @@ module.exports = [
       },
     },
     plugins: {
+      n: pluginN,
       prettier: prettierPlugin,
     },
     rules: {
+      ...pluginN.configs.recommended.rules,
+
       "no-unused-vars": [
         "warn",
         {
@@ -51,6 +53,7 @@ module.exports = [
           caughtErrorsIgnorePattern: "^(error$|_)",
         },
       ],
+      "no-useless-assignment": "warn",
       "no-extra-boolean-cast": "off",
 
       "no-console": "warn",

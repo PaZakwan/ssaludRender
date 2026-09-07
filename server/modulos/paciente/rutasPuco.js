@@ -285,6 +285,9 @@ app.get(
           puco: PucoCipres,
         });
       }
+      if (PucoCipres.error.message.includes("Nacimiento no coincide")) {
+        return errorMessage(res, PucoCipres.error, PucoCipres.error.status);
+      }
 
       // JUJUY
       const PucoJujuy = await consultarPucoDniJujuy(req.query.dni);

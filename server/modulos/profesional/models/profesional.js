@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const uniqueValidator = require("mongoose-unique-validator");
 
 const profesionalesSchema = new mongoose.Schema({
   usuario_modifico: {
@@ -102,7 +101,5 @@ profesionalesSchema.pre(["findOneAndUpdate", "updateOne", "updateMany"], functio
   }
   next();
 });
-
-profesionalesSchema.plugin(uniqueValidator, {message: "Ya existe. Valor repetido: '{VALUE}'."});
 
 module.exports = mongoose.model("Profesional", profesionalesSchema);

@@ -32,7 +32,7 @@
 | S.O.    | Ubuntu 20.04 |  W 11   |  W 11   |
 | MongoDB |    5.0.32    | 5.0.32  | 5.0.32  |
 | Node    |   20.20.1    | 24.14.0 | 24.14.0 |
-| NPM     |    10.9.2    | 11.9.0  | 11.9.0  |
+| NPM     |    10.9.2    | 11.19.0 | 11.19.0 |
 | Nodemon |     ---      | 3.1.14  | 3.1.14  |
 | PM2     |    5.4.0     |         |         |
 | Nginx   |              |         |         |
@@ -41,7 +41,7 @@
 ```bat
 # Go into the repository
 $ npm update / npm update --legacy-peer-deps
-$ npm install -g npm@10.9.4
+$ npm install -g npm@11.19.0
 $ npx update-browserslist-db@latest
 
 $ npm install -g @vue/cli
@@ -86,11 +86,33 @@ $ npm ls
       MAIL A CIPRES CONSULTA POR LA RESPUESTA "Internal Server Error".
       Persona Creada en CIPRES, SIN CODIGO DE CIPRES(SUMAR) y SIN RESPONSABLE o.o, creo que es lo que me esta generando el error.
 
-- [ ] ‼️ PACIENTE - Uploads -> salud_adulto => FIX {"Fecha último control": {$exists: true}, "ps_id": "salud_adulto"} $unset.
-  - [ ] rutas - Uploads -> Si la propiedad no esta en PacienteProperties, no cargar en la BD, delete propiedades que no estan.
+- [ ] ‼️ SISTEMA - Paciente -> index de documentos unicos.
+      los DNI mayores a 9.999.999 no deberian repetirse sin importar el sexo.
+      los DNI menores a 10.000.000 pueden repetirse solo si sexo es diferente (Masculino y Femenino) y fecha de nacimiento menor a 1950.
+
+- [ ] FARMACIA - Transferencias -> boton para rechazar las transferencias y que vuelvan al stock del lugar que las envía.
+      motivo_rechazo (String); insumos[].rechazado (Date)
+  - [ ] Dialog -> VER Transferencia y motivo de rechazo (Fecha Rechazadas | Recibidas).
+    - [/] VER REPORTES (BUSCAR DONDE SE USA "FarmaciaTransferencia") COMO CONTAR LAS RECHAZADAS... contar como salidas las que se retiraron y fueron recibidas, las rechazadas que no cuenten como movimiento, ver como hacer para que las rechazadas no cuenten como movimiento...
+      !! Faltan VER RutasStock y Rutas Ingresos.
+  - [ ] Buscar -> BTN -> Dialog para confirmar o rechazar, rechazar con motivo obligatorio.
+  - [ ] Buscar -> Color (Rojo) y filtro para ver transferecias rechazadas.
+  - [ ] PDF REMITO -> Agregar para completar motivo de rechazo.
+  - [ ] PDF Estado -> completadas -> Rechazadas | Recibidas. (rechazaste o te rechazaron? | Recibiste o Enviaste?)
+
+- [ ] FARMACIA - Ingreso -> "empaque_qty"
+  - [ ] "Empaque" -> en base al Alta del insumo con "Blister x Unidades", "Frasco x Unidades".
+
+- [ ] FARMACIA - Fracciones de productos (blíster o envase vs unidades sueltas)
+  - [ ] Stock de Insumos -> Insumo con empaque de "x Unidades" -> agregar nuevo campo "empaque_qty" para hacer inequivoco el producto en stock "Blister x Unidades", "Frasco x Unidades".
+  - [ ] Ingreso de Insumos -> Insumo con empaque de "x Unidades" -> agregar nuevo campo "empaque_qty" -> validacion e informar, no restringir, cantidad multiplo de "empaque_qty".
+  - [ ] Transferencia de Insumos -> validacion e informar, no restringir, cantidad multiplo de "empaque_qty".
+
+---
 
 - [ ] ‼️ PACIENTE - UNIFICACION -> ASIGNAR A UN PACIENTE, las id del otro (ref: "Paciente") y luego BORRARLO al otro.
   - [ ] Permiso Admin General, no cualquiera pueda unificar.
+  - [ ] Backend - ruta
 
   - [/] Dialog paciente Unificar -> Select Paciente 2 -> Pantalla Union Datos Basicos -> Datos Especiales.
     <progress value="68.99" max="100"></progress> 68.99%
@@ -117,6 +139,12 @@ $ npm ls
 
 ---
 
+- [ ] BACK - Improve Deteccion de errores -> Modelos no exportados de mongoose
+  - [ ] crear index_models (similar al rutas_api_index), con los require de todos los modelos de mongoose.
+  - [ ] cargar la funcion Async (startModelsDB) para iniciar la carga de modelos en el server (startSystem) y luego de la sincronizacion de indices el routes_API.startRutasApi.
+  - [ ] cambiar importacion de modelos en todas las rutas -> const mongoose = require("mongoose"); const Paciente = mongoose.model("Paciente");
+        // Usar el nombre exacto utilizado en mongoose.model("Nombre", schema...).
+
 - [/] FARMACIA - Alta Insumo ->
   - [x] accion_terapeutica -> Crear/Gestion accion_terapeutica (Diagnosticos Provincia) (farmacia/opcionesGrales)... con codigo ATC (opcional) (Mayor control local, para futuros reportes).
     - [x] Codigo ATC -> dejar link a pagina para que busquen...
@@ -139,14 +167,6 @@ $ npm ls
   - [ ] Farmacia - Entregas -> Solapa en la misma Entrega para cargar los faltantes de la receta.
 
 ---
-
-- [ ] FARMACIA - Ingreso -> "empaque_qty"
-  - [ ] "Empaque" -> en base al Alta del insumo con "Blister x Unidades", "Frasco x Unidades".
-
-- [ ] FARMACIA - Fracciones de productos (blíster o envase vs unidades sueltas)
-  - [ ] Stock de Insumos -> Insumo con empaque de "x Unidades" -> agregar nuevo campo "empaque_qty" para hacer inequivoco el producto en stock "Blister x Unidades", "Frasco x Unidades".
-  - [ ] Ingreso de Insumos -> Insumo con empaque de "x Unidades" -> agregar nuevo campo "empaque_qty" -> validacion e informar, no restringir, cantidad multiplo de "empaque_qty".
-  - [ ] Transferencia de Insumos -> validacion e informar, no restringir, cantidad multiplo de "empaque_qty".
 
 - [ ] FARMACIA - Reportes Excel ->
   - [ ] Ingresos/Egresos.
@@ -218,6 +238,11 @@ $ npm ls
         [generate-a-self-signed-SSL](https://stackoverflow.com/questions/10175812/how-to-generate-a-self-signed-ssl-certificate-using-openssl?answertab=trending#tab-top)
         [How SSL LOCAL](https://www.section.io/engineering-education/how-to-get-ssl-https-for-localhost/)
 - FRONT
+  - ESLINT ->
+    - [x] :pagination.sync="paginacion" -> @update:pagination="paginacion = $event"
+    - [x] this.$set(this.miArray, index, nuevoValor); -> this.usuario.email = 'juan@correo.com' o this.miArray.splice(index, 1, nuevoValor)
+    - [ ] ver tema de los componentes "hijos" emitan los cambios al "padre" al modificar las props. ("vue/no-mutating-props")
+
   - [ ] Performance ->
     - [x] mouseTools: Global con contador de cuantos lo estan leyendo; Centralizado Global ?Vue.Observer()? (vue 2.7 vue 3)
       - [x] TOUCH (moviles): touchstart, touchmove y touchend.

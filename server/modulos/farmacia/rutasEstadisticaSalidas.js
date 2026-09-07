@@ -14,7 +14,7 @@ const app = express();
 
 // ============================
 // Mostrar Insumos Estadistica, Salieron segun area filtros, entre fechas.
-// Descartes(Motivos) + Entregas + Transferencias(retirados)
+// Descartes(Motivos) + Entregas + Transferencias(retirados y no hayan sido rechazados)
 // Posibilidad de seleccionar los modelos de la DB
 // ============================
 app.get(
@@ -72,9 +72,9 @@ app.get(
           filtro.origen.$in[index] = isObjectIdValid(area);
         }
         filtroIndividual.origen = filtro.origen;
-      } else if (
-        !(req.usuario.farmacia.general?.reportes === 1 || req.usuario.farmacia.general?.admin === 1)
-      ) {
+      } else if (!(
+        req.usuario.farmacia.general?.reportes === 1 || req.usuario.farmacia.general?.admin === 1
+      )) {
         return errorMessage(res, {message: "Acceso Denegado."}, 401);
       }
       if (req.query.insumos && req.query.insumos !== "[]") {
@@ -666,6 +666,7 @@ app.get(
             "insumos.retirado": filtro["insumos.retirado"],
             "insumos.insumo": filtro.insumos?.$elemMatch.insumo || {$exists: true},
             "insumos.procedencia": filtro.insumos?.$elemMatch.procedencia || {$exists: true},
+            "insumos.rechazado": {$exists: false},
           })
           // agrupar - area/insumo, sumar por insumo.
           .group({

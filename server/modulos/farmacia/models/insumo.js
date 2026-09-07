@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const uniqueValidator = require("mongoose-unique-validator");
 
 const InsumoSchema = new mongoose.Schema({
   nombre: {
@@ -113,7 +112,5 @@ InsumoSchema.pre(["findOneAndUpdate", "updateOne", "updateMany"], function (next
 
   next();
 });
-
-InsumoSchema.plugin(uniqueValidator, {message: "Ya existe. Valor repetido: '{VALUE}'."});
 
 module.exports = mongoose.model("Insumo", InsumoSchema, "Insumos");

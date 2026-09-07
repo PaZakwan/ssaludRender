@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const uniqueValidator = require("mongoose-unique-validator");
 
 const areaSchema = new mongoose.Schema({
   usuario_modifico: {
@@ -92,7 +91,10 @@ areaSchema.pre(["findOneAndUpdate", "updateOne", "updateMany"], function (next) 
   next();
 });
 
-areaSchema.plugin(uniqueValidator, {message: "Ya existe. Valor repetido: '{VALUE}'."});
+// Para busquedas rapidas
+areaSchema.index({patrimonio: 1});
+areaSchema.index({farmacia: 1});
+areaSchema.index({vacunatorio: 1});
 
 module.exports = mongoose.connections[1].model("Area", areaSchema);
 module.exports = mongoose.model("Area", areaSchema);

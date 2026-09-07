@@ -10,7 +10,7 @@ const storage = multer.diskStorage({
   // process.env.MAIN_FOLDER
 
   //multer disk storage settings
-  destination: function (req, archivo, cb) {
+  destination: function (req, _archivo, cb) {
     cb(null, path.resolve(process.env.MAIN_FOLDER, "../file_server/uploads"));
   },
   filename: function (req, archivo, cb) {

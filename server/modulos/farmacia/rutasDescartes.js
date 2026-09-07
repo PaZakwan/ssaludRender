@@ -71,9 +71,9 @@ app.get(
           // regresa mongoose.Types.ObjectId(area);
           filtro.origen.$in[index] = isObjectIdValid(area);
         }
-      } else if (
-        !(req.usuario.farmacia.general?.reportes === 1 || req.usuario.farmacia.general?.admin === 1)
-      ) {
+      } else if (!(
+        req.usuario.farmacia.general?.reportes === 1 || req.usuario.farmacia.general?.admin === 1
+      )) {
         return errorMessage(res, {message: "Acceso Denegado."}, 401);
       }
       if (req.query.insumos && req.query.insumos !== "[]") {
@@ -271,23 +271,19 @@ app.delete(
       }
 
       // comparar permisos (origen)
-      if (
-        !(
-          req.usuario.farmacia.general?.admin === 1 ||
-          req.usuario.farmacia.gestion?.includes(descarteDB.origen?.toString?.())
-        )
-      ) {
+      if (!(
+        req.usuario.farmacia.general?.admin === 1 ||
+        req.usuario.farmacia.gestion?.includes(descarteDB.origen?.toString?.())
+      )) {
         return errorMessage(res, {message: "Acceso Denegado."}, 401);
       }
 
       // comparar permisos (fecha)
       let hoy = new Date().toISOString().slice(0, 10);
-      if (
-        !(
-          req.usuario.farmacia.general?.admin === 1 ||
-          new Date(descarteDB.retirado).toISOString().slice(0, 10) === hoy
-        )
-      ) {
+      if (!(
+        req.usuario.farmacia.general?.admin === 1 ||
+        new Date(descarteDB.retirado).toISOString().slice(0, 10) === hoy
+      )) {
         return errorMessage(
           res,
           {

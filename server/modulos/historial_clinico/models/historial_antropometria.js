@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const uniqueValidator = require("mongoose-unique-validator");
 
 const HistorialAntropometriaSchema = new mongoose.Schema({
   usuario_modifico: {
@@ -106,10 +105,6 @@ HistorialAntropometriaSchema.pre(["findOneAndUpdate", "updateOne", "updateMany"]
   }
 
   next();
-});
-
-HistorialAntropometriaSchema.plugin(uniqueValidator, {
-  message: "Ya existe. Valor repetido: '{VALUE}'.",
 });
 
 module.exports = mongoose.model("HistorialAntropometria", HistorialAntropometriaSchema);

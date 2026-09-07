@@ -1,7 +1,8 @@
 const express = require("express");
 
-const {verificaToken, verificaArrayPropValue} = require(process.env.MAIN_FOLDER +
-  "/middlewares/autenticacion");
+const {verificaToken, verificaArrayPropValue} = require(
+  process.env.MAIN_FOLDER + "/middlewares/autenticacion"
+);
 const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
 const {isObjectIdValid, sumarProps, dateUTC} = require(process.env.MAIN_FOLDER + "/tools/object");
 
@@ -71,9 +72,9 @@ app.get(
           filtro.origen.$in[index] = isObjectIdValid(area);
         }
         filtroIndividual.origen = filtro.origen;
-      } else if (
-        !(req.usuario.vacunas.general?.lectura === 1 || req.usuario.vacunas.general?.gestion === 1)
-      ) {
+      } else if (!(
+        req.usuario.vacunas.general?.lectura === 1 || req.usuario.vacunas.general?.gestion === 1
+      )) {
         return errorMessage(res, {message: "Acceso Denegado."}, 401);
       }
       if (req.query.insumos && req.query.insumos !== "[]") {

@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const uniqueValidator = require("mongoose-unique-validator");
 
 const autoUsuarioSchema = new mongoose.Schema({
   documento: {
@@ -148,10 +147,6 @@ autoUsuarioSchema.pre(["findOneAndUpdate", "updateOne", "updateMany"], function 
   }
 
   next();
-});
-
-autoUsuarioSchema.plugin(uniqueValidator, {
-  message: "Ya existe. Valor repetido: '{VALUE}'.",
 });
 
 module.exports = mongoose.model("autoUsuario", autoUsuarioSchema);

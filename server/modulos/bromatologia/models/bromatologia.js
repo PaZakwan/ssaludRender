@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const uniqueValidator = require("mongoose-unique-validator");
 
 const analisisValidos = {
   values: ["Bacteriologico", "Fisico-Quimico", "Alimento"],
@@ -203,10 +202,6 @@ bromatologiaSchema.pre(["findOneAndUpdate", "updateOne", "updateMany"], function
   }
 
   next();
-});
-
-bromatologiaSchema.plugin(uniqueValidator, {
-  message: "Ya existe. Valor repetido: '{VALUE}'.",
 });
 
 module.exports = mongoose.model("Bromatologia", bromatologiaSchema);

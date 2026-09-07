@@ -55,12 +55,10 @@ app.put("/config/:opc", [verificaToken], async (req, res) => {
       // No es admin
       switch (areaOpcion[0]) {
         case "farmacia":
-          if (
-            !(
-              req.usuario.farmacia?.general?.opciones === 1 ||
-              req.usuario.farmacia?.general?.admin === 1
-            )
-          ) {
+          if (!(
+            req.usuario.farmacia?.general?.opciones === 1 ||
+            req.usuario.farmacia?.general?.admin === 1
+          )) {
             return errorMessage(res, {message: "Actividad no autorizada."}, 403);
           }
           break;

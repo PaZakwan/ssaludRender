@@ -91,16 +91,18 @@ process.env.SEED = process.env.SEED ?? "seed-desarrollo";
 // ============================
 process.env.URLDB = process.env.MONGO_URI ?? "mongodb://127.0.0.1:27017/test";
 if (process.env.NODE_ENV === "dev") {
-  // serverSelectionTimeoutMS: Tiempo en retornar error de reconexion.
   // bufferCommands: Tiempo de espera en la ejecucion de las query de mongo, no espera antes de retornar un error.
   // family: 4; No intenta conectar con IPv6.
+  // serverSelectionTimeoutMS: Tiempo en retornar error de reconexion (30s).
+  // heartbeatFrequencyMS: Cada cuanto consulta el estado de conectividad (30s)
   // journal: true; Fuerza a escribir en el Journal (disco duro) antes de responder "OK".
   process.env.DBoptions = JSON.stringify({
-    serverSelectionTimeoutMS: 8 * 1000,
     bufferCommands: false,
-    family: 4,
-    journal: true,
     autoIndex: false,
+    family: 4,
+    serverSelectionTimeoutMS: 8 * 1000,
+    heartbeatFrequencyMS: 10 * 1000,
+    journal: true,
   });
   // VER EL TEMA DE Encriptacion -> 127.0.0.1 en el server local con certificado propio...
   //      Tutorial -> https://rajanmaharjan.medium.com/secure-your-mongodb-connections-ssl-tls-92e2addb3c89
@@ -110,11 +112,12 @@ if (process.env.NODE_ENV === "dev") {
   // tlsAllowInvalidCertificates: true,
 } else {
   process.env.DBoptions = JSON.stringify({
-    serverSelectionTimeoutMS: 8 * 1000,
     bufferCommands: false,
-    family: 4,
-    journal: true,
     autoIndex: false,
+    family: 4,
+    serverSelectionTimeoutMS: 8 * 1000,
+    heartbeatFrequencyMS: 10 * 1000,
+    journal: true,
   });
   // VER EL TEMA DE CRAFTEO DE INDEXS....
   // CREAR indexes en los modelos segun consulta corresponda.

@@ -9,7 +9,9 @@ const {uploadSingleRoute} = require(process.env.MAIN_FOLDER + "/middlewares/uplo
 // tools
 const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
 const {capitalize, trim_between} = require(process.env.MAIN_FOLDER + "/tools/string");
-const {isVacio, isDateValid, isObjectIdValid} = require(process.env.MAIN_FOLDER + "/tools/object");
+const {isVacio, isDateValid, isObjectIdValid, pickObject} = require(
+  process.env.MAIN_FOLDER + "/tools/object"
+);
 const {
   crearContentCSV,
   fileToJson,
@@ -124,10 +126,10 @@ const PacienteProperties = [
   "nombre",
   "tipo_doc",
   "documento",
-  "doc_tramite",
   "sexo",
   "fec_nac",
   "nacionalidad",
+  "doc_tramite",
   "telefono",
   "telefono_alt",
   "email",
@@ -145,10 +147,10 @@ const PacienteProperties = [
   "resp_apellido",
   "resp_nombre",
   "resp_tipo_doc",
+  "doc_responsable", // DNIResponsable
   "resp_sexo",
   "resp_fec_nac",
   // PS
-  "doc_responsable", // DNIResponsable
   "ps_id", // IdPS
   "error",
   "advertencia",
@@ -429,6 +431,12 @@ const PacienteFormat = async ({json, totales, line, logFile, csvErrors, csvFix})
       totales.advertencias += 1;
     }
 
+    // Solo toma las propiedades declaradas.
+    json = pickObject({
+      obj: json,
+      arr: [...PacienteProperties, "usuario_modifico", "estado", "updatedAt", "createdAt", "__v"],
+    });
+
     let existe = null;
     if (errores) {
       // errores-fixable => documento.. o apellido/nombre con numero (posible documento cargado en campo incorrecto).
@@ -596,7 +604,7 @@ const savePacientesUnHilo = async ({documentos, totales, line, logFile, csvError
     if (error?.writeErrors?.length > 0) {
       let mensajeTemp = `\n\nSave Errors [Fila ${line}] ${error?.writeErrors?.length}~${documentos.length}:`;
       error.writeErrors.forEach((element) => {
-        let errorMessage = "";
+        let errorMessage;
         if (element.err.code === 11000 || element.err.code === 11001) {
           let parts = element.err.errmsg.match(/index: (.+) dup key: (.+)/i);
           // parts[1] -> index name (I use this one to further parse out the field name)

@@ -589,7 +589,10 @@ const objectToFind = ({dato, mainValue = true, mainKey = false}) => {
         if (dato === "false" || dato === "true" || isObjectIdValid(dato) || isDateValid(dato)) {
           return dato;
         }
-        return new RegExp(dato, "i");
+        // Para usar indices de mongodb se podria agregar "^" al inicio de dato y quitar la "i",
+        // pero se pierde la busqueda de texto intermedio y es case sensitive.
+        // Replace -> Escapa los caracteres especiales para hacer una busqueda literal
+        return new RegExp(dato.substring(0, 256).replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&"), "i");
 
       case "number":
         return dato;

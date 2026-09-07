@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const uniqueValidator = require("mongoose-unique-validator");
 
 const patrimonioMovimientoSchema = new mongoose.Schema({
   usuario_modifico: {
@@ -81,10 +80,6 @@ patrimonioMovimientoSchema.pre(["findOneAndUpdate", "updateOne", "updateMany"], 
     this.getUpdate().updatedAt = new Date();
   }
   next();
-});
-
-patrimonioMovimientoSchema.plugin(uniqueValidator, {
-  message: "Ya existe. Valor repetido: '{VALUE}'.",
 });
 
 module.exports = mongoose.model("PatrimonioMovimiento", patrimonioMovimientoSchema);

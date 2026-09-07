@@ -20,7 +20,9 @@ const FarmaciaEstadistica = require("./modulos/farmacia/models/farmacia_estadist
 // │    └──────────────────── minute (0 - 59)
 // └───────────────────────── second (0 - 59, OPTIONAL)
 
-const saveFarmaciaEstadistica = function () {
+let scheduleState = false;
+
+const _saveFarmaciaEstadistica = function () {
   // guardar stock final, recibido(ingreso/trasnfer), consumo(entrega), pedido (solicitudes)
   // No guardar stock.. el stock calcularlo en base a la diferencia de los demas datos.
   // guardar los datos del mes pasado, por si faltan cargas del actual (ventana de carga 1 seamana)
@@ -116,14 +118,20 @@ const saveFarmaciaEstadistica = function () {
             _id: {area: "$origen", insumo: "$insumos.insumo"},
             retirado_transferencia: {
               $sum: {
-                $switch: {
-                  branches: [
-                    {
-                      case: {$not: ["$insumos.retirado"]},
-                      then: 0,
-                    },
-                  ],
-                  default: "$insumos.cantidad",
+                $cond: {
+                  if: {
+                    $and: [
+                      // Existe retirado
+                      {$ifNull: ["$insumos.retirado", false]},
+                      // No Existe rechazado
+                      {$not: [{$ifNull: ["$insumos.rechazado", false]}]},
+                    ],
+                  },
+                  // Tiene retirado y No tiene rechazado
+                  // - retirado - sin recibido ni rechazado
+                  // - retirado - recibido
+                  then: "$insumos.cantidad",
+                  else: 0,
                 },
               },
             },
@@ -274,9 +282,10 @@ const saveFarmaciaEstadistica = function () {
         // );
       }
     });
+    scheduleState = true;
   } catch (error) {
     clgFalla({
-      name: "× schedule saveFarmaciaEstadistica: ",
+      name: "schedule saveFarmaciaEstadistica: ",
       falla: error,
     });
   }
@@ -286,32 +295,17 @@ const saveFarmaciaEstadistica = function () {
 const scheduleRun = async () => {
   try {
     // saveFarmaciaEstadistica();
-    //  gracefully shutdown jobs when a system interrupt occurs.
-    process.on("SIGINT", async () => {
-      clgEvento({
-        name: "scheduleRun SIGINT",
-        evento: "gracefulShutdown",
-      });
-      await schedule.gracefulShutdown();
-      process.exit(0);
+
+    if (scheduleState) {
+      clgEvento({name: "⏰ Tareas Cronologicas", evento: "Tareas Programadas Inicializadas"});
+      return true;
+    }
+    clgFalla({
+      type: "Info",
+      name: "Tareas Cronologicas",
+      falla: "No hay Tareas Programadas",
     });
-    process.on("SIGTERM", async () => {
-      clgEvento({
-        name: "scheduleRun SIGTERM",
-        evento: "gracefulShutdown",
-      });
-      await schedule.gracefulShutdown();
-      process.exit(0);
-    });
-    process.on("SIGQUIT", async () => {
-      clgEvento({
-        name: "scheduleRun SIGQUIT",
-        evento: "gracefulShutdown",
-      });
-      await schedule.gracefulShutdown();
-      process.exit(0);
-    });
-    return true;
+    return false;
   } catch (error) {
     clgFalla({
       name: "scheduleRun CATCH: ",
@@ -321,6 +315,15 @@ const scheduleRun = async () => {
   }
 };
 
+// FUNCION PARA APAGAR Todas las tareas cronologicas
+const scheduleClose = async () => {
+  if (scheduleState) {
+    await schedule.gracefulShutdown();
+    return true;
+  }
+  return false;
+};
+
 // exports
 exports.scheduleRun = scheduleRun;
-// exports.saveFarmaciaEstadistica = saveFarmaciaEstadistica;
+exports.scheduleClose = scheduleClose;

@@ -293,23 +293,19 @@ app.delete(
       }
 
       // comparar permisos (origen)
-      if (
-        !(
-          req.usuario.farmacia.general?.admin === 1 ||
-          req.usuario.farmacia.entregas?.includes(entregaDB.origen?.toString?.())
-        )
-      ) {
+      if (!(
+        req.usuario.farmacia.general?.admin === 1 ||
+        req.usuario.farmacia.entregas?.includes(entregaDB.origen?.toString?.())
+      )) {
         return errorMessage(res, {message: "Acceso Denegado."}, 401);
       }
 
       // comparar permisos (fecha)
       let hoy = new Date().toISOString().slice(0, 10);
-      if (
-        !(
-          req.usuario.farmacia.general?.admin === 1 ||
-          new Date(entregaDB.retirado).toISOString().slice(0, 10) === hoy
-        )
-      ) {
+      if (!(
+        req.usuario.farmacia.general?.admin === 1 ||
+        new Date(entregaDB.retirado).toISOString().slice(0, 10) === hoy
+      )) {
         return errorMessage(
           res,
           {

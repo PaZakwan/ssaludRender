@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const uniqueValidator = require("mongoose-unique-validator");
 
 const {capitalize} = require(process.env.MAIN_FOLDER + "/tools/string");
 
@@ -281,7 +280,5 @@ usuarioSchema.pre(["findOneAndUpdate", "updateOne", "updateMany"], function (nex
 
   next();
 });
-
-usuarioSchema.plugin(uniqueValidator, {message: "Ya existe. Valor repetido: '{VALUE}'."});
 
 module.exports = mongoose.model("Usuario", usuarioSchema);

@@ -44,7 +44,7 @@ app.get(
       // entregas/descartes segun fecha(no timezone) y existe retirado.
       // ingreso segun insumo.recibido (timezone).
       // transferenciaIn segun insumo.retirado (timezone) y haya sido recibido.
-      // transferenciaOut segun insumo.retirado (timezone).
+      // transferenciaOut segun insumo.retirado (timezone) y que no haya sido rechazado.
       // ###########
       // VER EL TEMA DEL $elemMatch Y UNIFICAR FILTROS CON ESTADISTICA SALIDAS...
       // ###########
@@ -276,8 +276,8 @@ app.get(
           "insumos.insumo": 1,
           "insumos.procedencia": 1,
           "insumos.cantidad": 1,
-          "insumos.recibido": 1,
           "insumos.retirado": 1,
+          "insumos.recibido": 1,
         })
         .unwind({path: "$insumos", preserveNullAndEmptyArrays: true})
         .match({
@@ -325,11 +325,13 @@ app.get(
           "insumos.procedencia": 1,
           "insumos.cantidad": 1,
           "insumos.retirado": 1,
+          "insumos.rechazado": 1,
         })
         .unwind({path: "$insumos", preserveNullAndEmptyArrays: true})
         .match({
           ...filtroRetirado,
           origen: filtroIndividual.origen,
+          "insumos.rechazado": {$exists: false},
         })
         .project({
           area: "$origen",

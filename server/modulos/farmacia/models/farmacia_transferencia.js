@@ -1,5 +1,7 @@
 const mongoose = require("mongoose");
 
+const {trim_between} = require(process.env.MAIN_FOLDER + "/tools/string");
+
 const FarmaciaTransferenciaSchema = new mongoose.Schema({
   fecha: {
     type: Date,
@@ -54,6 +56,9 @@ const FarmaciaTransferenciaSchema = new mongoose.Schema({
         recibido: {
           type: Date,
         },
+        rechazado: {
+          type: Date,
+        },
       },
     ],
     required: [true, "La lista de Insumos a transferir es necesaria."],
@@ -71,6 +76,12 @@ const FarmaciaTransferenciaSchema = new mongoose.Schema({
     type: String,
     trim: true,
     lowercase: true,
+  },
+
+  motivo_rechazo: {
+    type: String,
+    trim: true,
+    set: trim_between,
   },
 
   fec_planificada: {

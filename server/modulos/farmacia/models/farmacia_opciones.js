@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const uniqueValidator = require("mongoose-unique-validator");
 
 const FarmaciaOpcionesSchema = new mongoose.Schema({
   area: {
@@ -28,7 +27,5 @@ FarmaciaOpcionesSchema.index(
     unique: true,
   }
 );
-
-FarmaciaOpcionesSchema.plugin(uniqueValidator, {message: "Ya existe. Valor repetido: '{VALUE}'."});
 
 module.exports = mongoose.model("FarmaciaOpciones", FarmaciaOpcionesSchema, "FarmaciaOpciones");

@@ -12,6 +12,7 @@ const db_connection = require("./db_connection");
 const schedule_task = require("./schedule_task");
 
 // WebServer + API Routes
+const gracefulShutdown = require("http-graceful-shutdown");
 const express = require("express");
 const history = require("connect-history-api-fallback");
 const cors = require("cors");
@@ -86,178 +87,208 @@ app.use(
   })
 );
 
-// FUNCION PARA CARGAR LAS RUTAS DE LA API (MODELOS DE MONGOOSE)
-const loadRutasApi = () => {
-  try {
-    // Habilita GETs de la carpeta public
-    app.use(express.static(path.resolve(__dirname, "../public")));
-    // app.use(express.static(path.resolve(__dirname, "../publicOld")));
+// Rutas de la API
+const routes_API = require("./rutas_api_index");
 
-    // Configuración global de rutas de la API
-    app.use("/api", require("./rutas_api_index"));
+const createAsyncServer = ({serverInstance, port}) => {
+  return new Promise((resolve, reject) => {
+    const server = serverInstance.listen?.(port) ?? serverInstance;
 
-    // Changelog de la API
-    app.get("/api/system/changelog", async (req, res) => {
-      let changelog = await fs.promises.readFile(
-        path.resolve(__dirname, "../CHANGELOG.md"),
-        "utf8"
-      );
-      return res.status(200).json({
-        ok: true,
-        changelog,
-      });
-    });
-    // ToDo de la API
-    app.get("/api/system/ToDoList", async (req, res) => {
-      let ToDoList = await fs.promises.readFile(path.resolve(__dirname, "../ToDo.md"), "utf8");
-      return res.status(200).json({
-        ok: true,
-        ToDoList,
-      });
-    });
-
-    // Si no encuentra la ruta responde con lo siguiente 404
-    app.use((req, res, next) => {
-      return res.status(404).json({
-        ok: false,
-        err: {
-          message: "Ruta Inexistente",
-          data: `${req.protocol}-${req.method}: ${req.originalUrl}`,
-        },
-      });
-    });
-
-    // Si ocurre algun error en la app 500
-    app.use((err, req, res, next) => {
-      clgFalla({
-        name: "RutasApi",
-        falla: err,
-      });
-      return res.status(500).json({
-        ok: false,
-        err: {
-          message: "Error Interno en el Servidor",
-          data: `${err.name}: ${err.message}`,
-        },
-      });
-    });
-  } catch (error) {
-    clgFalla({
-      name: "loadRutasApi CATCH",
-      falla: error,
-    });
-  }
+    server.on("listening", () => resolve(server));
+    server.on("error", (err) => reject(err));
+  });
 };
 
 // FUNCION PARA INICIAR SERVIDOR WEB (folder public) Y SERVICIOS DE RUTAS API
 const webApiServerRun = async () => {
   try {
-    //Revisando si esta en Heroku
+    const activeServers = {mainServer: null, redirectServer: null};
+
+    //Revisando si esta en Heroku (onRender) Free Host
     if (process.env.HEROKU) {
-      // Heroku Server
-      app.listen(process.env.PORT, () => {
-        mensajeBackend(process.env.BASE_URL, process.env.PORT);
-      });
+      // Hosting Server
+      const hostingServer = await createAsyncServer({serverInstance: app, port: process.env.PORT});
+
+      mensajeBackend(process.env.BASE_URL, process.env.PORT);
+      activeServers.mainServer = hostingServer;
     } else {
-      // Levantando servidor HTTP
+      // HTTP Server
+      let server80Instance;
+      let logCallback;
+
       if (process.env.NODE_ENV === "dev") {
         // Servidor para desarrollo local del FrontEnd
-        app.listen(80, () => {
-          mensajeBackend(process.env.BASE_URL, 80);
-        });
+        server80Instance = app;
+        logCallback = () => mensajeBackend(process.env.BASE_URL, 80);
       } else {
-        // Redirect from http port 80 to https 443
-        http
-          .createServer(function (req, res) {
-            res.writeHead(301, {Location: `https://${req.headers["host"]}${req.url}`});
-            res.end();
-            // res.redirect(301, `https://${req.headers['host']}${req.url}`);
-          })
-          .listen(80, () => {
-            clgEvento({
-              name: "Servidor",
-              evento: `funcionando en ${process.env.BASE_URL}:80 redirecciona al HTTPS 443`,
-            });
+        // Redirect from http to https
+        server80Instance = http.createServer((req, res) => {
+          res.writeHead(301, {Location: `https://${req.headers["host"]}${req.url}`});
+          res.end();
+          // res.redirect(301, `https://${req.headers['host']}${req.url}`);
+        });
+        logCallback = () =>
+          clgEvento({
+            name: "✅ Server",
+            evento: `Funcionando en ${process.env.BASE_URL}:80. Redirecciona al HTTPS`,
           });
       }
 
-      // Levantando servidor HTTPS
-      https
-        .createServer(
-          {
-            key: fs.readFileSync(process.env.KEY),
-            cert: fs.readFileSync(process.env.CERT),
-            dhparam: fs.readFileSync(process.env.DH),
-          },
-          app
-        )
-        .listen(process.env.PORT, () => {
-          mensajeBackend(process.env.BASE_URL, process.env.PORT);
-        });
+      // HTTPS Server
+      const httpsServerInstance = https.createServer(
+        {
+          key: fs.readFileSync(process.env.KEY),
+          cert: fs.readFileSync(process.env.CERT),
+          dhparam: fs.readFileSync(process.env.DH),
+        },
+        app
+      );
+
+      [activeServers.redirectServer, activeServers.mainServer] = await Promise.all([
+        createAsyncServer({serverInstance: server80Instance, port: 80}),
+        createAsyncServer({serverInstance: httpsServerInstance, port: process.env.PORT}),
+      ]);
+
+      // Ejecutamos los logs ahora que sabemos con certeza que están escuchando
+      logCallback();
+      mensajeBackend(process.env.BASE_URL, process.env.PORT);
     }
-    return true;
+    return activeServers;
   } catch (error) {
-    clgFalla({
-      name: "webApiServerRun CATCH",
-      falla: error,
-    });
-    return false;
+    throw new Error(`Server Web Api - CATCH.\nmessage: ${error.message}`, {cause: error});
   }
 };
 
 // FUNCION PARA INICIAR SERVIDOR
-const startServer = async () => {
+const startSystem = async () => {
   try {
+    clgEvento({
+      name: "🖥️  Sistema",
+      evento: "Iniciando Sistema..",
+    });
+
     // Conecta a la DB.
-    let DB = await db_connection.startConnectionDB();
+    const DB = await db_connection.startConnectionDB({
+      maxIntentos: 10,
+      tiempoEntreReintentos: 6 * 1000,
+    });
     // Carga las Rutas de la API.
-    loadRutasApi();
+    await routes_API.startRutasApi({routerPrincipal: app, path: "/api"});
     // Espera que se creen los modelos en las RUTAS
     clgEvento({
-      name: "Base de Datos",
-      evento: "Creando Modelos",
+      name: "⚙️  Base de Datos",
+      evento: "Modelos Cargados",
     });
-    if (process.env.NODE_ENV === "dev") {
-      await new Promise((resolve) => setTimeout(resolve, 1 * 1000));
-    } else {
-      await new Promise((resolve) => setTimeout(resolve, 2 * 1000));
-    }
+
+    // Sincronizacion por modelo
+    const modelos = Object.keys(DB.models);
+
     // Crea los INDEX de la BD.
     clgEvento({
-      name: "Base de Datos",
-      evento: "Creando Indices",
+      name: "⚙️  Base de Datos",
+      evento: "Sincronizando Indices..",
     });
-    let _index = await DB.syncIndexes({continueOnError: true});
-    // {key : value} => {Modelo : Error}
-    // console.log("_index", _index);
+    for (const nombreModelo of modelos) {
+      try {
+        await DB.model(nombreModelo).syncIndexes();
+      } catch (err) {
+        throw new Error(
+          `Base de Datos - Indices en Modelo: ${nombreModelo}.\nmessage: ${err.message}`,
+          {cause: err}
+        );
+      }
+    }
+
     // Espera que se Terminen de crear los index de la DB
     clgEvento({
-      name: "Base de Datos",
-      evento: "Terminando de Crear los Indices",
+      name: "💾 Base de Datos",
+      evento: "Finalizada la Sincronizacion",
     });
-    if (process.env.NODE_ENV === "dev") {
-      await new Promise((resolve) => setTimeout(resolve, 1 * 1000));
-    } else {
-      await new Promise((resolve) => setTimeout(resolve, 5 * 1000));
-    }
+
     // Carga las Tareas Cronologicas.
-    schedule_task.scheduleRun();
+    const scheduleState = await schedule_task.scheduleRun();
     // Levanta el Servidor.
-    await webApiServerRun();
+    const webApiServer = await webApiServerRun();
+
+    // Apagado Seguro
+    const opcionesShutdown = {
+      timeout: 30000, // Tiempo para responder peticiones activas (30 segundos)
+      signals: "SIGINT SIGTERM SIGQUIT",
+      forceExit: true,
+
+      preShutdown: async (signal) => {
+        clgEvento({
+          name: "🖥️  Sistema",
+          evento: `Iniciando apagado... (${signal})`,
+        });
+        if (scheduleState) {
+          clgEvento({name: "⚠️  Tareas Cronologicas", evento: "Deteniendo Tareas Programadas.."});
+          await schedule_task.scheduleClose();
+          clgEvento({name: "🛑 Tareas Cronologicas", evento: "Tareas Programadas Detenidas"});
+        }
+        if (webApiServer.redirectServer) {
+          clgEvento({name: "⚠️  Server", evento: "Cerrando Redireccionador.."});
+          await new Promise((resolve) => {
+            webApiServer.redirectServer.close(() => {
+              clgEvento({name: "🛑 Server", evento: "Redireccionador Cerrado"});
+              resolve();
+            });
+          });
+        }
+        clgEvento({
+          name: "⚠️  Server",
+          evento: "Cerrando Express..",
+        });
+      },
+
+      onShutdown: async () => {
+        clgEvento({
+          name: "🛑 Server",
+          evento: "Express Cerrado",
+        });
+        if (DB) {
+          clgEvento({name: "⚠️  Base de Datos", evento: "Cerrando Mongoose.."});
+          const conexionUpload = DB.upload;
+          const cierreDBs = [DB.disconnect()];
+          if (conexionUpload) {
+            cierreDBs.push(conexionUpload.close());
+          }
+
+          await Promise.all(cierreDBs);
+          clgEvento({name: "🛑 Base de Datos", evento: "Mongoose Cerrado"});
+        }
+      },
+
+      finally: () => clgEvento({name: "☠️  Sistema", evento: "Apagado Completo"}),
+    };
+
+    const _testShutdown = gracefulShutdown(webApiServer.mainServer, opcionesShutdown);
+
+    clgEvento({
+      name: "🖥️  Sistema",
+      evento: "Funcionando",
+    });
+
+    // Para testear el apagado, porque nodemon no espera...
+    // await _testShutdown();
   } catch (error) {
     clgFalla({
-      name: "startServer CATCH",
+      name: "startSystem CATCH",
       falla: error,
     });
+    if (process.env.NODE_ENV !== "dev") {
+      // eslint-disable-next-line n/no-process-exit
+      process.exit(1);
+    }
   }
 };
 
-startServer();
+startSystem();
 
 // funciones de msjs
 const mensajeBackend = function (BASE_URL, PORT) {
   clgEvento({
-    name: "Server",
+    name: "✅ Server",
     evento: `Funcionando en ${BASE_URL}:${PORT}`,
   });
 };

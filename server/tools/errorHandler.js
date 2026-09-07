@@ -28,17 +28,18 @@ const errorMessage = function (res, error, statusTemp) {
       // "cannot call connection functions" no se conecto con la BD
       if (error.message?.includes?.("initial connection")) {
         status = 503;
-        msjtemp = `No se logro la Conexion con la Base de Datos
+        msjtemp = `No se logro la Conexion con la Base de Datos,
         Comuniquese con soporte para mas informacion.`;
       } else {
         status = 500;
-        msjtemp = `Problema con la Base de Datos
+        msjtemp = `Problema con la Base de Datos,
         Comuniquese con soporte para mas informacion.`;
       }
       break;
     case "MongooseServerSelectionError":
+    case "MongoServerSelectionError":
       status = 503;
-      msjtemp = `Problema con la Conexion a la Base de Datos
+      msjtemp = `Problema con la Conexion a la Base de Datos,
       Comuniquese con soporte para mas informacion.`;
       break;
     case "ValidationError":
@@ -50,12 +51,33 @@ const errorMessage = function (res, error, statusTemp) {
 
     // MongoDB Errors
     case "MongoServerError":
-      status = 500;
-      if (error.code === 292 || error.code === 146) {
+      // Campos que deben ser unicos (Indices simples y compuestos)
+      if (error.code === 11000) {
+        status = 400;
+        const campos = Object.keys(error.keyValue || {});
+
+        if (campos.length === 0) {
+          msjtemp = "Se intento registrar un elemento duplicado en un campo unico.";
+          error.errors = ["global: Violacion de restriccion unica (valor duplicado)."];
+        } else if (campos.length > 1) {
+          msjtemp = `La combinacion de los campos (${campos.join(", ")}) debe ser unica y ya se encuentra registrada en el sistema.`;
+          error.errors = campos.map(
+            (campo) =>
+              `${campo}: Es parte de una combinacion existente. Valor repetido: '${error.keyValue[campo]}'.`
+          );
+        } else {
+          msjtemp = "El siguiente campo debe ser unico.";
+          error.errors = [
+            `${campos[0]}: Ya existe. Valor repetido: '${error.keyValue[campos[0]]}'.`,
+          ];
+        }
+      } else if (error.code === 292 || error.code === 146) {
+        status = 500;
         msjtemp = `Problema con la Consulta a la Base de Datos,
         El rango de busqueda de la Consulta Excede el Limite de Memoria del Servidor.`;
       } else {
-        msjtemp = `Problema con la Consulta a la Base de Datos
+        status = 500;
+        msjtemp = `Problema con la Consulta a la Base de Datos,
         Comuniquese con soporte para mas informacion.`;
       }
       break;
@@ -64,7 +86,7 @@ const errorMessage = function (res, error, statusTemp) {
       // "timed out" mensaje de BD no funcionando
       if (error.message?.includes?.("timed out")) {
         status = 503;
-        msjtemp = `Problema con la Conexion a la Base de Datos
+        msjtemp = `Problema con la Conexion a la Base de Datos (Timed Out),
         Comuniquese con soporte para mas informacion.`;
       }
       break;

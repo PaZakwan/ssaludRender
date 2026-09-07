@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const uniqueValidator = require("mongoose-unique-validator");
 
 const HistorialVacunaSchema = new mongoose.Schema({
   usuario_modifico: {
@@ -65,7 +64,5 @@ HistorialVacunaSchema.pre(["findOneAndUpdate", "updateOne", "updateMany"], funct
 
   next();
 });
-
-HistorialVacunaSchema.plugin(uniqueValidator, {message: "Ya existe. Valor repetido: '{VALUE}'."});
 
 module.exports = mongoose.model("HistorialVacuna", HistorialVacunaSchema);

@@ -1,10 +1,10 @@
 const express = require("express");
-const {ObjectId} = require("mongodb");
 
-const {verificaToken, verificaArrayPropValue} = require(process.env.MAIN_FOLDER +
-  "/middlewares/autenticacion");
+const {verificaToken, verificaArrayPropValue} = require(
+  process.env.MAIN_FOLDER + "/middlewares/autenticacion"
+);
 const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
-const {sumarProps, dateUTC} = require(process.env.MAIN_FOLDER + "/tools/object");
+const {sumarProps, dateUTC, isObjectIdValid} = require(process.env.MAIN_FOLDER + "/tools/object");
 
 const HistorialMotivo = require("./models/historial_motivo");
 const Nutricion = require("./models/especialidades/consultas_nutricion");
@@ -924,10 +924,12 @@ app.get(
         fecha: {$gte: new Date(req.query.desde), $lte: new Date(req.query.hasta)},
       };
       if (req.query.area && req.query.area != "null") {
-        filtro.area = ObjectId(req.query.area);
+        // regresa mongoose.Types.ObjectId(area);
+        filtro.area = isObjectIdValid(req.query.area);
       }
       if (req.query.profesional && req.query.profesional != "null") {
-        filtro.profesional = ObjectId(req.query.profesional);
+        // regresa mongoose.Types.ObjectId(profesional);
+        filtro.profesional = isObjectIdValid(req.query.profesional);
       }
 
       const outputControlNutricion = {

@@ -457,12 +457,10 @@ app.delete(
       }
 
       // comparar permisos (usuario creador)
-      if (
-        !(
-          req.usuario.vacunas.general?.gestion === 1 ||
-          req.usuario._id.toString() === vacunacionesDB.usuario_creador.toString()
-        )
-      ) {
+      if (!(
+        req.usuario.vacunas.general?.gestion === 1 ||
+        req.usuario._id.toString() === vacunacionesDB.usuario_creador.toString()
+      )) {
         return errorMessage(
           res,
           {

@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const uniqueValidator = require("mongoose-unique-validator");
 
 const lugarSchema = new mongoose.Schema({
   usuario_modifico: {
@@ -56,7 +55,5 @@ lugarSchema.pre(["findOneAndUpdate", "updateOne", "updateMany"], function (next)
 
   next();
 });
-
-lugarSchema.plugin(uniqueValidator, {message: "Ya existe. Valor repetido: '{VALUE}'."});
 
 module.exports = mongoose.model("Lugar", lugarSchema, "Lugares");

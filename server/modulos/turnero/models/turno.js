@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const uniqueValidator = require("mongoose-unique-validator");
 
 const turnoSchema = new mongoose.Schema({
   usuario_modifico: {
@@ -77,7 +76,5 @@ turnoSchema.pre(["findOneAndUpdate", "updateOne", "updateMany"], async function 
   }
   next();
 });
-
-turnoSchema.plugin(uniqueValidator, {message: "Ya existe. Valor repetido: '{VALUE}'."});
 
 module.exports = mongoose.model("Turno", turnoSchema);

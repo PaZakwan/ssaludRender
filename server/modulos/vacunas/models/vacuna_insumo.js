@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const uniqueValidator = require("mongoose-unique-validator");
 
 const VacunaInsumoSchema = new mongoose.Schema({
   nombre: {
@@ -129,7 +128,5 @@ VacunaInsumoSchema.pre(["findOneAndUpdate", "updateOne", "updateMany"], function
   }
   next();
 });
-
-VacunaInsumoSchema.plugin(uniqueValidator, {message: "Ya existe. Valor repetido: '{VALUE}'."});
 
 module.exports = mongoose.model("VacunaInsumo", VacunaInsumoSchema, "VacunaInsumos");

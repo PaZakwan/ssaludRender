@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const uniqueValidator = require("mongoose-unique-validator");
 
 const VacunaStockSchema = new mongoose.Schema({
   area: {
@@ -50,7 +49,5 @@ VacunaStockSchema.pre(["findOneAndUpdate", "updateOne", "updateMany"], function 
   }
   next();
 });
-
-VacunaStockSchema.plugin(uniqueValidator, {message: "Ya existe. Valor repetido: '{VALUE}'."});
 
 module.exports = mongoose.model("VacunaStock", VacunaStockSchema, "VacunaStock");

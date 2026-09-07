@@ -107,14 +107,12 @@ app.put(
         });
       }
       // verificar permisos que sea admin(CIPRES o Gestion) o que "origen" sea de sus CIPRES vacunas o que sea su Vacuna.
-      if (
-        !(
-          req.usuario.vacunas.general?.gestion === 1 ||
-          req.usuario.vacunas.general?.cipres === 1 ||
-          req.usuario._id.toString() === vacunacionDB.usuario_creador.toString() ||
-          req.usuario.vacunas.cipres?.includes(vacunacionDB.origen.id)
-        )
-      ) {
+      if (!(
+        req.usuario.vacunas.general?.gestion === 1 ||
+        req.usuario.vacunas.general?.cipres === 1 ||
+        req.usuario._id.toString() === vacunacionDB.usuario_creador.toString() ||
+        req.usuario.vacunas.cipres?.includes(vacunacionDB.origen.id)
+      )) {
         return errorMessage(res, {message: "Acceso Denegado."}, 401);
       }
 
@@ -827,11 +825,12 @@ const buscarPacienteCIPRES = async ({paciente, responsable = false}) => {
         return {
           err:
             `Paciente: Fecha de Nacimiento ${responsable ? "del Responsable " : ""}no coincide con la del CIPRES.` +
-            `\nDatos -> Documento ${responsable ? "Responsable" : ""}: ${paciente.documento}.` +
+            `\nDatos -> Documento ${responsable ? "Responsable" : ""}: ${paciente.documento} (${paciente.sexo[0].toUpperCase()}).` +
             `\nCIPRES: ${pacienteCipres.data["hydra:member"][0].paciente?.fechaNacimiento
               ?.split("-")
               .reverse()
-              .join("-")}. LOCAL: ${paciente.fec_nac}\n`,
+              .join("-")}. LOCAL: ${paciente.fec_nac}.` +
+            `\nCIPRES: ${pacienteCipres.data["hydra:member"][0].paciente?.apellido}, ${pacienteCipres.data["hydra:member"][0].paciente?.nombre}.\n`,
         };
       }
       return {
@@ -1440,7 +1439,7 @@ const _matchPacienteCIPRES = async ({
     }
   } catch (error) {
     if (error.status === 404 || !(paciente.documento && paciente.doc_responsable)) {
-      let pacienteCipres = null;
+      let pacienteCipres;
       if (!paciente.documento && paciente.doc_responsable) {
         // no encontrado responsable
         // obetener datos locales del responsable con el documento
@@ -1650,7 +1649,7 @@ const matchPlanesVacunasCIPRES = async ({vacunacionDB, CIPRES}) => {
   }
 
   // Obtener datos de planes del CIPRES para detectar coincidencias
-  let planCipres = null;
+  let planCipres;
   if (CIPRES?.planVacunacionesVacunaNOMIVAC) {
     planCipres = CIPRES.planVacunacionesVacunaNOMIVAC?.[vacunacionDB.id_Nomivac] ?? [];
   } else {

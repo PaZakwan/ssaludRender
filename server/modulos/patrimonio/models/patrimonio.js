@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const uniqueValidator = require("mongoose-unique-validator");
 
 const patrimonioSchema = new mongoose.Schema({
   usuario_creador: {
@@ -252,8 +251,6 @@ patrimonioSchema.pre(["findOneAndUpdate", "updateOne", "updateMany"], async func
 
   next();
 });
-
-patrimonioSchema.plugin(uniqueValidator, {message: "Ya existe. Valor repetido: '{VALUE}'."});
 
 // para usarlo en el Schema.pre("save")
 const Patrimonio = mongoose.model("Patrimonio", patrimonioSchema);

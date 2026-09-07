@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const uniqueValidator = require("mongoose-unique-validator");
 
 const configSchema = new mongoose.Schema({
   usuario_modifico: {
@@ -40,10 +39,6 @@ configSchema.pre(["findOneAndUpdate", "updateOne", "updateMany"], function (next
   }
 
   next();
-});
-
-configSchema.plugin(uniqueValidator, {
-  message: "Ya existe. Valor repetido: '{VALUE}'.",
 });
 
 module.exports = mongoose.model("Config", configSchema);

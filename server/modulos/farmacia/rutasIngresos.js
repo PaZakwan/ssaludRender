@@ -83,9 +83,9 @@ app.get(
           // regresa mongoose.Types.ObjectId(area);
           filtro.destino.$in[index] = isObjectIdValid(area);
         }
-      } else if (
-        !(req.usuario.farmacia.general?.reportes === 1 || req.usuario.farmacia.general?.admin === 1)
-      ) {
+      } else if (!(
+        req.usuario.farmacia.general?.reportes === 1 || req.usuario.farmacia.general?.admin === 1
+      )) {
         return errorMessage(res, {message: "Acceso Denegado."}, 401);
       }
       if (req.query.insumos && req.query.insumos !== "[]") {
@@ -547,9 +547,9 @@ app.get(
           // regresa mongoose.Types.ObjectId(area);
           areasID.$in[index] = isObjectIdValid(area);
         }
-      } else if (
-        !(req.usuario.farmacia.general?.reportes === 1 || req.usuario.farmacia.general?.admin === 1)
-      ) {
+      } else if (!(
+        req.usuario.farmacia.general?.reportes === 1 || req.usuario.farmacia.general?.admin === 1
+      )) {
         return errorMessage(res, {message: "Acceso Denegado."}, 401);
       }
       let filtro = {};
@@ -1037,9 +1037,9 @@ app.get(
           // regresa mongoose.Types.ObjectId(area);
           filtro.destino.$in[index] = isObjectIdValid(area);
         }
-      } else if (
-        !(req.usuario.farmacia.general?.reportes === 1 || req.usuario.farmacia.general?.admin === 1)
-      ) {
+      } else if (!(
+        req.usuario.farmacia.general?.reportes === 1 || req.usuario.farmacia.general?.admin === 1
+      )) {
         return errorMessage(res, {message: "Acceso Denegado."}, 401);
       }
       if (req.query.insumos && req.query.insumos !== "[]") {

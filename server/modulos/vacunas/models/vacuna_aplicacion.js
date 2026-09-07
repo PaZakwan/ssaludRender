@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const uniqueValidator = require("mongoose-unique-validator");
 
 const VacunaAplicacionSchema = new mongoose.Schema({
   usuario_creador: {
@@ -243,7 +242,10 @@ const VacunaAplicacionSchema = new mongoose.Schema({
   },
 });
 
-VacunaAplicacionSchema.plugin(uniqueValidator, {message: "Ya existe. Valor repetido: '{VALUE}'."});
+// Para busquedas rapidas
+VacunaAplicacionSchema.index({paciente: 1});
+VacunaAplicacionSchema.index({origen: 1, insumo: 1, fecha: -1});
+VacunaAplicacionSchema.index({insumo: 1, fecha: -1});
 
 mongoose.connections[1].model("VacunaAplicacion", VacunaAplicacionSchema, "VacunaAplicaciones");
 module.exports = mongoose.model("VacunaAplicacion", VacunaAplicacionSchema, "VacunaAplicaciones");

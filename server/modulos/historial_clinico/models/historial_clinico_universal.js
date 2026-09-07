@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const uniqueValidator = require("mongoose-unique-validator");
 
 const HistorialClinicoUniversalSchema = new mongoose.Schema({
   usuario_modifico: {
@@ -101,10 +100,6 @@ HistorialClinicoUniversalSchema.pre(
     next();
   }
 );
-
-HistorialClinicoUniversalSchema.plugin(uniqueValidator, {
-  message: "Ya existe. Valor repetido: '{VALUE}'.",
-});
 
 module.exports = mongoose.model(
   "HistorialClinico",

@@ -30,9 +30,8 @@ const modificarStockInc = async (area, insumo, cantidad, resta) => {
     return {err: "Ya recibido"};
   }
 
-  let stockDB = null;
   // busca stock existente en "area"
-  stockDB = await VacunaStock.findOne(filtro).exec();
+  let stockDB = await VacunaStock.findOne(filtro).exec();
 
   if (resta) {
     if (stockDB?.cantidad > cantidad) {

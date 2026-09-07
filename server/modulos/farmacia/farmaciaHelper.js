@@ -23,16 +23,20 @@ const modificarStockInc = async (area, insumo, cantidad, resta) => {
   } else {
     filtro.vencimiento = {$exists: false};
   }
-  // verifica si ya fue retirado o recibido
+  // verifica si ya fue retirado o recibido | rechazado
   if (resta && insumo.retirado) {
     return {err: "Ya retirado"};
-  } else if (!resta && insumo.recibido) {
-    return {err: "Ya recibido"};
+  } else if (!resta) {
+    if (insumo.recibido) {
+      return {err: "Ya recibido"};
+    }
+    if (insumo.rechazado) {
+      return {err: "Ya rechazado"};
+    }
   }
 
-  let stockDB = null;
   // busca stock existente en "area"
-  stockDB = await FarmaciaStock.findOne(filtro).exec();
+  let stockDB = await FarmaciaStock.findOne(filtro).exec();
 
   if (resta) {
     if (stockDB?.cantidad > cantidad) {

@@ -83,4 +83,9 @@ const InsumoEntregaSchema = new mongoose.Schema({
   },
 });
 
+// Para busquedas rapidas
+InsumoEntregaSchema.index({paciente: 1});
+InsumoEntregaSchema.index({origen: 1, insumo: 1, fecha: -1});
+InsumoEntregaSchema.index({insumo: 1, fecha: -1});
+
 module.exports = mongoose.model("InsumoEntrega", InsumoEntregaSchema, "InsumoEntregas");

@@ -175,13 +175,11 @@ app.get(
           // regresa mongoose.Types.ObjectId(area);
           filtro.area.$in[index] = isObjectIdValid(area);
         }
-      } else if (
-        !(
-          req.usuario.farmacia.general?.stock === 1 ||
-          req.usuario.farmacia.general?.reportes === 1 ||
-          req.usuario.farmacia.general?.admin === 1
-        )
-      ) {
+      } else if (!(
+        req.usuario.farmacia.general?.stock === 1 ||
+        req.usuario.farmacia.general?.reportes === 1 ||
+        req.usuario.farmacia.general?.admin === 1
+      )) {
         return errorMessage(res, {message: "Acceso Denegado."}, 401);
       }
       if (req.query.insumos && req.query.insumos !== "[]") {
@@ -861,6 +859,7 @@ app.put(
               lote: transferenciaDB.insumos[index].lote,
               vencimiento: transferenciaDB.insumos[index].vencimiento,
               retirado: transferenciaDB.insumos[index].retirado,
+              rechazado: transferenciaDB.insumos[index].rechazado,
             },
             transferenciaDB.insumos[index].cantidad,
             {resta: true}
@@ -895,6 +894,117 @@ app.put(
         }
       } else {
         return errorMessage(res, {message: "Transferencia no encontrada."}, 404);
+      }
+
+      return res.status(errors.length > 0 ? 500 : 202).json({
+        ok: errors.length > 0 ? false : true,
+        retirado: req.body.remito,
+        err: {
+          errors,
+        },
+      });
+    } catch (err) {
+      return errorMessage(res, err, err.code);
+    }
+  }
+);
+
+// ============================
+// Rechazar el remito (rechazado fecha)
+// ============================
+// ============================
+// XXXXXX  Desarrollar  XXXXXXX
+// ============================
+app.put(
+  "/farmacia/rechazar",
+  [
+    verificaToken,
+    (req, res, next) => {
+      req.verificacionArray = [
+        {prop: "farmacia.gestion"},
+        {prop: "farmacia.general.admin", value: 1},
+      ];
+      next();
+    },
+    verificaArrayPropValue,
+  ],
+  async (req, res) => {
+    // ============================
+    // XXXXXX  Desarrollar  XXXXXXX
+    // SIMILAR AL DE RETIRADO
+    // VER TEMA DE PERMISO PARA RECHAZAR (Permiso en destino? y no en origen)
+    // "insumos.rechazado"
+    // RE VER EL HELPER DE RESTA Y SUMA DE PASARLE EL retirado, recibido y rechazado.
+    // ============================
+    try {
+      let transferenciaDB = null;
+      let errors = [];
+
+      // Buscar Transferencia
+      transferenciaDB = await FarmaciaTransferencia.findOne({
+        remito: req.body.remito,
+      })
+        .populate("insumos.insumo", "nombre")
+        .exec();
+
+      if (!transferenciaDB) {
+        return errorMessage(res, {message: "Transferencia no encontrada."}, 404);
+      }
+
+      if (
+        // verificar que sea admin o que "destino" sea de su gestion.
+        !(
+          req.usuario.farmacia.general?.admin === 1 ||
+          req.usuario.farmacia.gestion?.includes(transferenciaDB.destino.toString())
+        )
+      ) {
+        return errorMessage(res, {message: "Acceso Denegado."}, 401);
+      }
+      let rechazado = Date.now();
+      // recorrer insumos
+      for (let index = 0; index < transferenciaDB.insumos.length; index++) {
+        // Modificar stock
+        let stockDB = null;
+        stockDB = await modificarStockInc(
+          transferenciaDB.origen,
+          {
+            insumo: transferenciaDB.insumos[index].insumo._id,
+            procedencia: transferenciaDB.insumos[index].procedencia,
+            lote: transferenciaDB.insumos[index].lote,
+            vencimiento: transferenciaDB.insumos[index].vencimiento,
+            retirado: transferenciaDB.insumos[index].retirado,
+            rechazado: transferenciaDB.insumos[index].rechazado,
+          },
+          transferenciaDB.insumos[index].cantidad,
+          {resta: false}
+        );
+        if (!stockDB || (stockDB && stockDB.err)) {
+          // o si tira error..
+          errors.push({
+            message: `${transferenciaDB.insumos[index].insumo.nombre} - Modificar Stock - ${
+              stockDB?.err ?? "No contemplado"
+            }.`,
+            type: "Modificar Stock",
+          });
+        } else {
+          // si es exitoso..
+          transferenciaDB.insumos[index].retirado = retirado;
+        }
+      }
+
+      // Retirar Update
+      let retiradoDB = null;
+      retiradoDB = await FarmaciaTransferencia.findOneAndUpdate(
+        {
+          remito: req.body.remito,
+        },
+        {insumos: transferenciaDB.insumos}
+      ).exec();
+      if (retiradoDB === null) {
+        errors.push({
+          message: `${req.body.remito} - Transferencia Retirada Error`,
+          type: "Transferencia Retirar",
+        });
       }
 
       return res.status(errors.length > 0 ? 500 : 202).json({

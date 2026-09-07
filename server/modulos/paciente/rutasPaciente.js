@@ -289,6 +289,7 @@ app.put(
           ],
         }).cursor();
 
+        let fallas = [];
         for await (const vacunacionDB of vacunacionesCursor) {
           if (body.$set.sexo !== vacunacionDB.sexo) {
             vacunacionDB.sexo = body.$set.sexo;
@@ -319,16 +320,27 @@ app.put(
                 vacunacionDB.edad_valor = edadTemp?.edad_days ?? "";
                 break;
 
-              case "Hora":
-                vacunacionDB.edad_valor;
-                break;
-
+              // Dia | Hora | dafault -> Dia
               default:
-                vacunacionDB.edad_valor;
+                vacunacionDB.edad_unidad = "Dia";
+                vacunacionDB.edad_valor = edadTemp?.edad_days ?? "";
                 break;
             }
           }
-          await vacunacionDB.save();
+
+          try {
+            await vacunacionDB.save();
+          } catch (err) {
+            // error en alguna vacunacion
+            fallas.push(
+              Object.entries(err.errors)
+                .map(([key, value]) => `${key}: ${value.message}`)
+                .join("\n   ")
+            );
+          }
+        }
+        if (fallas.length) {
+          return errorMessage(res, {message: `Errores:\n\n • ${fallas.join("\n\n • ")}`}, 400);
         }
       } else {
         // Nuevo

@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const uniqueValidator = require("mongoose-unique-validator");
 
 const TuberculosisSchema = require("./schemas/Tuberculosis");
 
@@ -53,9 +52,31 @@ const pacienteSchema = new mongoose.Schema({
     validate: [
       {
         validator: function (val) {
+          const tipo_doc =
+            this instanceof mongoose.Query
+              ? (this.getUpdate().$set?.tipo_doc ?? this.getUpdate().tipo_doc)
+              : this.tipo_doc;
+          if (tipo_doc === "DNI") {
+            const esNumericoValido = /^[0-9]{6,8}$/.test(val);
+            const noEsTodoCeros = !/^0+$/.test(val);
+
+            return esNumericoValido && noEsTodoCeros;
+          }
+
           return /^[A-Z0-9]+$/.test(val);
         },
-        message: "Solo se admiten numeros y letras Mayusculas.",
+        message: function (props) {
+          // Asumimos que es un fallo por DNI
+          if (
+            props.value.length < 6 ||
+            props.value.length > 8 ||
+            /^0+$/.test(props.value) ||
+            /[A-Z]/.test(props.value)
+          ) {
+            return "El DNI debe tener entre 6 y 8 Numeros.";
+          }
+          return "Solo se admiten Numeros y letras Mayusculas.";
+        },
       },
     ],
   },
@@ -223,12 +244,14 @@ pacienteSchema.index(
   {
     name: "documento_unico",
     unique: true,
-    sparse: true,
     partialFilterExpression: {
       $and: [{documento: {$exists: true}}, {sexo: {$exists: true}}, {tipo_doc: {$exists: true}}],
     },
   }
 );
+
+// Para busquedas exactas rapidas o regex que buscan desde el primer caracter /^fantasmin/
+pacienteSchema.index({documento: 1});
 
 pacienteSchema.virtual("nombreC").get(function () {
   try {
@@ -302,8 +325,6 @@ pacienteSchema.pre(["findOneAndUpdate", "updateOne", "updateMany"], function (ne
 
   next();
 });
-
-pacienteSchema.plugin(uniqueValidator, {message: "Ya existe. Valor repetido: '{VALUE}'."});
 
 mongoose.connections[1].model("Paciente", pacienteSchema);
 module.exports = mongoose.model("Paciente", pacienteSchema);

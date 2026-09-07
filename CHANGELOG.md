@@ -27,6 +27,26 @@
 
 ---
 
+### [1.7.20260907] - 2026-09-07
+
+- 📈 Improved a Sistema - Frontend => Se mejoraron los mensajes de los errores al validar formularios (validarFormulario).
+- 📈 Improved a Sistema - Frontend => Se borro la libreria vue-axios, y ahora estan centralizadas todas las consultas de la APP (+requestAPI -axiosConfig -APIURL).
+- 📈 Improved a Sistema - Frontend/Backend => Se actualizo libreria (ESLINT v9 -> v10) que cuida el formato-estructura del codigo.
+
+- 📈 Improved a Sistema - Backend => Busquedas de Aplicaciones (Vacunas), Entregas (Farmacia) y Areas seran mas rapidas (se crearon nuevos indices).
+- 📈 Improved a Sistema - Backend => Se borro una libreria (mongoose-unique-validator) que le daba formato a los errores de validacion de campos unicos, ahora el formato lo maneja la funcion de errorMessage(), al borrarla se mejora el guardado de documentos (antes se realizaba doble consulta a la BD).
+- 📈 Improved a Sistema - Backend => La ejecucion del servidor ahora espera la conexion inicial con la BD (10 reintentos), la sincronizacion de indices y en caso de ocurrir un error severo el servidor no inicia.
+- 📈 Improved a Sistema - Backend => El apagado del servidor ahora espera que se cierren los procesos del sistema en orden -> Cronjobs, Web server y BD.
+- 🩹 Fixed a Sistema - Backend => En objectToFind la busqueda de campos de string con RegExp ahora es literal, antes no dejaba buscar los caracteres especiales de RegExp, ademas ahora esta limitado a 256 caracteres.
+- 🩹 Fixed a Sistema - Backend => Upload de Pacientes -> en PacienteFormat ahora se usa pickObject para que solo se guarden las propiedades declaradas de los pacientes.
+
+- 🩹 Fixed a Sistema - Paciente => Antes mostraba error al querer modificar un Paciente con apliaciones de vacunas historicas del PS (que no tenian edad_unidad).
+- 📈 Improved a Sistema - Paciente => Mayor prioridad al error por Fecha de Nacimiento en las consultas de Obra Social (PUCO) por medio de CIPRES.
+- 🚨 Changed a Sistema - Paciente => Ahora la busqueda de Pacientes por medio del documento del responsable es mas visible (Antes en Filtro Avanzado).
+- 🚨 Changed a Sistema - Paciente => Ahora el alta/edicion de un Paciente solo permite cargar DNI con 6 a 8 caracteres solo numericos (antes 14 caracteres numericos maximo), el resto de tipo de documentos sigue con la limitacion unica de maximo 14 caracteres.
+
+- ✨ Added a Sistema - Usuarios => Se agrego la visibilidad de la Fecha de Alta de los usuarios al gestor de usuarios.
+
 ### [1.7.20260724] - 2026-07-24
 
 - 🩹 Fixed a Sistema - Frontend => Cursor (mouse) follower, al abrir un iframe (reportes PDF), si el follower estaba activado quedaba bugueado sobre el iframe.

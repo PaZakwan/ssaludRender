@@ -2,8 +2,9 @@ const express = require("express");
 const mongoose = require("mongoose");
 
 // Middleware de Permisos
-const {verificaToken, verificaAdmin_Role} = require(process.env.MAIN_FOLDER +
-  "/middlewares/autenticacion");
+const {verificaToken, verificaAdmin_Role} = require(
+  process.env.MAIN_FOLDER + "/middlewares/autenticacion"
+);
 const {uploadSingleRoute} = require(process.env.MAIN_FOLDER + "/middlewares/upload");
 // tools
 const {errorMessage} = require(process.env.MAIN_FOLDER + "/tools/errorHandler");
@@ -436,7 +437,7 @@ const VacunacionFormat = async ({
   line,
   logFile,
   csvErrors,
-  csvFix,
+  // csvFix,
   vacunatoriosDB,
   vacunasDB,
 }) => {
@@ -1013,7 +1014,7 @@ const saveVacunacionesUnHilo = async ({documentos, totales, line, logFile, csvEr
     if (error?.writeErrors?.length > 0) {
       let mensajeTemp = `\n\nSave Errors [Fila ${line}] ${error?.writeErrors?.length}~${documentos.length}:`;
       error.writeErrors.forEach((element) => {
-        let errorMessage = "";
+        let errorMessage;
         if (element.err.code === 11000 || element.err.code === 11001) {
           let parts = element.err.errmsg.match(/index: (.+) dup key: (.+)/i);
           // parts[1] -> index name (I use this one to further parse out the field name)
@@ -1188,7 +1189,7 @@ app.post(
             line,
             logFile,
             csvErrors,
-            csvFix,
+            // csvFix,
             vacunatoriosDB,
             vacunasDB,
           });

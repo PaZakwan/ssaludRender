@@ -114,7 +114,7 @@ async function guardarLog(file, exitosos, errores, totales) {
       flag: "a",
     });
   } catch (error) {
-    throw new Error(`Error al escribir el uploads/logs: ${error}.`);
+    throw new Error(`Error al escribir el uploads/logs: ${error}.`, {cause: error});
   }
 }
 
@@ -162,8 +162,6 @@ app.post("/area/upload", [verificaToken, verificaAdmin_Role], (req, res) => {
             });
           }
           // Manipulando excel para luego actualizar la BD
-          let object = {};
-          let objetoBDTMP = {};
           let exitosos = "";
           let errores = "";
           let totales = {
@@ -171,11 +169,11 @@ app.post("/area/upload", [verificaToken, verificaAdmin_Role], (req, res) => {
             errores: 0,
           };
           for (let index = 0; index < result.length; index++) {
-            object = result[index];
+            let object = result[index];
             // preparando el objeto segun las columnas del excel
             if (object["area"]) {
               // Delete del campo si esta como null / "" / undefined /array vacio
-              objetoBDTMP = objectSetUnset({dato: object}).dato;
+              let objetoBDTMP = objectSetUnset({dato: object}).dato;
 
               objetoBDTMP.$set["usuario_modifico"] = req.usuario._id;
 
@@ -206,10 +204,6 @@ app.post("/area/upload", [verificaToken, verificaAdmin_Role], (req, res) => {
                 }\r\n\t`;
                 totales.errores += 1;
               }
-
-              // Reiniciar objetos para el proximo del loop
-              area = "";
-              objetoBDTMP = {};
             } else {
               // si No tiene nombre de area no hacer nada
               errores = `${errores}Fila Excel: ${index + 2}, Error: No contiene Area.\r\n\t`;
@@ -270,7 +264,7 @@ app.post("/patrimonio/upload", [verificaToken, verificaAdmin_Role], (req, res) =
         },
       });
     }
-    let exceltojson;
+    // let exceltojson;
     if (req.file.originalname.split(".")[req.file.originalname.split(".").length - 1] === "xlsx") {
       // exceltojson = xlsxtojson;
     } else if (
@@ -294,10 +288,6 @@ app.post("/patrimonio/upload", [verificaToken, verificaAdmin_Role], (req, res) =
             });
           }
           // Manipulando excel para luego actualizar la BD
-          let object = {};
-          let $set = {};
-          let objetoBDTMP = {};
-          let fechaError = false;
           let exitosos = "";
           let errores = "";
           let totales = {
@@ -306,7 +296,7 @@ app.post("/patrimonio/upload", [verificaToken, verificaAdmin_Role], (req, res) =
           };
           // console.log("tutoBem DESARROLLANDO, MIRAR VACUNAS");
           for (let index = 0; index < result.length; index++) {
-            object = result[index];
+            let object = result[index];
             // preparando el objeto segun las columnas del excel
 
             if (object["inventario"] || object["categoria"] === "Insumos") {
@@ -314,6 +304,8 @@ app.post("/patrimonio/upload", [verificaToken, verificaAdmin_Role], (req, res) =
                 let AreaUnHilo = mongoose.connections[1].models.Area;
                 let areaTMP = await AreaUnHilo.find({area: object["area"]}).exec();
                 if (areaTMP.length !== 0) {
+                  let $set = {};
+                  let fechaError = false;
                   for (const key in object) {
                     if (Object.hasOwn(object, key)) {
                       if (
@@ -365,7 +357,6 @@ app.post("/patrimonio/upload", [verificaToken, verificaAdmin_Role], (req, res) =
                     $set["area"] = areaTMP[0].id;
 
                     $set["usuario_creador"] = req.usuario._id;
-                    objetoBDTMP = {$set};
 
                     // Realizar actualizacion uno por uno
                     let PatrimonioUnHilo = mongoose.connections[1].models.Patrimonio;
@@ -373,7 +364,7 @@ app.post("/patrimonio/upload", [verificaToken, verificaAdmin_Role], (req, res) =
                       try {
                         let resultado = await PatrimonioUnHilo.findOneAndUpdate(
                           {modelo: object["modelo"]},
-                          objetoBDTMP,
+                          {$set},
                           {
                             upsert: true,
                             setDefaultsOnInsert: true,
@@ -395,7 +386,7 @@ app.post("/patrimonio/upload", [verificaToken, verificaAdmin_Role], (req, res) =
                       try {
                         let resultado = await PatrimonioUnHilo.findOneAndUpdate(
                           {inventario: object["inventario"]},
-                          objetoBDTMP,
+                          {$set},
                           {
                             upsert: true,
                             setDefaultsOnInsert: true,
@@ -421,11 +412,6 @@ app.post("/patrimonio/upload", [verificaToken, verificaAdmin_Role], (req, res) =
                     }, Error: Fecha Valor/es invalido/s.\r\n\t`;
                     totales.errores += 1;
                   }
-                  // Reiniciar objetos para el proximo del loop
-                  objetoBDTMP = {};
-                  $set = {};
-                  fechaError = false;
-                  areaTMP = "";
                 } else {
                   // si No tiene un Area valida no hacer nada
                   errores = `${errores}Fila Excel: ${

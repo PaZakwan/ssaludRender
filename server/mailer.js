@@ -12,10 +12,14 @@ const crearTransporter = async () => {
       clgFalla({
         type: "Info",
         name: "Mail Server",
-        falla: "No esta configurado.",
+        falla: "No esta configurado",
       });
       return {error: {code: 501, message: "Mail Server: No esta configurado."}};
     }
+    clgEvento({
+      name: "⚙️  Mail Server",
+      evento: "Configurando..",
+    });
 
     const temp = {
       auth: {},
@@ -65,13 +69,13 @@ const crearTransporter = async () => {
       // Listen for transporter has capacity to accept more messages.
       transporter.on("idle", (idle) => {
         clgEvento({
-          name: "Mail Server",
+          name: "✉️ Mail Server",
           evento: `Idle (${idle})`,
         });
       });
     }
     clgEvento({
-      name: "Mail Server",
+      name: "✉️ Mail Server",
       evento: `Funcionando (${
         transporter.options.service || `${transporter.options.host}:${transporter.options.port}`
       })`,
