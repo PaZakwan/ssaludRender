@@ -1,5 +1,37 @@
 /* eslint no-console: ["error", { allow: ["warn", "error"] }] */
 
+const mesFullNames = [
+  "Enero",
+  "Febrero",
+  "Marzo",
+  "Abril",
+  "Mayo",
+  "Junio",
+  "Julio",
+  "Agosto",
+  "Septiembre",
+  "Octubre",
+  "Noviembre",
+  "Diciembre",
+];
+
+const mesShortNames = [
+  "Ene",
+  "Feb",
+  "Mar",
+  "Abr",
+  "May",
+  "Jun",
+  "Jul",
+  "Ago",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dic",
+];
+
+const redondearA2Decimales = (num) => Number(Math.round(num + "e2") + "e-2");
+
 const WORDS_LOWERCASE = new Set([
   // Artículos
   "el",
@@ -142,6 +174,9 @@ const checkIsValidJson = (string) => {
   }
 };
 
+exports.mesFullNames = mesFullNames;
+exports.mesShortNames = mesShortNames;
+exports.redondearA2Decimales = redondearA2Decimales;
 exports.capitalize = capitalize;
 exports.trim_between = trim_between;
 exports.checkIsValidJson = checkIsValidJson;

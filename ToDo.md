@@ -86,9 +86,17 @@ $ npm ls
       MAIL A CIPRES CONSULTA POR LA RESPUESTA "Internal Server Error".
       Persona Creada en CIPRES, SIN CODIGO DE CIPRES(SUMAR) y SIN RESPONSABLE o.o, creo que es lo que me esta generando el error.
 
+- [/] ‼️ CIPRES - ERROR -> nuevos mensajes... => "Servicio de CIPRES no accesible, re-intente mas tarde."
+  - [ ] FALTA TESTEAR
+        Paciente: connect ETIMEDOUT 170.155.150.51:443.
+        Paciente: CIPRES Bad Gateway.
+        CIPRES: Bad Gateway.
+        Paciente: CIPRES undefined.
+
 - [ ] ‼️ SISTEMA - Paciente -> index de documentos unicos.
       los DNI mayores a 9.999.999 no deberian repetirse sin importar el sexo.
       los DNI menores a 10.000.000 pueden repetirse solo si sexo es diferente (Masculino y Femenino) y fecha de nacimiento menor a 1950.
+      los documentos que no son DNI no deberian repetirse sin importar el sexo.
 
 - [ ] FARMACIA - Transferencias -> boton para rechazar las transferencias y que vuelvan al stock del lugar que las envía.
       motivo_rechazo (String); insumos[].rechazado (Date)

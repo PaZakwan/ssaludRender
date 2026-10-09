@@ -66,6 +66,9 @@ const VacunaInsumoSchema = new mongoose.Schema({
             },
           ],
         },
+        objetivo_anual: {
+          type: Number,
+        },
       },
     ],
     default: void 0,

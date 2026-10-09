@@ -27,6 +27,12 @@
 
 ---
 
+### [1.7.20261009] - 2026-10-09
+
+- 📈 Improved a Sistema - Frontend => Se mejoro el uso de los iframe, al descargar (PDFs) ahora se pueden auto-cerrar.
+
+- ✨ Added a Vacunas - Reportes => Vacuna Poblacion Objetivo Anual, Porcentaje Acumulativo Mensual Respecto al Objetivo Anual, el cual se configura en el Grupo Etario al dar de Alta Vacunas. Propuesto por Yesica Fernandez.
+
 ### [1.7.20260907] - 2026-09-07
 
 - 📈 Improved a Sistema - Frontend => Se mejoraron los mensajes de los errores al validar formularios (validarFormulario).
