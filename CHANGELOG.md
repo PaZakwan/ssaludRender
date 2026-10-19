@@ -27,6 +27,10 @@
 
 ---
 
+### [1.7.20261019] - 2026-10-19
+
+- 🩹 Fixed a Farmacia - Filtros/Ingresos => La procedencia Bonaerenses, ahora se carga correctamente y no como "Municipal" (otros proveedores). Reportado por Direccion de Farmacia.
+
 ### [1.7.20261009] - 2026-10-09
 
 - 📈 Improved a Sistema - Frontend => Se mejoro el uso de los iframe, al descargar (PDFs) ahora se pueden auto-cerrar.

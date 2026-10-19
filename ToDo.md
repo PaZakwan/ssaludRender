@@ -93,6 +93,8 @@ $ npm ls
         CIPRES: Bad Gateway.
         Paciente: CIPRES undefined.
 
+- [ ] ‼️ FARMACIA - Ingreso -> revisar los ya ingresados como procedencia "Municipal" pero con proveedor "Bonaerenses".
+
 - [ ] ‼️ SISTEMA - Paciente -> index de documentos unicos.
       los DNI mayores a 9.999.999 no deberian repetirse sin importar el sexo.
       los DNI menores a 10.000.000 pueden repetirse solo si sexo es diferente (Masculino y Femenino) y fecha de nacimiento menor a 1950.
